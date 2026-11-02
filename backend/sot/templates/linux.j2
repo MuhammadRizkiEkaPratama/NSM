@@ -1,0 +1,39 @@
+{# linux.j2 -- INTENDED configuration for Linux servers (Ubuntu 24.04, this lab). Not a single real Linux config file: it combines pieces of several real files (/etc/hostname, /etc/chrony/chrony.conf, /etc/systemd/timesyncd.conf, /etc/rsyslog.d/*.conf, /etc/issue.net), each under its own header for comparison with real snapshots. Only 9 of the 13 cisco_ios catalog keys apply to Linux (`untuk_platform("linux")`); CLI concepts such as exec_timeout, vty_izin, ssh_saja and layanan_http_mati do not. `interface`, `vlan` and `rute` are deliberately ignored by the renderer on this platform (see sot/render.py). #}
+# --- /etc/hostname -----------------------------------------------------
+{{ n.hostname }}
+
+{% if n.domain is defined %}
+# --- /etc/resolv.conf (search domain) -----------------------------------
+search {{ n.domain }}
+{% endif %}
+{% for ip in n.dns_server | default([]) %}
+nameserver {{ ip }}
+{% endfor %}
+
+# --- Zona waktu (timedatectl set-timezone) ------------------------------
+{{ n.zona_waktu }}
+
+# --- /etc/chrony/chrony.conf (server NTP) -------------------------------
+{% for ip in n.ntp_server %}
+server {{ ip }} iburst
+{% endfor %}
+
+{% for ip in n.logging_server | default([]) %}
+# --- /etc/rsyslog.d/10-nsm-forward.conf ---------------------------------
+*.* @@{{ ip }}:514
+{% endfor %}
+
+{% if n.snmp_lokasi is defined or n.snmp_kontak is defined %}
+# --- /etc/snmp/snmpd.conf (identitas, bukan kredensial) ------------------
+{% if n.snmp_lokasi is defined %}
+sysLocation {{ n.snmp_lokasi }}
+{% endif %}
+{% if n.snmp_kontak is defined %}
+sysContact {{ n.snmp_kontak }}
+{% endif %}
+{% endif %}
+
+{% if n.banner_masuk is defined %}
+# --- /etc/issue.net (banner login SSH) ----------------------------------
+{{ n.banner_masuk }}
+{% endif %}

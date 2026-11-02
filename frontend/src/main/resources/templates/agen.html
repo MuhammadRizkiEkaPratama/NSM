@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Agen SOC - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<link rel="stylesheet" href="/css/wawasan.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Agen SOC', 'apa yang diusulkan mesin, dan apa kata pagar', 'wawasan')}"></div>
+
+<div th:replace="~{fragmen/wawasan-jalur :: jalur('agen')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-keadaan">Paket C4. Agen ini
+  <b>tidak pernah menyentuh perangkat</b> &mdash; tidak ada satu baris pun di
+  dalamnya yang bisa, dan itu diuji dengan memindai sumbernya. Yang ia lakukan:
+  mengusulkan. Usulannya lewat <code>pagar_otomasi.putuskan()</code> yang SAMA
+  PERSIS dengan pemulih otomatis biasa, jadi keenam gerbang berlaku otomatis
+  tanpa satu baris pun kode pengaman baru. AI menjadi satu lagi pemohon, bukan
+  pengecualian.</div>
+
+<h4 id="judul-keadaan" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-shield"/></svg>
+  Keadaan saklar</h4>
+
+<div id="agen-saklar"><p class="redup">Memuat&hellip;</p></div>
+
+<h4 id="judul-rekam" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>
+  Rekam jejak: seberapa sering pagar setuju</h4>
+
+<div class="jelas-isi" data-untuk="#judul-rekam">Ini satu-satunya ukuran jujur
+  apakah agen layak dipercaya, dan ia hanya bermakna kalau dihitung dari usulan
+  yang benar-benar sampai ke pagar. Membandingkan usulannya dengan keputusan
+  manusia sungguhan selama beberapa minggu adalah alasan mode
+  <code>usul</code> ada.</div>
+
+<div id="agen-ringkas" class="kisi-4"></div>
+
+<div id="alat">
+  <label for="jendela" class="kecil redup">Jendela</label>
+  <select id="jendela">
+    <option value="24" selected>24 jam terakhir</option>
+    <option value="72">3 hari terakhir</option>
+    <option value="168">7 hari terakhir</option>
+    <option value="720">30 hari terakhir</option>
+  </select>
+  <span id="meta" class="kecil redup"></span>
+</div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-history"/></svg>
+  Usulan</h4>
+<div id="agen-usulan"><p class="redup">Memuat&hellip;</p></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Mode 'usul' memanggil pagar dengan simulasi=True: seluruh gerbang berjalan persis sama, tetapi barisnya tidak ditulis. Itu perlu karena batas laju pagar MENGHITUNG baris izin -- agen yang cuma bertanya sepuluh kali akan menghabiskan jatah tindakan milik pemulih sungguhan, dan pemulih itu ditolak untuk tindakan yang tidak pernah ada.">
+    Apa bedanya mode "usul" dan "jalan"?
+  </span>
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Usulan yang DITOLAK pagar tetap ditampilkan lengkap dengan alasannya. Menyembunyikannya berarti manusia tidak pernah tahu bahwa ada sesuatu yang bisa dilakukan tetapi tidak boleh -- dan itu justru informasi yang paling berguna saat gangguan berlarut.">
+    Kenapa usulan yang ditolak tetap ditampilkan?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/wawasan.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

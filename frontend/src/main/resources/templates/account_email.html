@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Ganti Email - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+.email-sekarang {
+  font-size: var(--f-m); color: var(--teks-2); background: var(--permukaan);
+  border: 1px solid var(--garis); border-radius: 5px;
+  padding: var(--sp-2) 11px; margin-bottom: var(--sp-3);
+}
+.email-sekarang b { color: var(--teks); }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Ganti Email', '', 'email')}"></div>
+
+<div style="display:flex; justify-content:center;">
+  <div class="panel">
+    <h2>Ganti Email</h2>
+    <div class="pengantar">
+      Email baru harus diverifikasi lebih dulu. Tautan konfirmasi dikirim ke alamat
+      baru, dan email akun berubah setelah tautan itu diklik. Sampai saat itu email
+      lama tetap berlaku, dan diberi tahu bahwa ada permintaan penggantian.
+    </div>
+
+    <div class="email-sekarang" th:if="${emailSekarang}">
+      Email sekarang: <b th:text="${emailSekarang}">-</b>
+    </div>
+
+    <div class="pesan-galat" th:if="${error}" th:text="${error}"></div>
+    <div class="pesan-sukses" th:if="${success}" th:text="${success}"></div>
+
+    <form th:action="@{/account/email}" method="post">
+      <label class="label-atas" for="email">Email Baru</label>
+      <input type="email" name="email" id="email" required autocomplete="email">
+
+      <label class="label-atas" for="cur">Password Saat Ini</label>
+      <input type="password" name="current" id="cur" required autocomplete="current-password">
+
+      <label class="baris-centang"><input type="checkbox" id="showpw"> Lihat password</label>
+      <button type="submit" class="tombol-utama tombol-lebar" style="margin-top:var(--sp-5)">
+        Kirim Tautan Verifikasi
+      </button>
+    </form>
+
+    <div class="tautan-bawah"><a th:href="@{/}">Kembali ke dashboard</a></div>
+  </div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Kelola User - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+h2 { margin: var(--sp-8) 0 var(--sp-2); font-size: var(--f-l); }
+h2:first-of-type { margin-top: var(--sp-5); }
+.bagian-ket { color: var(--teks-redup); font-size: var(--f-s); margin-bottom: var(--sp-2); }
+button.setuju { background: #15803d; border-color: var(--up-gelap); color: var(--teks); }
+button.setuju:hover { background: var(--up-gelap); }
+button.tolak { background: var(--down); border-color: #dc2626; color: var(--teks); margin-left: var(--sp-1); }
+button.tolak:hover { background: #dc2626; }
+td form { display: inline; }
+
+.aksi-akun { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.aksi-akun button { font-size: var(--f-s); padding: 4px 9px; }
+.aksi-akun button:disabled { opacity: .4; cursor: not-allowed; }
+
+.pesan-aksi {
+  padding: 10px 14px; border-radius: var(--r-sedang); margin-bottom: var(--sp-4);
+  font-size: var(--f-m); border: 1px solid;
+}
+.pesan-aksi.baik  { background: #10281b; border-color: #1f6b41; color: #86efac; }
+.pesan-aksi.buruk { background: #2a1414; border-color: #7f1d1d; color: var(--down); }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Kelola User', 'persetujuan akun, hak akses, dan pembukaan kunci', 'users')}"></div>
+
+<!-- Result sentence is built here, not in the controller, so the controller sends only state codes and all user-facing wording lives in this file. -->
+<div class="pesan-aksi baik" th:if="${param.pesan}" th:switch="${param.pesan[0]}">
+  <span th:case="'role-diubah'">Role akun sudah diubah. Perubahannya berlaku saat orangnya masuk berikutnya.</span>
+  <span th:case="'akses-dicabut'">Akses akun dicabut. Akunnya tidak dihapus, dan riwayat auditnya tetap utuh.</span>
+  <span th:case="'akses-dikembalikan'">Akses akun dikembalikan, beserta hitungan gagal masuk yang direset ke normal.</span>
+  <span th:case="'akun-dihapus'">Akun dihapus permanen dari daftar user.</span>
+  <span th:case="*">Perubahan tersimpan.</span>
+</div>
+
+<div class="pesan-aksi buruk" th:if="${param.galat}" th:switch="${param.galat[0]}">
+  <span th:case="'diri-sendiri'">Ditolak: akun yang sedang Anda pakai tidak bisa mengubah haknya sendiri. Minta admin lain yang melakukannya.</span>
+  <span th:case="'admin-terakhir'">Ditolak: itu admin aktif terakhir. Kalau haknya dicabut, tidak ada lagi yang bisa membuka halaman ini, dan satu-satunya jalan memperbaikinya adalah lewat SQL langsung. Angkat admin kedua lebih dulu.</span>
+  <span th:case="'tidak-ada'">Ditolak: akun itu sudah tidak ada. Mungkin baru saja dihapus di jendela lain.</span>
+  <span th:case="*">Aksi ditolak.</span>
+</div>
+
+<h2>Menunggu Persetujuan</h2>
+<div class="bagian-ket">
+  Akun baru tidak bisa masuk sampai disetujui di sini. Menolak akan menghapus
+  pendaftarannya, dan orangnya harus mendaftar ulang bila itu keliru.
+</div>
+<div class="kosong" th:if="${#lists.isEmpty(pending)}">Tidak ada akun yang menunggu persetujuan.</div>
+<div class="gulir-tabel"><table th:unless="${#lists.isEmpty(pending)}">
+  <thead><tr><th>Username</th><th>Email</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <tr th:each="u : ${pending}">
+      <td th:text="${u.username}"></td>
+      <td th:text="${u.email}"></td>
+      <!-- Formatted with #temporals, not js/waktu.js: the page is server-rendered and the value is already a LocalDateTime, so loading a JS file would add nothing. -->
+      <td class="redup"
+          th:text="${u.createdAt} != null
+                   ? ${#temporals.format(u.createdAt, 'dd MMM yyyy, HH.mm.ss')} : '-'"
+          th:title="${u.createdAt} != null
+                   ? ${#temporals.format(u.createdAt, 'EEEE, dd MMMM yyyy HH:mm:ss')} : null"></td>
+      <td class="nowrap">
+        <form th:action="@{'/admin/users/' + ${u.id} + '/approve'}" method="post">
+          <button class="setuju" type="submit" title="Akun bisa langsung dipakai masuk">Setujui</button>
+        </form>
+        <form th:action="@{'/admin/users/' + ${u.id} + '/reject'}" method="post">
+          <button class="tolak" type="submit" title="Pendaftaran dihapus, orangnya harus mendaftar ulang">Tolak</button>
+        </form>
+      </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<h2>Semua User</h2>
+<div class="gulir-tabel"><table>
+  <thead>
+    <tr>
+      <th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th>
+      <th title="Tingkat penguncian akibat gagal masuk berulang">Lockout</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="u : ${all}">
+      <td class="redup" th:text="${u.id}"></td>
+      <td th:text="${u.username}"></td>
+      <td th:text="${u.email}"></td>
+      <td th:text="${u.role}"></td>
+      <td>
+        <span th:if="${u.enabled}" class="lencana lencana-up">AKTIF</span>
+        <span th:if="${!u.enabled and u.nonaktif}" class="lencana lencana-down"
+              data-petunjuk="Akses akun ini dicabut admin. Akunnya tidak dihapus, jadi jejaknya di Audit Log tetap bisa dibaca sebagai nama, bukan sebagai id yang sudah hilang.">DINONAKTIFKAN</span>
+        <span th:if="${!u.enabled and !u.nonaktif}" class="lencana lencana-menunggu">MENUNGGU</span>
+      </td>
+      <td class="nowrap">
+        <span th:if="${u.lockLevel == 0}" class="redup">Normal</span>
+        <span th:if="${u.lockLevel != 0}" class="lencana lencana-down"
+              th:text="'Tingkat ' + ${u.lockLevel}"></span>
+        <form th:if="${u.lockLevel != 0}"
+              th:action="@{'/admin/users/' + ${u.id} + '/reset-lockout'}" method="post">
+          <button class="utama" type="submit" style="margin-left:6px"
+                  title="Membuka kunci tanpa menunggu masa tunggu habis">Buka Kunci</button>
+        </form>
+      </td>
+
+      <!-- Buttons the server would reject are not drawn. The real guard stays in AdminController, since a hidden button can still be called by URL. -->
+      <td class="nowrap aksi-akun">
+        <span th:if="${u.username == akuSendiri}" class="redup"
+              data-petunjuk="Akun yang sedang dipakai tidak bisa mengubah haknya sendiri. Kesalahan semacam itu baru terasa saat mencoba masuk lagi, dan pada saat itu sudah tidak ada yang bisa memperbaikinya dari dalam aplikasi.">akun Anda sendiri</span>
+
+        <th:block th:unless="${u.username == akuSendiri}">
+          <!-- Ubah role -->
+          <form th:action="@{'/admin/users/' + ${u.id} + '/role'}" method="post"
+                th:if="${u.enabled}">
+            <input type="hidden" name="role"
+                   th:value="${u.role == 'ADMIN'} ? 'VIEWER' : 'ADMIN'">
+            <button type="submit"
+                    th:disabled="${u.role == 'ADMIN' and jumlahAdminAktif <= 1}"
+                    th:text="${u.role == 'ADMIN'} ? 'Jadikan Viewer' : 'Jadikan Admin'"
+                    th:attr="data-petunjuk=${u.role == 'ADMIN' and jumlahAdminAktif <= 1}
+                             ? 'Ini admin aktif terakhir. Menurunkannya membuat sistem tidak punya admin sama sekali, dan satu-satunya cara memperbaikinya kembali lewat SQL langsung.'
+                             : 'Admin bisa menjeda device, mengelola akun, dan membuka halaman admin. Viewer hanya melihat.'">Ubah Role</button>
+          </form>
+
+          <!-- Cabut / kembalikan akses -->
+          <form th:action="@{'/admin/users/' + ${u.id} + '/nonaktif'}" method="post"
+                th:if="${u.enabled or u.nonaktif}">
+            <input type="hidden" name="nonaktif" th:value="${u.enabled} ? 'true' : 'false'">
+            <button type="submit"
+                    th:classappend="${u.enabled} ? 'tolak' : 'setuju'"
+                    th:disabled="${u.enabled and u.role == 'ADMIN' and jumlahAdminAktif <= 1}"
+                    th:text="${u.enabled} ? 'Cabut Akses' : 'Kembalikan Akses'"
+                    data-petunjuk="Mencabut akses menghentikan orangnya masuk tanpa menghapus akunnya. Ini jalan yang disarankan untuk orang yang sudah keluar: riwayat auditnya tetap terbaca sebagai nama.">Cabut Akses</button>
+          </form>
+
+          <!-- PENDING accounts get no buttons here; Approve and Reject are in the "Menunggu Persetujuan" table above, and a second "Hapus" would be a differently named duplicate of the same action. -->
+          <span th:if="${!u.enabled and !u.nonaktif}" class="redup"
+                data-petunjuk="Akun ini belum pernah disetujui. Keputusannya ada di tabel Menunggu Persetujuan di atas halaman: Setujui memberinya akses, Tolak menghapus pendaftarannya.">lihat tabel persetujuan di atas</span>
+
+          <form th:action="@{'/admin/users/' + ${u.id} + '/hapus'}" method="post"
+                th:unless="${!u.enabled and !u.nonaktif}"
+                onsubmit="return confirm('Hapus akun ini permanen? Baris audit lamanya akan menyebut nama yang sudah tidak ada di daftar user. Mencabut akses biasanya lebih tepat.');">
+            <button class="tolak" type="submit"
+                    th:disabled="${u.enabled and u.role == 'ADMIN' and jumlahAdminAktif <= 1}"
+                    data-petunjuk="Menghapus membuang barisnya dari tabel users. Baris audit lama tetap menyebut username itu, jadi riwayatnya akan menunjuk ke orang yang tidak ada lagi di daftar. Untuk orang yang sudah keluar, Cabut Akses lebih tepat.">Hapus</button>
+          </form>
+        </th:block>
+      </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<h2>IP Diblokir</h2>
+<div class="bagian-ket">
+  Tingkat 3 memblokir alamat asal, bukan akun. Alamat localhost tidak pernah
+  diblokir supaya admin tidak bisa mengunci dirinya sendiri.
+</div>
+<div class="kosong" th:if="${#lists.isEmpty(blockedIps)}">Tidak ada IP yang diblokir.</div>
+<div class="gulir-tabel"><table th:unless="${#lists.isEmpty(blockedIps)}">
+  <thead><tr><th>IP</th><th>Dipicu Oleh</th><th>Diblokir Pada</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <tr th:each="b : ${blockedIps}">
+      <td class="mono" th:text="${b.ip}"></td>
+      <td th:text="${b.triggeredBy}"></td>
+      <td class="redup"
+          th:text="${b.blockedAt} != null
+                   ? ${#temporals.format(b.blockedAt, 'dd MMM yyyy, HH.mm.ss')} : '-'"
+          th:title="${b.blockedAt} != null
+                   ? ${#temporals.format(b.blockedAt, 'EEEE, dd MMMM yyyy HH:mm:ss')} : null"></td>
+      <td>
+        <form th:action="@{/admin/unblock-ip}" method="post">
+          <input type="hidden" name="ip" th:value="${b.ip}">
+          <button class="utama" type="submit">Buka Blokir</button>
+        </form>
+      </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

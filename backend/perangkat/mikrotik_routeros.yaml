@@ -1,0 +1,70 @@
+nama: mikrotik_routeros
+keterangan: MikroTik RouterOS (v6 dan v7)
+teruji: dokumentasi
+# No MikroTik device in the lab, and none of the commands in this file has been
+# run on real RouterOS. The write path is therefore disabled, enforced by
+# `dialek_perangkat.Definisi.boleh_menulis`. The `/export` command below already
+# existed in the connectors/konfig.py `PERINTAH` table untested; this file makes
+# that risk visible rather than adding new risk.
+
+deteksi:
+  # MikroTik PEN in the IANA registry (https://www.iana.org/assignments/enterprise-numbers/).
+  sysobjectid:
+    - ".1.3.6.1.4.1.14988."
+
+akses:
+  netmiko_device_type: mikrotik_routeros
+  jenis: jaringan
+  butuh_enable: false
+
+  # No `paging_mati`: netmiko's MikroTik driver overrides `disable_paging()` to
+  # return an empty string (RouterOS has no paging by default), so an invented
+  # command would only send text the device does not understand.
+
+baca:
+  # Already in connectors/konfig.py `PERINTAH` before this file existed.
+  # `/export hide-sensitive` would mask secrets on the device, but it needs
+  # RouterOS v6.43+, and changing an already-running command is out of scope. The
+  # `rahasia:` patterns below are needed either way.
+  konfigurasi: /export
+
+  # `konfigurasi_startup` is deliberately absent: RouterOS has no running/saved
+  # split (every change is permanent, no `write memory`), so comparing the two
+  # would report false differences. `konfig.ambil_startup()` distinguishes None from an empty string for this.
+
+  nama_host: /system identity print
+  identitas: /system resource print
+  interface_ringkas: /interface print
+  tabel_rute: /ip route print
+
+tulis:
+  # `true` describes RouterOS itself (it can be configured over CLI), not whether
+  # NSM may do so; `boleh_menulis` answers that, reads `teruji` above, and says no.
+  didukung: true
+  mode_konfig: ""
+
+
+  # Safety net: RouterOS safe mode rolls back changes automatically when the
+  # session drops, with no reboot. `pasang` is empty because safe mode is entered
+  # with Ctrl-X rather than a command, and its behavior through netmiko is unverified.
+  jaring_pengaman:
+    jenis: commit_confirmed
+    pasang: ""
+
+rahasia:
+  # Additional masking on top of the Cisco-style patterns connectors/konfig.py
+  # applies to all platforms; RouterOS `key=value` syntax is not caught by those.
+  # Only the value is replaced; the key stays so a removed `/snmp community` line
+  # still shows as a change.
+  - pola: '(?i)(\bpassword=)("[^"]*"|\S+)'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?i)(\b(?:wpa|wpa2)-pre-shared-key=)("[^"]*"|\S+)'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?i)(\b(?:authentication|encryption)-password=)("[^"]*"|\S+)'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?i)(\b(?:secret|psk|private-key|shared-secret)=)("[^"]*"|\S+)'
+    ganti: '\1<DISAMARKAN>'
+
+kemampuan: {}
+# Deliberately empty: no capability here has been tried on a real MikroTik
+# device, and `dialek_perangkat` treats unlisted capabilities as unsupported.

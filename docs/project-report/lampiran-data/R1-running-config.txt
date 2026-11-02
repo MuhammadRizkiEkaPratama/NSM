@@ -1,0 +1,112 @@
+Building configuration...
+
+Current configuration : 1681 bytes
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec localtime show-timezone
+!
+hostname R1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+logging buffered 16384 informational
+logging rate-limit 20 except errors
+!
+no aaa new-model
+no ip icmp rate-limit unreachable
+ip cef
+!
+!
+!
+!
+!
+!
+no ip domain lookup
+ip domain name lab.local
+no ipv6 cef
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+username nsm privilege 15 secret 5 <disamarkan>
+!
+!
+ip tcp synwait-time 5
+ip ssh version 2
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface FastEthernet0/0
+ description lewat tombol NSM
+ ip address 192.168.56.60 255.255.255.0
+ duplex full
+!
+interface FastEthernet1/0
+ description WAN ke R2 (lokasi B)
+ ip address 10.10.10.1 255.255.255.252
+ speed auto
+ duplex auto
+!
+interface FastEthernet1/1
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 0.0.0.0 0.0.0.0 10.10.10.2
+ip route 192.168.20.0 255.255.255.0 10.10.10.2
+!
+logging source-interface FastEthernet0/0
+logging host 192.168.56.156 transport udp port 1514
+!
+snmp-server group NSMGRUP v3 priv read NSMVIEW 
+snmp-server view NSMVIEW iso included
+snmp-server trap-source FastEthernet0/0
+snmp-server enable traps snmp linkdown linkup coldstart warmstart
+snmp-server enable traps config
+snmp-server host 192.168.56.156 version 2c public udp-port 1162 
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line vty 0 4
+ login local
+ transport input ssh
+!
+ntp server 192.168.56.104
+!
+end

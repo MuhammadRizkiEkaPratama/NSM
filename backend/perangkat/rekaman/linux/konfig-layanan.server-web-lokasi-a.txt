@@ -1,0 +1,47 @@
+### sshd
+AcceptEnv LANG LC_* COLORTERM NO_COLOR
+    AllowTcpForwarding no
+    ChrootDirectory /srv/berkas
+    ForceCommand internal-sftp -f AUTH -l INFO
+Include /etc/ssh/sshd_config.d/*.conf
+KbdInteractiveAuthentication no
+Match Group berkas
+    PermitTTY no
+PrintMotd no
+Subsystem sftp internal-sftp -f AUTH -l INFO
+UsePAM yes
+    X11Forwarding no
+X11Forwarding yes
+
+### port-mendengarkan
+0.0.0.0:22
+127.0.0.1:631
+127.0.0.53%lo:53
+127.0.0.54:53
+[::1]:631
+[::]:22
+*:80
+*:8080
+
+### firewall
+active
+
+### akun-uid0
+root
+
+### akun-bershell
+nsmro:/bin/bash
+doni:/bin/bash
+root:/bin/bash
+sync:/bin/sync
+
+### grup-istimewa
+adm:syslog,doni,nsmro
+lxd:
+sudo:doni
+
+### akun-pemantau-grup
+!! kosong
+
+### pembaruan-keamanan-tertunda
+40

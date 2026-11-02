@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- CSRF token for the preview and send POSTs; without it Spring Security returns 403. Only this page loads it; the other configuration pages never POST. -->
+<meta name="_csrf" th:content="${_csrf.token}" content="">
+<meta name="_csrf_header" th:content="${_csrf.headerName}" content="">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Susun Perintah Konfigurasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Susun Perintah Konfigurasi', 'satu-satunya bagian NSM yang mengubah perangkat', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('perintah')}"></div>
+
+<!-- Separate page, because this is the only section that actually changes devices and should be reached deliberately (one click from the Configuration home). -->
+<!-- Three rules that apply when sending. The operational promises (safety net, result not yet permanent, interface checked first) stay printed; only reasons and details are in hover hints, since touch screens have none. -->
+<div class="bagian">
+  <div class="alur alur-lebar alur-ikon">
+    <div class="langkah"><span class="titik"><svg class="ikon"><use href="/ikon-tabler.svg#i-shield-check"/></svg></span>
+      <span class="nama-langkah judul-bantu" tabindex="0"
+            data-petunjuk="NSM memasang `reload in 10` di perangkat SEBELUM satu pun baris konfigurasi dikirim, lalu memeriksa `show reload` untuk membuktikan jaringnya benar-benar terpasang. Kalau tidak terbukti, pengiriman DIBATALKAN di sini.">1. pasang jaring</span></div>
+    <div class="garis"></div>
+    <div class="langkah"><span class="titik"><svg class="ikon"><use href="/ikon-tabler.svg#i-send"/></svg></span>
+      <span class="nama-langkah judul-bantu" tabindex="0"
+            data-petunjuk="Baris yang dikirim persis yang tertulis di pratinjau — tidak ada yang ditambahkan diam-diam. Perintah yang memutus sambungan tetap boleh dikirim, karena jaringnya sudah terpasang.">2. kirim</span></div>
+    <div class="garis"></div>
+    <div class="langkah"><span class="titik"><svg class="ikon"><use href="/ikon-tabler.svg#i-circle-check"/></svg></span>
+      <span class="nama-langkah judul-bantu" tabindex="0"
+            data-petunjuk="NSM membuktikan perangkatnya masih menjawab sesudah perintahnya masuk. Kalau sambungannya hilang, jaring pengaman yang bekerja: perangkat menyala ulang sendiri dan kembali ke konfigurasi tersimpan.">3. buktikan</span></div>
+    <div class="garis"></div>
+    <div class="langkah"><span class="titik"><svg class="ikon"><use href="/ikon-tabler.svg#i-lock-open"/></svg></span>
+      <span class="nama-langkah judul-bantu" tabindex="0"
+            data-petunjuk="Jaring dilepas SESUDAH pembuktian, bukan sebelum. Urutan itu yang membedakan langkah berisiko dari langkah ceroboh — melepas lebih dulu menghapus satu-satunya hal yang melindungi selama pembuktian berlangsung.">4. lepas jaring</span></div>
+  </div>
+
+  <div class="hal-singkat">
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Selama belum disimpan, menyalakan ulang perangkat mengembalikannya ke keadaan semula. Menyimpan permanen (write memory) adalah tombol yang berdiri sendiri, dan tidak pernah dijalankan otomatis.">
+      Belum permanen sampai disimpan
+    </span>
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Nama interface diperiksa terhadap potret konfigurasi terakhir perangkat itu, jadi interface yang tidak ada ditolak sebelum perintahnya sempat tersusun. Seluruh validasi dikerjakan Python, bukan di peramban.">
+      Interface diperiksa dulu
+    </span>
+  </div>
+
+  <div id="alat-perintah">
+    <label><span class="judul-ikon"><svg class="ikon"><use href="/ikon-tabler.svg#i-router"/></svg>Perangkat</span>
+      <select id="pilih-device"></select>
+    </label>
+    <label><span class="judul-ikon"><svg class="ikon"><use href="/ikon-tabler.svg#i-terminal"/></svg>Perintah</span>
+      <select id="pilih-perintah"></select>
+    </label>
+  </div>
+
+  <div id="penjelasan-perintah" class="ket"></div>
+  <div id="isian-perintah"></div>
+  <button id="tombol-pratinjau" class="tombol" type="button">Lihat Pratinjau</button>
+
+  <div id="hasil-pratinjau"></div>
+</div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Percobaan menyusun perintah yang DITOLAK justru yang paling berguna terlihat di Audit Log: itu tanda ada yang mencoba mengirim sesuatu yang tidak seharusnya bisa dikirim. Nama pengirim diambil dari sesi login, bukan dari badan permintaan, supaya jejaknya tidak bisa dipalsukan pengirimnya sendiri. Perangkat yang vonis identitasnya BERTENTANGAN diblokir dari jalur ini — jaring pengaman `reload in 10` melindungi dari perintah yang salah, bukan dari perangkat yang salah.">
+    Apa yang tercatat, dan siapa yang tercatat?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/konfig.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

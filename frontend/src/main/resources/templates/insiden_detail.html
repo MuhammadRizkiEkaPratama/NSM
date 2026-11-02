@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Garis waktu insiden - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<link rel="stylesheet" href="/css/insiden.css">
+<meta name="insiden-id" th:content="${insidenId}">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Garis waktu insiden', 'urutan kejadian dari mulai sampai pulih', 'insiden')}"></div>
+
+<div class="jalur" aria-label="Jalur halaman insiden">
+  <a class="pulang" th:href="@{/insiden}">&larr; Semua insiden</a>
+</div>
+
+<div id="kepala-insiden"><p class="redup">Memuat&hellip;</p></div>
+
+<h4 id="judul-garis" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-history"/></svg>
+  Garis waktu</h4>
+
+<div class="jelas-isi" data-untuk="#judul-garis">Tiap baris adalah satu gejala:
+  perangkat yang bermasalah, kapan ia mulai bermasalah, berapa kali ia terlihat
+  begitu, dan kapan ia pulih. Baris yang ditandai AKAR adalah perangkat yang
+  menurut graf ketergantungan menjadi sebabnya; sisanya berada di hilirnya dan
+  ikut gelap karena itu. Perangkat hilir yang melaporkan dirinya sendiri rusak
+  adalah persis kebingungan yang halaman ini ada untuk menghilangkan.</div>
+
+<div id="garis-waktu"><p class="redup">Memuat&hellip;</p></div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/insiden.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+#!/bin/bash
+# The only way NSM may change the firewall. Installed as /usr/local/sbin/nsm-ubah-firewall, owned by root; the monitoring account gets sudo for THIS FILE only.
+#
+#     nsm-ubah-firewall blokir <ip> <menit>
+#     nsm-ubah-firewall buka   <ip>
+#     nsm-ubah-firewall daftar
+#
+# Why a wrapper instead of sudo for `ufw`: sudoers cannot express "may block addresses except NSM's own", "blocks must have a time limit" or "never touch SSH rules", and argument patterns there are looser than they look. Here the whole policy lives in one readable file.
+# Not possible through this file: disabling the firewall, changing default policy, deleting allow rules (only `deny from <ip>` rules are touched), blocking NSM's own addresses (see the forbidden list below).
+# Adding a capability means editing this file.
+
+set -e
+
+UFW=/usr/sbin/ufw
+
+# Addresses that must never be blocked:
+# .1   laptop: the administrator's only SSH entry point.
+# .101 directory and database server: blocking it from .103 breaks E-Canteen login and sssd on .103.
+# .103 web and file server: blocking it from .101 breaks the reverse direction.
+# .156 nsm-app VM: NSM monitors from here; blocking it cuts monitoring itself.
+# Kept in sync with `ALAMAT_NSM` + `ALAMAT_DILINDUNGI` in the Python-side `.env`, but deliberately duplicated here so it survives if the Python side is lost. If NSM is installed on another network, fill this list again on every server; `uji_ubah_firewall.py` compares it with the Python side.
+DILARANG="192.168.56.1 192.168.1.43 192.168.20.1 192.168.20.101 192.168.56.103 127.0.0.1 192.168.56.156"
+
+sah_ipv4() {
+    echo "$1" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || return 1
+    for bagian in $(echo "$1" | tr '.' ' '); do
+        [ "$bagian" -le 255 ] || return 1
+    done
+    return 0
+}
+
+unit_untuk() {
+    # A systemd unit name must not contain a dot in its name part.
+    echo "nsm-buka-$(echo "$1" | tr '.' '-')"
+}
+
+case "$1" in
+
+daftar)
+    exec "$UFW" status numbered
+    ;;
+
+blokir)
+    IP="$2"
+    MENIT="$3"
+
+    if ! sah_ipv4 "$IP"; then
+        echo "TOLAK: '$IP' bukan alamat IPv4 yang sah." >&2
+        exit 2
+    fi
+    for larangan in $DILARANG; do
+        if [ "$IP" = "$larangan" ]; then
+            # Refused here, not only on the NSM side: a guard that exists only in the caller disappears when something else calls.
+            echo "TOLAK: $IP ada di daftar yang tidak boleh diblokir." >&2
+            exit 3
+        fi
+    done
+    case "$MENIT" in
+        ''|*[!0-9]*)
+            echo "TOLAK: lama blokir harus angka menit." >&2; exit 2 ;;
+    esac
+    if [ "$MENIT" -lt 1 ] || [ "$MENIT" -gt 1440 ]; then
+        # 24-hour maximum: an unlimited block set by a machine outlives its reason. Permanent blocks are placed by a human.
+        echo "TOLAK: lama blokir di luar batas (1-1440 menit)." >&2; exit 2
+    fi
+
+    UNIT=$(unit_untuk "$IP")
+    # Cancel any earlier timer for the same address first, or the earlier timer would lift the second block early.
+    systemctl stop "$UNIT.timer" 2>/dev/null || true
+
+    # `insert 1` puts the deny rule above the allow rules; ufw uses the first match, so below `allow` it would never apply.
+    "$UFW" insert 1 deny from "$IP" comment "NSM blokir sementara" >/dev/null
+
+    # Install the safety timer after the rule exists; otherwise a failed rule write would leave a timer that unblocks nothing.
+    systemd-run --on-active="${MENIT}min" --unit="$UNIT" \
+        /usr/local/sbin/nsm-ubah-firewall buka "$IP" >/dev/null
+
+    if ! systemctl list-timers --all "$UNIT.timer" 2>/dev/null | grep -q "$UNIT"; then
+        # A block with no automatic unblock is an unrequested permanent block; better to cancel now.
+        "$UFW" delete deny from "$IP" >/dev/null 2>&1 || true
+        echo "TOLAK: jaring pembuka gagal dipasang; blokir DIBATALKAN." >&2
+        exit 4
+    fi
+
+    echo "BLOKIR $IP selama $MENIT menit"
+    systemctl list-timers --all "$UNIT.timer" --no-pager | sed -n '2p'
+    ;;
+
+buka)
+    IP="$2"
+    if ! sah_ipv4 "$IP"; then
+        echo "TOLAK: '$IP' bukan alamat IPv4 yang sah." >&2
+        exit 2
+    fi
+    UNIT=$(unit_untuk "$IP")
+    systemctl stop "$UNIT.timer" 2>/dev/null || true
+
+    # Repeat until none remain: ufw deletes one matching rule per call, and the same address may have several. Leaving one would keep it blocked while NSM reports it open.
+    n=0
+    while "$UFW" delete deny from "$IP" >/dev/null 2>&1; do
+        n=$((n + 1))
+        [ "$n" -ge 20 ] && break
+    done
+    echo "BUKA $IP ($n aturan dihapus)"
+    ;;
+
+*)
+    echo "Pemakaian: nsm-ubah-firewall {blokir <ip> <menit>|buka <ip>|daftar}" >&2
+    exit 1
+    ;;
+esac

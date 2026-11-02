@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Kepatuhan Konfigurasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Kepatuhan Konfigurasi', 'apakah yang sudah terpasang di perangkat aman', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('kepatuhan')}"></div>
+
+<!-- Remediation queue. The axis is findings, not devices: the same finding on many devices is one card, since fixing it is one job. Devices are a context rail on the right. Drawn by `gambarKepatuhan()` in konfig.js. -->
+
+<!-- Posture strip: four numbers instead of one percentage, which would count an open telnet and a missing banner as equal. -->
+<div class="postur-b" id="postur-kepatuhan"></div>
+
+<div class="dua-kepatuhan">
+  <div>
+    <h4 id="judul-temuan" class="kepala judul-ikon">
+      <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>Yang perlu ditangani, terparah dulu</h4>
+    <div class="jelas-isi" data-untuk="#judul-temuan">Dinilai terhadap POTRET TERAKHIR tiap perangkat, bukan terhadap perangkat yang sedang hidup — jadi perubahan yang baru saja dikirim belum tentu ikut terhitung. Temuan yang sama di banyak perangkat digabung jadi satu kartu, karena memperbaikinya memang satu pekerjaan. Tiga tingkat keparahan tetap tiga angka terpisah, bukan satu persen yang menutupi bedanya. Temuan rendah diringkas jadi judul saja: ia yang paling tidak mendesak, dan paling tidak pantas jadi dinding teks.</div>
+    <div class="ket" id="ket-kepatuhan"></div>
+    <div class="saring-sev" id="saring-sev"></div>
+    <div id="antrian-temuan"></div>
+  </div>
+
+  <aside id="rel-perangkat"></aside>
+</div>
+
+<h4 id="judul-katalog" class="judul-kecil kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>Aturan yang diperiksa</h4>
+<div class="jelas-isi" data-untuk="#judul-katalog">Seluruh katalog ditampilkan, bukan hanya yang jadi temuan. Aturan kepatuhan yang tidak bisa dibaca pemakainya menuntut kepercayaan buta, dan alat keamanan adalah tempat terakhir yang pantas menuntut itu. Dilipat per platform supaya 23 aturan tidak jadi tabel panjang; arahkan kursor ke sebuah aturan untuk membaca kenapa ia penting. Aturan yang tidak berlaku untuk sebuah platform dijawab "tidak berlaku", bukan "patuh".</div>
+<div id="katalog-aturan"></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Dinilai terhadap POTRET TERAKHIR tiap perangkat, bukan terhadap perangkat yang sedang hidup — jadi perubahan yang baru saja dikirim belum tentu ikut terhitung. Halaman ini tidak menghitung apa pun sendiri: seluruh penilaian, alasan tiap aturan, dan cara memperbaikinya datang jadi dari Python. NSM tidak pernah menjalankan perintah perbaikan yang ditampilkan; ia ditulis untuk dijalankan manusia dan tetap tunduk pada aturan izin per perubahan.">
+    Dinilai dari apa, dan siapa yang menilai?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/konfig.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

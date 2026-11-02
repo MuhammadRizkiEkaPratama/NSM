@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Konfigurasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<!-- Configuration home: the ANSWER for each of five areas (command composition, compliance, identity, firewall, snapshot history); each area's evidence lives on its own page. No new top-menu links (it overflows 1366px); the way back is the `konfig-jalur` fragment on each page. -->
+<div th:replace="~{fragmen/nav :: bilah('Konfigurasi', 'keadaan konfigurasi perangkat, dan apa yang mengubahnya', 'konfig')}"></div>
+
+<div id="alat">
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<!-- Per-card descriptions live in `data-petunjuk` and show on hover. Only supplementary text goes there; card names and answer sentences stay printed, since hover is unavailable on touch screens. -->
+<div id="beranda">
+
+  <!-- Compliance is largest and first: it answers "is what is installed safe?", the question people bring first, and it shows per-device finding counts. -->
+  <a class="gerbang g-kepatuhan g-netral" id="kartu-kepatuhan"
+     th:href="@{/admin/konfig/kepatuhan}"
+     data-petunjuk="Apakah yang sudah terpasang di perangkat aman? Dinilai Python terhadap potret terakhir tiap perangkat, memakai katalog aturan yang bisa dibaca utuh di halamannya.">
+    <div class="kepala">
+      <span class="nama">Kepatuhan</span>
+    </div>
+    <div class="jawab belum" id="jawab-kepatuhan">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-kepatuhan"></div>
+  </a>
+
+  <!-- The only card that is not read-only. Distinguished by shape and a badge rather than a danger color; nothing here is risky until something is actually sent. -->
+  <a class="gerbang g-perintah g-aksi" id="kartu-perintah"
+     th:href="@{/admin/konfig/perintah}"
+     data-petunjuk="Mengubah konfigurasi perangkat lewat NSM. Pratinjau dulu, kirim belakangan, dan NSM memasang reload penyelamat sebelum mengirim. Hasilnya belum permanen sampai write memory ditekan sendiri.">
+    <div class="kepala">
+      <span class="nama">Susun perintah</span>
+      <span class="tanda-aksi">mengubah perangkat</span>
+    </div>
+    <div class="jawab" id="jawab-perintah">Memuat&hellip;</div>
+
+    <div class="alur" aria-hidden="true">
+      <div class="langkah"><span class="titik"></span>
+        <span class="nama-langkah">pasang jaring</span></div>
+      <div class="garis"></div>
+      <div class="langkah"><span class="titik"></span>
+        <span class="nama-langkah">kirim</span></div>
+      <div class="garis"></div>
+      <div class="langkah"><span class="titik"></span>
+        <span class="nama-langkah">buktikan</span></div>
+      <div class="garis"></div>
+      <div class="langkah"><span class="titik"></span>
+        <span class="nama-langkah">lepas jaring</span></div>
+    </div>
+  </a>
+
+  <a class="gerbang g-potret g-netral" id="kartu-potret"
+     th:href="@{/admin/konfig/potret}"
+     data-petunjuk="Apa yang berubah di perangkat, dan kapan. Potret hanya disimpan saat isinya berubah, jadi satu baris di halamannya sama dengan satu perubahan yang benar-benar terjadi.">
+    <div class="kepala">
+      <span class="nama">Potret</span>
+    </div>
+    <div class="jawab belum" id="jawab-potret">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-potret"></div>
+  </a>
+
+  <!-- Firewall: configured state, not traffic flow. It answers "which holes are open", so it sits in the configuration group rather than on the Traffic page. -->
+  <a class="gerbang g-firewall g-netral" id="kartu-firewall"
+     th:href="@{/admin/konfig/firewall}"
+     data-petunjuk="Lubang mana yang terbuka, dan siapa yang ditolak. Aturan dibaca dari ufw tiap perangkat Linux dengan izin sudo yang hanya boleh membaca; penolakannya dibaca dari log ACL router.">
+    <div class="kepala">
+      <span class="nama">Firewall</span>
+    </div>
+    <div class="jawab belum" id="jawab-firewall">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-firewall"></div>
+  </a>
+
+  <!-- Identity is smallest but must stay: its verdict decides whether a device may be written to, and four of six lab devices have default addresses that would also match on another network. -->
+  <a class="gerbang g-identitas g-netral" id="kartu-identitas"
+     th:href="@{/admin/konfig/identitas}"
+     data-petunjuk="Yang dituju NSM benar-benar perangkat yang dimaksud? Perangkat dikenali dari penanda yang dijawabnya sendiri, dan yang vonisnya bertentangan diblokir dari jalur menulis.">
+    <div class="kepala">
+      <span class="nama">Identitas</span>
+    </div>
+    <div class="jawab belum" id="jawab-identitas">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-identitas"></div>
+  </a>
+
+  <!-- Source of truth card: answers "what SHOULD be installed", versus Snapshot (what is installed) and Compliance (is it safe). Zero device contact. -->
+  <a class="gerbang g-netral" id="kartu-sot"
+     th:href="@{/admin/konfig/sot}"
+     data-petunjuk="Apa yang SEHARUSNYA terpasang di perangkat -- bukan apa yang sekarang terpasang. Lapisan pertama rencana otomasi tertutup: tanpa ini, NSM cuma bisa MENGIRIM perintah, tidak bisa MEMASTIKAN jaringan benar. Mengisi di sini tidak mengubah satu pun perangkat.">
+    <div class="kepala">
+      <span class="nama">Sumber Kebenaran</span>
+    </div>
+    <div class="jawab belum" id="jawab-sot">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-sot"></div>
+  </a>
+
+  <!-- Drift detection card: given what SHOULD be installed, does the current state match? -->
+  <a class="gerbang g-netral" id="kartu-drift"
+     th:href="@{/admin/konfig/drift}"
+     data-petunjuk="Apakah yang SEKARANG terpasang cocok dengan yang seharusnya (Sumber Kebenaran)? Baca-saja penuh -- membandingkan intent tersimpan dengan potret konfigurasi terbaru, tidak menyentuh satu pun perangkat.">
+    <div class="kepala">
+      <span class="nama">Penyimpangan</span>
+    </div>
+    <div class="jawab belum" id="jawab-drift">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-drift"></div>
+  </a>
+
+  <!-- Automation guard card: the mandatory gate for the future remediation stages; it shows "no actions yet" until then. -->
+  <a class="gerbang g-netral" id="kartu-pagar"
+     th:href="@{/admin/konfig/pagar}"
+     data-petunjuk="Satu pintu wajib untuk semua perbaikan otomatis nanti (Tahap 4-7, belum dibangun): daftar putih, batas laju, jam kerja, jendela beku. Baca-saja penuh -- tidak ada tombol yang mengeksekusi apa pun di halaman ini.">
+    <div class="kepala">
+      <span class="nama">Pagar Otomasi</span>
+    </div>
+    <div class="jawab belum" id="jawab-pagar">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-pagar"></div>
+  </a>
+
+  <!-- Device discovery card: the only card that SENDS PACKETS to the network and can add devices. Both are stated in its hover hint. -->
+  <a class="gerbang g-netral" id="kartu-penemuan"
+     th:href="@{/admin/konfig/penemuan}"
+     data-petunjuk="Pindai sebuah subnet, kenali platformnya lewat sysObjectID SNMP, lalu putuskan sendiri mana yang jadi perangkat. Yang ditemukan TIDAK PERNAH ditambahkan sendiri: ia masuk daftar tunggu, dan hanya tombol Setujui yang memindahkannya -- dengan perangkat dibuat dalam keadaan BELUM AKTIF. Rentang alamat publik dan rentang di atas 1024 alamat ditolak sebelum satu paket pun dikirim. Tiap pemindaian tercatat di Audit Log.">
+    <div class="kepala">
+      <span class="nama">Penemuan Perangkat</span>
+    </div>
+    <div class="jawab belum" id="jawab-penemuan">Memuat&hellip;</div>
+    <div class="rinci" id="rinci-penemuan"></div>
+  </a>
+
+</div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Konfigurasi diambil lewat SSH dengan perintah yang hanya membaca (`show running-config`), tiap 15 menit. Nilai password, community SNMP, dan kunci pra-berbagi DISAMARKAN sebelum disimpan, jadi basis data tidak pernah memuat rahasia perangkat; nama perintahnya tetap utuh supaya hilangnya sebuah baris tetap terlihat sebagai perubahan. Baris yang berubah sendiri seperti `ntp clock-period` dan cap waktu dibuang, kalau tidak setiap pengambilan akan terbaca sebagai perubahan. Sejak 13 Agustus 2026 NSM BISA menulis ke perangkat lewat halaman &quot;Susun perintah&quot;, dan tiap pengiriman tercatat di Audit Log. Pengambilan konfigurasi sendiri tetap hanya membaca.">
+    Dari mana angka ini, dan apa batasnya?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/konfig.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

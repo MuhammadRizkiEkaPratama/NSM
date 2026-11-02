@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- Wrapper template used only by NavFragmentTest. `SpringTemplateEngine.process()` treats the whole string as a template NAME, so a parameterized fragment can only be called from inside another template. The page marker is passed as a variable so one file covers all twelve known values. -->
+<body>
+<div th:replace="~{fragmen/nav :: bilah('Judul Uji', 'anak judul uji', ${halamanUji})}"></div>
+</body>
+</html>

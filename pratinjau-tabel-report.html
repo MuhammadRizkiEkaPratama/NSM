@@ -1,0 +1,734 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">
+<title>Pratinjau Tabel Report NSM</title><style>/* NSM shared styles for the whole app (single source of truth for colors and spacing). Color rules: status colors (green/red/yellow/gray) only express device state and never decorate buttons or titles; the action color (blue) is for buttons and links; BSP green (--brand) is organization identity (top line, report header), not a button color. Order: 1) tokens 2) base 3) layout 4) components 5) helpers */
+
+:root {
+  /* Identitas */
+  --brand:            #2b6049;   /* hijau PT Bumi Siak Pusako */
+  --brand-terang:     #3d8a68;
+
+  --bg:               #1a1a1a;
+  --permukaan:        #1f1f1f;
+  --permukaan-2:      #222222;
+  --permukaan-3:      #262626;
+  --garis:            #333333;
+  --garis-terang:     #444444;
+
+  --teks:             #eeeeee;
+  --teks-2:           #bbbbbb;
+  --teks-redup:       #8a8a8a;
+  --teks-samar:       #6b7280;
+
+  /* Aksi */
+  --aksi:             #2563eb;
+  --aksi-gelap:       #1d4ed8;
+  --aksi-tepi:        #3b82f6;
+  --tautan:           #60a5fa;
+
+  --up:               #4ade80;
+  --down:             #f87171;
+  --hati-hati:        #facc15;
+  --tak-diketahui:    #9ca3af;
+
+  --up-latar:         #16301c;
+  --up-tepi:          #285034;
+  --down-latar:       #3b1a1a;
+  --down-tepi:        #5a2a2a;
+  --hati-hati-latar:  #2e2717;
+  --hati-hati-tepi:   #a16207;
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+
+  /* Lengkung sudut */
+  --r-kecil: 4px; --r-sedang: 8px; --r-besar: 15px; --r-bulat: 999px;
+
+  /* Ukuran huruf */
+  --f-xs: 11px; --f-s: 12px; --f-m: 13px; --f-n: 14px;
+  --f-l: 17px;  --f-xl: 22px; --f-angka: 30px;
+
+  --huruf: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+           Roboto, "Helvetica Neue", Arial, sans-serif;
+  --huruf-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas,
+                "Liberation Mono", "Courier New", monospace;
+
+  --alih: .18s ease;   /* durasi transisi baku */
+}
+
+/* ---------------------------------------------------------------------
+   2) DASAR
+   --------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--huruf);
+  background: var(--bg);
+  color: var(--teks);
+  margin: 0;
+  padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fixed-width digits: the page refreshes every 5-10 seconds, and proportional digits would make columns jitter. */
+table, .kartu .angka, .kartu-mini .isi, .ubin .isi,
+.waktu, .asal, .mono, .meter-teks {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+body.terpusat {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; padding: var(--sp-6);
+}
+body.terpusat-atas {
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; padding: 40px var(--sp-4);
+}
+
+h1 { font-size: var(--f-xl); margin: 0; font-weight: 700; }
+h2 { font-size: var(--f-l); margin: 0 0 var(--sp-3); font-weight: 700; }
+
+a { color: var(--tautan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus indicator; without it keyboard users cannot tell where they are. */
+:focus-visible {
+  outline: 2px solid var(--aksi-tepi);
+  outline-offset: 2px;
+  border-radius: var(--r-kecil);
+}
+
+.bilah {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--sp-4); flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--garis);
+  margin-bottom: var(--sp-5);
+}
+.bilah .judul-kiri { display: flex; align-items: baseline; gap: var(--sp-3); }
+.bilah .anak-judul { color: var(--teks-redup); font-size: var(--f-m); }
+
+.nav {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--f-m); color: var(--teks-2); flex-wrap: wrap;
+}
+.nav .sapa { color: var(--teks-redup); margin-right: var(--sp-2); }
+.nav .sapa b { color: var(--teks); }
+
+.nav a {
+  color: var(--teks-2); padding: 6px 10px; border-radius: var(--r-kecil);
+  transition: background var(--alih), color var(--alih);
+}
+.nav a:hover { background: var(--permukaan-3); color: var(--teks); text-decoration: none; }
+
+.nav a.aktif {
+  color: #fff; background: var(--permukaan-3);
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+.nav form { margin: 0; }
+
+/* Thin brand-color line at the top of the page; the only place BSP green appears (identity, not status). */
+.pita-merek {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-terang));
+  z-index: 50;
+}
+
+/* ---------------------------------------------------------------------
+   4) KOMPONEN
+   --------------------------------------------------------------------- */
+
+/* --- Tombol --- */
+button, .tombol {
+  font-family: inherit; font-size: var(--f-s); line-height: 1.6;
+  background: var(--permukaan-3); color: var(--teks);
+  border: 1px solid var(--garis-terang);
+  padding: 6px 12px; border-radius: var(--r-kecil);
+  cursor: pointer; text-decoration: none; display: inline-block;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+button:hover, .tombol:hover {
+  background: var(--garis-terang); border-color: #666; text-decoration: none;
+}
+
+.tombol-utama, button.utama {
+  background: var(--aksi); border-color: var(--aksi-tepi); color: #fff;
+  font-weight: 600;
+}
+.tombol-utama:hover, button.utama:hover { background: var(--aksi-gelap); }
+
+.tombol-lebar { display: block; width: 100%; text-align: center; padding: 10px; font-size: var(--f-n); }
+
+/* Tombol berbentuk pil: pemilih periode, unduhan */
+.pil {
+  padding: 6px 14px; border-radius: var(--r-bulat);
+  border: 1px solid var(--garis-terang); background: var(--permukaan-2);
+  color: var(--teks-2); cursor: pointer; font-size: var(--f-s);
+  text-decoration: none; display: inline-block; line-height: 1.6;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+.pil:hover { background: var(--permukaan-3); border-color: #666; color: var(--teks); text-decoration: none; }
+.pil.aktif { background: var(--aksi-gelap); border-color: var(--aksi-tepi); color: #fff; font-weight: 700; }
+
+.tombol[aria-disabled="true"], .tombol.mati-tombol {
+  opacity: .35; pointer-events: none;
+}
+
+/* --- Kotak isi (kartu angka, panel form) --- */
+.kartu {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: var(--sp-4) 18px;
+}
+.kartu .judul {
+  color: var(--teks-redup); font-size: var(--f-xs);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.kartu .angka { font-size: var(--f-angka); font-weight: 700; margin: var(--sp-2) 0 var(--sp-1); }
+.kartu .sub { color: #999; font-size: var(--f-s); line-height: 1.5; }
+
+.kartu-sorot { background: linear-gradient(160deg, #262626, var(--permukaan-2) 60%); }
+.kartu-sorot .angka { font-size: 40px; letter-spacing: -.5px; }
+
+.kartu-mini {
+  background: var(--permukaan); border: 1px solid var(--garis);
+  border-radius: 6px; padding: 10px 14px;
+}
+.kartu-mini .judul { color: #777; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+.kartu-mini .isi { font-size: var(--f-n); margin-top: var(--sp-1); }
+
+.panel {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: 30px 34px;
+  width: 380px; max-width: 100%;
+}
+.panel-lebar { width: 520px; }
+
+.panel-2kolom { width: 760px; }
+.panel-2kolom .isi-2kolom {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--sp-6);
+}
+.panel-2kolom .lajur-penuh { grid-column: 1 / -1; }
+@media (max-width: 800px) {
+  .panel-2kolom { width: 380px; }
+  .panel-2kolom .isi-2kolom { grid-template-columns: 1fr; }
+}
+.panel .pengantar {
+  color: var(--teks-redup); font-size: var(--f-m);
+  margin: var(--sp-1) 0 18px; line-height: 1.55;
+}
+
+/* --- Formulir --- */
+label { display: block; font-size: var(--f-s); color: #aaa; margin: var(--sp-3) 0 var(--sp-1); }
+label.label-atas { text-transform: uppercase; letter-spacing: .4px; }
+
+input[type="text"], input[type="password"], input[type="email"], select {
+  width: 100%; font-family: inherit; font-size: var(--f-n);
+  background: #111; border: 1px solid var(--garis-terang); color: var(--teks);
+  padding: 9px 11px; border-radius: var(--r-kecil);
+  transition: border-color var(--alih);
+}
+input:focus, select:focus { border-color: var(--aksi-tepi); }
+
+.baris-centang {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 10px; font-size: var(--f-s); color: #aaa;
+  text-transform: none; cursor: pointer;
+}
+.baris-centang input { width: auto; }
+
+.meter { height: 6px; border-radius: 3px; background: var(--garis); margin-top: var(--sp-2); overflow: hidden; }
+.meter > div { height: 100%; width: 0; transition: width .2s ease, background .2s ease; }
+.meter-teks { font-size: var(--f-s); margin-top: 5px; color: var(--teks-redup); }
+
+.aturan { list-style: none; padding: 0; margin: var(--sp-2) 0 0; font-size: var(--f-s); }
+.aturan li { color: var(--teks-redup); margin: 2px 0; }
+.aturan li.ok { color: var(--up); }
+.aturan li::before { content: "\2717\00a0\00a0"; }
+.aturan li.ok::before { content: "\2713\00a0\00a0"; }
+
+/* --- Kotak pesan --- */
+.pesan-sukses, .pesan-galat, .pesan-hati-hati {
+  padding: 9px 12px; border-radius: var(--r-kecil);
+  font-size: var(--f-m); margin-bottom: var(--sp-3); line-height: 1.5;
+}
+.pesan-sukses     { background: var(--up-latar);   color: var(--up);   border: 1px solid var(--up-tepi); }
+.pesan-galat      { background: var(--down-latar); color: var(--down); border: 1px solid var(--down-tepi); }
+.pesan-hati-hati  { background: var(--hati-hati-latar); color: #eab308; border: 1px solid var(--hati-hati-tepi); }
+
+table { border-collapse: collapse; width: 100%; }
+th, td {
+  padding: 9px 14px; text-align: left;
+  border-bottom: 1px solid var(--garis); font-size: var(--f-m);
+}
+th {
+  background: var(--permukaan-3); font-size: var(--f-s);
+  text-transform: uppercase; letter-spacing: .4px; color: #aaa;
+  font-weight: 600; white-space: nowrap;
+}
+tbody tr { transition: background var(--alih); }
+tbody tr:hover { background: #242424; }
+
+/* --- Lencana kecil --- */
+.lencana {
+  display: inline-block; padding: 2px 9px; border-radius: var(--r-bulat);
+  font-size: var(--f-xs); font-weight: 600; letter-spacing: .3px;
+  border: 1px solid transparent;
+}
+.lencana-up        { background: var(--up-latar); color: var(--up); border-color: var(--up-tepi); }
+.lencana-down      { background: var(--down-latar); color: var(--down); border-color: var(--down-tepi); }
+.lencana-menunggu  { background: var(--hati-hati-latar); color: var(--hati-hati); border-color: var(--hati-hati-tepi); }
+.lencana-netral    { background: #33333a; color: #b9b9c4; border-color: #44444d; }
+
+/* Status dots differ in shape, not only color, so color-blind readers can tell them apart. */
+.titik {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; margin-right: var(--sp-2); flex: none;
+}
+.titik-up { background: var(--up); }
+.titik-down { background: var(--down); }
+.titik-tanya { background: var(--tak-diketahui); }
+
+/* --- Bilah persentase --- */
+.bilah-nilai {
+  background: var(--garis); border-radius: 3px; height: 6px; width: 90px;
+  display: inline-block; vertical-align: middle; margin-right: var(--sp-2);
+  overflow: hidden;
+}
+.bilah-nilai > i { display: block; height: 100%; }
+
+/* --- Keluaran perintah / teks mentah --- */
+.keluaran {
+  font-family: var(--huruf-mono); font-size: var(--f-s);
+  background: #141414; border: 1px solid var(--garis);
+  border-radius: 6px; padding: var(--sp-3) var(--sp-4);
+  white-space: pre-wrap; overflow-x: auto; color: #d6d6d6;
+}
+
+/* --- Catatan kaki halaman --- */
+.catatan {
+  color: var(--teks-samar); font-size: var(--f-xs);
+  margin-top: var(--sp-6); line-height: 1.7;
+  padding-top: var(--sp-4); border-top: 1px solid #2a2a2a;
+}
+
+.bantu {
+  border-bottom: 1px dashed var(--garis-terang);
+  cursor: help; color: var(--teks-2); margin-left: var(--sp-1);
+  transition: color var(--alih), border-color var(--alih);
+}
+.bantu:hover, .bantu:focus-visible { color: var(--teks); border-color: var(--teks-redup); }
+
+.tautan-bawah { text-align: center; margin-top: var(--sp-4); font-size: var(--f-m); }
+
+.kosong {
+  color: var(--teks-redup); font-size: var(--f-m);
+  padding: var(--sp-6); text-align: center;
+  border: 1px dashed var(--garis); border-radius: var(--r-sedang);
+}
+
+.petunjuk {
+  position: fixed; z-index: 200; pointer-events: none;
+  max-width: 260px; padding: 7px 10px;
+  background: #0f0f0f; color: var(--teks);
+  border: 1px solid var(--garis-terang); border-radius: 6px;
+  font-size: var(--f-s); line-height: 1.45;
+  box-shadow: 0 6px 20px -6px rgba(0,0,0,.8);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+  visibility: hidden;
+}
+.petunjuk.siap { visibility: visible; }
+.petunjuk.terlihat { opacity: 1; transform: translateY(0); }
+.petunjuk.bawah { transform: translateY(-4px); }
+.petunjuk.bawah.terlihat { transform: translateY(0); }
+
+.petunjuk-grafik {
+  position: fixed; z-index: 200; pointer-events: none;
+  min-width: 150px; padding: 8px 10px;
+  background: #0f0f0f; border: 1px solid var(--garis-terang);
+  border-radius: 7px; box-shadow: 0 8px 24px -8px rgba(0,0,0,.85);
+  font-size: var(--f-s); color: var(--teks);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .12s ease, transform .12s ease;
+  visibility: hidden;
+}
+.petunjuk-grafik.terlihat { opacity: 1; transform: translateY(0); visibility: visible; }
+.petunjuk-grafik .waktu {
+  font-family: var(--huruf-mono); color: var(--teks-redup);
+  font-size: var(--f-xs); padding-bottom: 5px; margin-bottom: 5px;
+  border-bottom: 1px solid var(--garis);
+}
+.petunjuk-grafik .baris { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+.petunjuk-grafik .tanda { width: 9px; height: 3px; border-radius: 2px; flex: none; }
+.petunjuk-grafik .nama { color: var(--teks-2); }
+.petunjuk-grafik .angka {
+  margin-left: auto; font-family: var(--huruf-mono);
+  font-weight: 700; color: #fff;
+}
+
+/* Motion explains change, not decoration; only the pulse on down devices repeats continuously. */
+@keyframes nsm-muncul {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes nsm-denyut {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--down) 42%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--down) 0%, transparent); }
+}
+@keyframes nsm-masuk-halus {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.muncul { animation: nsm-muncul .34s cubic-bezier(.22,.9,.3,1) both; }
+
+.titik-down { animation: nsm-denyut 2s ease-out infinite; }
+
+/* ---------------------------------------------------------------------
+   5) KELAS BANTU
+   --------------------------------------------------------------------- */
+.hijau { color: var(--up); }
+.merah { color: var(--down); }
+.kuning { color: var(--hati-hati); }
+.biru  { color: var(--tautan); }
+.abu   { color: var(--tak-diketahui); }
+.redup { color: var(--teks-redup); }
+
+.mono { font-family: var(--huruf-mono); }
+.kanan { text-align: right; }
+.nowrap { white-space: nowrap; }
+.dorong-kanan { margin-left: auto; }
+
+/* Screen-reader only; not visible on screen. */
+.khusus-pembaca-layar {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.kisi-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1100px) { .kisi-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px)  { .kisi-4 { grid-template-columns: 1fr; } }
+
+@media (max-width: 720px) {
+  body { padding: var(--sp-4); }
+  .bilah { align-items: flex-start; }
+}
+
+/* Respect users who disable animations in their system settings. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+canvas.sparkline{width:110px;height:24px;display:block;cursor:help;}
+.sel-device{display:flex;align-items:center;gap:10px;}
+</style></head><body>
+<div class="pita-merek"></div>
+<div class="bilah"><div class="judul-kiri"><h1>Report Availability</h1>
+<span class="anak-judul">pratinjau dengan data asli dari nsm.db</span></div></div>
+
+<div id="cards" class="kisi-4"></div>
+
+<table><thead><tr>
+<th>Status</th><th>Device</th><th>IP</th><th>Availability</th>
+<th data-petunjuk="Pola naik-turun sepanjang periode. Membedakan satu gangguan panjang dari banyak gangguan pendek.">Pola</th>
+<th>Insiden</th><th>Total Down</th><th>Latency</th><th>Terakhir Cek</th></tr></thead>
+<tbody id="rows"></tbody></table>
+
+<div class="catatan">Arahkan kursor ke grafik mungil di kolom <b>Pola</b> untuk melihat penjelasannya.
+Ini data sungguhan dari basis datamu, bukan angka contoh.</div>
+
+<script>/* Mini bar chart in table rows. Bars rather than a line, because the data is bucketed: each bar is the percentage of successful checks in that bucket. Buckets with no data are drawn as a faint baseline instead of skipped, so a monitoring gap does not look like uptime. */
+function gambarSparkline(canvas, deret, opsi) {
+  opsi = opsi || {};
+  var ctx = canvas.getContext("2d");
+  var dpr = window.devicePixelRatio || 1;
+  var lebar = canvas.clientWidth || 90;
+  var tinggi = canvas.clientHeight || 22;
+
+  if (canvas.width !== Math.round(lebar * dpr) || canvas.height !== Math.round(tinggi * dpr)) {
+    canvas.width = Math.round(lebar * dpr);
+    canvas.height = Math.round(tinggi * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, lebar, tinggi);
+
+  if (!deret || !deret.length) return;
+
+  var gaya = getComputedStyle(document.documentElement);
+  var warnaUp = (gaya.getPropertyValue("--up") || "#4ade80").trim();
+  var warnaHatiHati = (gaya.getPropertyValue("--hati-hati") || "#facc15").trim();
+  var warnaDown = (gaya.getPropertyValue("--down") || "#f87171").trim();
+  var warnaKosong = "#3a3a3a";
+
+  var n = deret.length;
+  var jarak = n > 60 ? 0 : 1;
+  var lebarBatang = Math.max(1, (lebar - (n - 1) * jarak) / n);
+  var tinggiMin = 2;
+
+  for (var i = 0; i < n; i++) {
+    var v = deret[i];
+    var x = i * (lebarBatang + jarak);
+
+    if (v === null || v === undefined) {
+      ctx.fillStyle = warnaKosong;
+      ctx.fillRect(x, tinggi - 1.5, lebarBatang, 1.5);
+      continue;
+    }
+
+    // Same thresholds as the rest of the app, so colors match the availability number beside them.
+    ctx.fillStyle = v >= 0.999 ? warnaUp : v >= 0.99 ? warnaHatiHati : warnaDown;
+
+    var t = Math.max(tinggiMin, v * tinggi);
+    ctx.fillRect(x, tinggi - t, lebarBatang, t);
+  }
+
+  if (opsi.tandaiTerburuk !== false) {
+    var terburuk = -1, nilaiTerburuk = 1.1;
+    for (var j = 0; j < n; j++) {
+      if (deret[j] !== null && deret[j] !== undefined && deret[j] < nilaiTerburuk) {
+        nilaiTerburuk = deret[j];
+        terburuk = j;
+      }
+    }
+    if (terburuk >= 0 && nilaiTerburuk < 0.99) {
+      ctx.fillStyle = "#ffffff";
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(terburuk * (lebarBatang + jarak), 0, Math.max(1, lebarBatang), 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+function ringkasSparkline(deret, lebarDetik) {
+  if (!deret || !deret.length) return "Belum ada data pemantauan";
+  var adaData = 0, penuh = 0, terburuk = 1.1, kosong = 0;
+  for (var i = 0; i < deret.length; i++) {
+    var v = deret[i];
+    if (v === null || v === undefined) { kosong++; continue; }
+    adaData++;
+    if (v >= 0.999) penuh++;
+    if (v < terburuk) terburuk = v;
+  }
+  if (!adaData) return "Belum ada data pemantauan pada periode ini";
+
+  var satuanPetak = lebarDetik >= 3600
+    ? Math.round(lebarDetik / 3600) + " jam"
+    : Math.round(lebarDetik / 60) + " menit";
+
+  var kalimat = "Tiap batang mewakili " + satuanPetak + ". "
+    + penuh + " dari " + adaData + " petak berjalan tanpa gangguan";
+  if (terburuk < 0.999) {
+    kalimat += ", dan petak terburuk hanya " + Math.round(terburuk * 100) + " persen berhasil";
+  }
+  kalimat += ".";
+  if (kosong) {
+    kalimat += " " + kosong + " petak tidak punya data, biasanya karena device "
+      + "belum dipantau saat itu atau pemantauan sedang dijeda.";
+  }
+  return kalimat;
+}
+</script><script>/* Shared time formatting. Relative times ("2 minutes ago") with the exact time on hover. Do not use in printed documents. */
+
+function waktuRelatif(tanggal) {
+  if (!tanggal) return "-";
+  var d = (tanggal instanceof Date) ? tanggal : new Date(tanggal);
+  if (isNaN(d.getTime())) return "-";
+
+  var detik = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (detik < 0) detik = 0;
+
+  if (detik < 10) return "baru saja";
+  if (detik < 60) return detik + " detik lalu";
+
+  var menit = Math.floor(detik / 60);
+  if (menit < 60) return menit + " menit lalu";
+
+  var jam = Math.floor(menit / 60);
+  if (jam < 24) return jam + " jam lalu";
+
+  var hari = Math.floor(jam / 24);
+  if (hari === 1) return "kemarin";
+  if (hari < 30) return hari + " hari lalu";
+
+  // After a month, relative time stops being useful; show the date.
+  return waktuLengkap(d);
+}
+
+function waktuLengkap(tanggal) {
+  if (!tanggal) return "-";
+  var d = (tanggal instanceof Date) ? tanggal : new Date(tanggal);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleString("id-ID", {
+    day: "2-digit", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  });
+}
+
+function jamSaja(tanggal) {
+  if (!tanggal) return "-";
+  var d = (tanggal instanceof Date) ? tanggal : new Date(tanggal);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleTimeString("id-ID");
+}
+
+/* Relative-time elements refresh themselves, so a page left open does not keep saying "just now". */
+function pasangWaktuRelatif(el, tanggal) {
+  function perbarui() {
+    el.textContent = waktuRelatif(tanggal);
+    el.setAttribute("data-petunjuk", waktuLengkap(tanggal));
+  }
+  perbarui();
+  if (!window._jamRelatif) {
+    window._jamRelatif = [];
+    setInterval(function () {
+      if (document.hidden) return;
+      window._jamRelatif.forEach(function (f) { f(); });
+    }, 20000);
+  }
+  window._jamRelatif.push(perbarui);
+}
+</script><script>/* NSM tooltips, replacing native title tooltips (delayed, unstyled). Tooltips are for supplementary text only: they do not appear on touch screens. Usage: add a data-petunjuk attribute to any element; title attributes are moved automatically. Also shown on keyboard focus. */
+(function () {
+  var kotak = null;
+  var sasaran = null;
+  var jedaTampil = null;
+
+  function buatKotak() {
+    if (kotak) return kotak;
+    kotak = document.createElement("div");
+    kotak.className = "petunjuk";
+    kotak.setAttribute("role", "tooltip");
+    document.body.appendChild(kotak);
+    return kotak;
+  }
+
+  function ambilTeks(el) {
+    var t = el.getAttribute("data-petunjuk");
+    if (t) return t;
+    var judul = el.getAttribute("title");
+    if (judul) {
+      el.setAttribute("data-petunjuk", judul);
+      el.removeAttribute("title");
+      return judul;
+    }
+    return null;
+  }
+
+  function tempatkan(el) {
+    var r = el.getBoundingClientRect();
+    var k = kotak.getBoundingClientRect();
+    var jarak = 8;
+
+    var kiri = r.left + r.width / 2 - k.width / 2;
+    var atas = r.top - k.height - jarak;
+    kotak.classList.remove("bawah");
+
+    if (atas < 6) {
+      atas = r.bottom + jarak;
+      kotak.classList.add("bawah");
+    }
+    kiri = Math.max(8, Math.min(kiri, window.innerWidth - k.width - 8));
+
+    kotak.style.left = Math.round(kiri) + "px";
+    kotak.style.top = Math.round(atas) + "px";
+  }
+
+  function tampilkan(el) {
+    var teks = ambilTeks(el);
+    if (!teks) return;
+    sasaran = el;
+    buatKotak();
+    kotak.textContent = teks;
+    kotak.classList.add("siap");
+    tempatkan(el);
+    kotak.classList.add("terlihat");
+  }
+
+  function sembunyikan() {
+    sasaran = null;
+    clearTimeout(jedaTampil);
+    if (kotak) kotak.classList.remove("terlihat", "siap");
+  }
+
+  function cariSasaran(e) {
+    var el = e.target.closest ? e.target.closest("[data-petunjuk],[title]") : null;
+    if (el && (el.getAttribute("data-petunjuk") || el.getAttribute("title"))) return el;
+    return null;
+  }
+
+  document.addEventListener("pointerover", function (e) {
+    var el = cariSasaran(e);
+    if (!el || el === sasaran) return;
+    clearTimeout(jedaTampil);
+    jedaTampil = setTimeout(function () { tampilkan(el); }, 120);
+  });
+
+  document.addEventListener("pointerout", function (e) {
+    var el = cariSasaran(e);
+    if (el && el === sasaran) sembunyikan();
+  });
+
+  document.addEventListener("focusin", function (e) {
+    var el = cariSasaran(e);
+    if (el) tampilkan(el);
+  });
+  document.addEventListener("focusout", sembunyikan);
+
+  // Scrolling or Escape closes the tooltip so it does not linger.
+  window.addEventListener("scroll", sembunyikan, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") sembunyikan();
+  });
+})();
+</script>
+<script>
+var SPARK = {"1": [0.9974, null, null, null, null, null, 0.3459, 0.6736, 0.7361, 0.5995, 0.0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "2": [1.0, null, null, null, null, null, 0.9938, 1.0, 1.0, 1.0, 0.0531, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0.9919, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "4": [1.0, null, null, null, null, null, 0.9938, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, null, null, null, null, null, null, null, null, null, null, null, null, null, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "5": [1.0, null, null, null, null, null, 0.9875, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, null, null, null, null, null, null, null, null, null, null, null, null, null, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "6": [1.0, null, null, null, null, null, 0.9938, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.628, null, null, null, null, null, null, null, null, null, null, null, null, null, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.4612, 0.9375, 1.0, 1.0, 1.0]}, LEBAR = 2160, DEV = [{"id": 1, "name": "Gateway WiFi", "ip": "192.168.1.1", "avail": 53.631, "insiden": 69, "down": "11 jam 7 menit", "lat": 29.41, "cek": "2026-07-26T16:26:43.146162", "flap": true, "up": true}, {"id": 2, "name": "Laptop Sendiri", "ip": "192.168.1.43", "avail": 55.822, "insiden": 1, "down": "10 jam 36 menit", "lat": 0.28, "cek": "2026-07-26T16:26:43.152091", "flap": false, "up": true}, {"id": 4, "name": "VM Ubuntu", "ip": "192.168.56.101", "avail": 100.0, "insiden": 0, "down": "-", "lat": 0.87, "cek": "2026-07-26T16:26:43.154257", "flap": false, "up": true}, {"id": 5, "name": "Router Cisco GNS3", "ip": "192.168.56.60", "avail": 99.988, "insiden": 1, "down": "10 detik", "lat": 21.3, "cek": "2026-07-26T16:26:43.156769", "flap": false, "up": true}, {"id": 6, "name": "VM testUbuntu", "ip": "192.168.56.103", "avail": 97.992, "insiden": 4, "down": "28 menit 55 detik", "lat": 0.76, "cek": "2026-07-26T16:26:43.166781", "flap": false, "up": true}];
+function el(t,k,x){var e=document.createElement(t);if(k)e.className=k;if(x!=null)e.textContent=x;return e;}
+function warnaAvail(v){return v==null?"abu":v>=99.9?"hijau":v>=99?"kuning":"merah";}
+
+var cards=document.getElementById("cards");
+function kartu(j,a,k,s,p,sorot){var c=el("div","kartu"+(sorot?" kartu-sorot":""));
+ if(p)c.setAttribute("data-petunjuk",p);
+ c.appendChild(el("div","judul",j));c.appendChild(el("div","angka "+(k||""),a));
+ c.appendChild(el("div","sub",s||""));return c;}
+var rata = DEV.filter(function(d){return d.avail!=null;});
+var avg = rata.reduce(function(x,d){return x+d.avail;},0)/(rata.length||1);
+cards.appendChild(kartu("Device Hidup Sekarang", DEV.filter(function(d){return d.up;}).length+" / "+DEV.length,"hijau","Semua device merespons"));
+cards.appendChild(kartu("Availability Keseluruhan", avg.toFixed(2)+"%", warnaAvail(avg),"Rata-rata semua device pada periode ini","Angka utama halaman, sengaja dibuat paling besar.",true));
+cards.appendChild(kartu("Insiden Gangguan", String(DEV.reduce(function(x,d){return x+(d.insiden||0);},0)),"kuning","Total pada periode ini"));
+cards.appendChild(kartu("Latency Rata-rata","10.41 ms","biru","Paling lambat Gateway WiFi"));
+
+var tb=document.getElementById("rows");
+DEV.forEach(function(d,i){
+  var tr=el("tr");tr.classList.add("muncul");tr.style.animationDelay=(i*40)+"ms";
+  var td0=el("td");var sp=el("span","sel-device");
+  var titik=el("span","titik "+(d.up?"titik-up":"titik-down"));
+  sp.appendChild(titik);sp.appendChild(el("span",d.up?"hijau":"merah",d.up?"UP":"DOWN"));
+  td0.appendChild(sp);tr.appendChild(td0);
+  tr.appendChild(el("td",null,d.name));
+  tr.appendChild(el("td",null,d.ip));
+  var tdA=el("td");var bar=el("span","bilah-nilai");var isi=el("i");
+  isi.style.width=(d.avail||0)+"%";
+  isi.style.background=getComputedStyle(document.documentElement).getPropertyValue(d.avail>=99.9?"--up":d.avail>=99?"--hati-hati":"--down").trim();
+  bar.appendChild(isi);tdA.appendChild(bar);
+  tdA.appendChild(el("span",warnaAvail(d.avail),d.avail==null?"-":d.avail.toFixed(2)+"%"));
+  tr.appendChild(tdA);
+  var tdP=el("td");var deret=SPARK[String(d.id)];
+  if(deret&&deret.length){var cv=document.createElement("canvas");cv.className="sparkline";
+    tdP.appendChild(cv);tdP.setAttribute("data-petunjuk",ringkasSparkline(deret,LEBAR));
+    requestAnimationFrame(function(){gambarSparkline(cv,deret);});}
+  else{tdP.className="redup";tdP.textContent="-";}
+  tr.appendChild(tdP);
+  var tdI=el("td",d.insiden>0?"kuning":null,String(d.insiden));
+  if(d.flap){var pil=el("span","lencana lencana-menunggu","tidak stabil");pil.style.marginLeft="6px";tdI.appendChild(pil);}
+  tr.appendChild(tdI);
+  tr.appendChild(el("td",null,d.down||"-"));
+  tr.appendChild(el("td",null,d.lat==null?"-":d.lat+" ms"));
+  var tdC=el("td","nowrap redup",waktuRelatif(d.cek));
+  tdC.setAttribute("data-petunjuk",waktuLengkap(d.cek));
+  tr.appendChild(tdC);
+  tb.appendChild(tr);
+});
+</script></body></html>

@@ -1,0 +1,71 @@
+spring.application.name=frontend
+
+# MySQL
+spring.datasource.url=jdbc:mysql://192.168.56.104:3306/nsm_auth
+spring.datasource.username=nsm_app
+spring.datasource.password=GANTI_DENGAN_NILAI_SUNGGUHAN
+
+# Create/update tables automatically from entities (fine for a lab)
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.open-in-view=false
+
+# Login session lifetime: 1 hour
+server.servlet.session.timeout=1h
+
+# == Email SMTP Gmail (Fase 3) ==
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=owner@example.com
+# Replace with a Gmail App Password (16 letters, no spaces). Do NOT commit this file to Git.
+spring.mail.password=GANTI_DENGAN_NILAI_SUNGGUHAN
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+spring.mail.properties.mail.smtp.writetimeout=5000
+
+# Base URL of the application (used to build reset links in emails). Must be reachable from other computers, not just localhost.
+nsm.base-url=http://192.168.56.156:8080
+
+# == Lockout ==
+# Failures before escalation (default 3).
+nsm.lock-max-attempts=3
+# Freeze duration per level, in minutes. Use 1 to make testing escalation easier; raise to 5 for normal use.
+nsm.lock-minutes=1
+
+# Backup encryption passphrase.
+#
+# The second copy of the backup is stored in a cloud-synced folder and this machine has only
+# one disk, so the backup is encrypted. The passphrase lives here, not in .env (single source of
+# truth for secrets), and this file is not included in the backup zip.
+# WARNING: a passphrase that exists only in this file is lost with the disk; an encrypted
+# backup without its key is not a backup. Keep a copy in a password manager.
+nsm.backup-passphrase=GANTI_DENGAN_NILAI_SUNGGUHAN
+
+# LDAP: central identity source, enabled by setting `nsm.ldap.url`. While it is empty or removed,
+# NSM uses MySQL only.
+#
+# When enabled:
+#   - only users in LDAP can log in
+#   - MySQL accounts are rejected while LDAP answers, including `admin`
+#   - MySQL accounts flagged `darurat` work only when LDAP is UNREACHABLE
+# Roles come from groups: cn=nsm-admin -> ROLE_ADMIN, cn=nsm-viewer -> ROLE_USER. Users without
+# an NSM group are rejected even with a correct password.
+#
+# Login works with uid or email: the DN is searched (uid OR mail), not built from a pattern, so
+# the old `nsm.ldap.pola-user` setting no longer exists.
+nsm.ldap.url=ldap://192.168.20.101:389/dc=bsp,dc=id
+nsm.ldap.basis-user=ou=people
+nsm.ldap.filter-user=(|(uid={0})(mail={0}))
+nsm.ldap.basis-grup=ou=groups
+
+# Directory timeout. 5 seconds was too short: a full login over the WAN link with StartTLS
+# takes 2.5-3.0 s when idle (breakdown in `LdapConfig.java`), and a timeout looks like "LDAP
+# down" and tells users to check their password. Raise it for slower links, but not too high:
+# it also sets how long the emergency path waits to trigger when the directory is really down.
+nsm.ldap.timeout-sambung-ms=5000
+nsm.ldap.timeout-baca-ms=15000
+
+# Remember-me cookie signing key. Use a long random value, or leave empty to
+# get a random key on every start (or set NSM_REMEMBER_ME_KEY in the environment).
+nsm.remember-me-key=

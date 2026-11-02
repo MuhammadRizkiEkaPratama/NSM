@@ -1,0 +1,66 @@
+[
+  {
+    "id": 4,
+    "device_id": 6,
+    "jalur": "/opt/ecanteen/logs/access.log",
+    "posisi": 342548.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-12 15:30:38.506345"
+  },
+  {
+    "id": 6,
+    "device_id": 6,
+    "jalur": "/opt/ecanteen/logs/access.log",
+    "posisi": 435686.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 11:18:35.243450"
+  },
+  {
+    "id": 8,
+    "device_id": 6,
+    "jalur": "/opt/ecanteen/logs/access.log",
+    "posisi": 451436.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 12:21:35.245050"
+  },
+  {
+    "id": 10,
+    "device_id": 6,
+    "jalur": "/opt/ecanteen/logs/access.log",
+    "posisi": 501196.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 15:39:41.328593"
+  },
+  {
+    "id": 5,
+    "device_id": 6,
+    "jalur": "/var/log/auth.log",
+    "posisi": 1000000.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-12 15:30:38.531266"
+  },
+  {
+    "id": 7,
+    "device_id": 6,
+    "jalur": "/var/log/auth.log",
+    "posisi": 1000000.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 11:18:35.265959"
+  },
+  {
+    "id": 9,
+    "device_id": 6,
+    "jalur": "/var/log/auth.log",
+    "posisi": 3000000.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 12:21:35.257835"
+  },
+  {
+    "id": 11,
+    "device_id": 6,
+    "jalur": "/var/log/auth.log",
+    "posisi": 4065160.0,
+    "ukuran_terakhir": 0.0,
+    "diperbarui": "2026-08-13 15:39:41.329477"
+  }
+]

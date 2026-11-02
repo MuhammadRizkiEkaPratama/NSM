@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Data Device - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+h2 { font-size: var(--f-n); margin: var(--sp-8) 0 0; color: var(--teks-2);
+     text-transform: uppercase; letter-spacing: .6px; }
+
+/* --- kepala device --- */
+
+#tunggu { margin-top: 26px; text-align: center; padding: 46px 0; }
+#tunggu .putar {
+  width: 34px; height: 34px; margin: 0 auto var(--sp-4); border-radius: 50%;
+  border: 3px solid var(--garis); border-top-color: var(--tautan);
+  animation: berputar .9s linear infinite;
+}
+@keyframes berputar { to { transform: rotate(360deg); } }
+#tunggu .pesan { color: var(--teks-redup); font-size: var(--f-m); }
+#tunggu .kecil { color: var(--teks-samar); font-size: var(--f-xs); margin-top: var(--sp-2); }
+
+/* --- ubin ringkasan --- */
+#ubin { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 13px; margin-top: 14px; }
+.ubin { background: var(--permukaan-2); border: 1px solid #343434; border-radius: 9px; padding: 14px 16px; }
+.ubin .judul { color: var(--teks-redup); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.ubin .isi { font-size: var(--f-l); font-weight: 700; margin-top: 6px; word-break: break-word; }
+.ubin .kecil { color: var(--teks-redup); font-size: var(--f-xs); margin-top: var(--sp-1); }
+
+/* Fetch time. The page does not refresh itself, so without this the content could be mistaken for current state. */
+.waktu-ambil { color: var(--teks-redup); font-size: var(--f-xs);
+               margin-bottom: var(--sp-3); }
+#hasil.basi .ubin, #hasil.basi pre { opacity: .55; }
+#hasil.basi .waktu-ambil { color: var(--hati-hati); opacity: 1; font-weight: 600; }
+
+.bilah-pakai { height: 7px; border-radius: 4px; background: var(--garis);
+               margin-top: 9px; overflow: hidden; }
+.bilah-pakai > i { display: block; height: 100%; border-radius: 4px;
+                   transition: width .5s cubic-bezier(.2,.9,.3,1); }
+
+/* --- blok keluaran perintah --- */
+.blok { background: var(--permukaan-2); border: 1px solid var(--garis); border-radius: 9px;
+        margin-top: var(--sp-3); overflow: hidden; }
+.blok .atas { display: flex; justify-content: space-between; align-items: center;
+              padding: 9px 14px; background: var(--permukaan-3); border-bottom: 1px solid var(--garis); }
+.blok .label { font-size: var(--f-xs); text-transform: uppercase; color: var(--teks-redup); letter-spacing: .5px; }
+/* `pre-wrap`, not `pre`: output columns keep their alignment, but long explanatory sentences wrap instead of forcing a horizontal scrollbar. */
+.blok pre { margin: 0; padding: 14px; overflow-x: auto; font-size: 12.5px;
+            line-height: 1.65; color: #dcdcdc; white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-family: var(--huruf-mono); }
+.blok button.salin { padding: 3px 10px; font-size: var(--f-xs); }
+
+.galat { background: #2a1c1c; border: 1px solid #5c2b2b; color: #f8b4b4;
+         padding: var(--sp-4) 18px; border-radius: 9px; margin-top: 18px; line-height: 1.7; }
+</style>
+</head>
+<body th:attr="data-device-id=${deviceId}">
+
+<div th:replace="~{fragmen/nav :: bilah('Data Device', 'kondisi device saat ini, diambil langsung', 'dashboard')}"></div>
+
+<div id="jejak" style="margin-bottom:var(--sp-2);font-size:var(--f-s)">
+  <a th:href="@{/}">Kembali ke Dashboard</a>
+</div>
+
+<div id="kepala">
+  <div class="kiri">
+    <span class="bungkus-ikon" id="kotak-ikon"></span>
+    <div>
+      <div class="nama" id="nama">Memuat&hellip;</div>
+      <div class="sub" id="sub"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:var(--sp-2)">
+    <a id="ke-riwayat" href="#" class="tombol">Lihat Riwayat</a>
+    <button class="utama" id="ambil-ulang" title="Mengambil ulang keadaan device saat ini">Ambil Ulang</button>
+  </div>
+</div>
+
+<div id="tunggu">
+  <div class="putar"></div>
+  <div class="pesan">Menghubungi device lewat SSH&hellip;</div>
+  <div class="kecil">Membuka koneksi, login, lalu menjalankan perintah baca.
+    Biasanya 1 sampai 3 detik.</div>
+</div>
+
+<div id="hasil"></div>
+
+<div class="catatan">
+  Semua perintah yang dijalankan bersifat <b>membaca saja</b>, tidak ada satu pun
+  yang mengubah keadaan device. Pengambilan ini tercatat di Audit Log beserta
+  siapa yang melakukannya dan kapan.
+  Angka di halaman ini adalah keadaan device <b>saat tombol ditekan</b>, bukan data
+  tersimpan, jadi tidak ada penyegaran otomatis: tiap pembaruan berarti satu
+  pengambilan baru ke device.
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/ikon.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/device_ssh.js"></script>
+<script src="/js/lipatan.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

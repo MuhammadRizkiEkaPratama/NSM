@@ -1,0 +1,33 @@
+nama: lokal
+keterangan: Mesin tempat NSM sendiri berjalan
+teruji: lab
+sumber: >-
+  Lab NSM: dibaca connectors/lokal.py lewat psutil, di dalam proses NSM
+  sendiri. Bukan hasil dokumentasi -- ia berjalan setiap putaran poller.
+
+akses:
+  # No `netmiko_device_type` on purpose: this platform is read in-process via psutil
+  # and never contacted over the network. A monitor that watches itself over the
+  # network would die exactly when the network fails, so `platform == "lokal"` is
+  # excluded from ping in nsm/pemantau/dasar.py.
+  jenis: host
+  butuh_enable: false
+
+baca: {}
+
+tulis:
+  # Windows Firewall on this machine is changed by NSM, but through its own path in
+  # report_service/firewall.py, not "send config commands".
+  didukung: false
+
+  jaring_pengaman:
+    # Rebooting the machine running NSM would stop the watcher along with the watched, so it is never a safety net.
+    jenis: tidak_ada
+
+kemampuan:
+  # The machine NSM itself runs on; replaces scattered `platform == "lokal"` checks.
+  lokal: true
+
+  # Windows Firewall via `netsh`, read by `poll_firewall_lokal()`. Unlike `ufw` it
+  # needs no sudo, so the "not read yet" message differs.
+  firewall: netsh

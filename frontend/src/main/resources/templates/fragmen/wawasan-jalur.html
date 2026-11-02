@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Sideways navigation between Insights, SOC Agent, and Tenant. Only Insights is in the main menu (to keep the bar within 1366px), same reasoning as `fragmen/konfig-jalur.html`.
+  Usage: <div th:replace="~{fragmen/wawasan-jalur :: jalur('agen')}"></div>
+  Known values: wawasan, agen, tenant. The current page is plain text, not a link.
+  Tenant is shown to admins only; the page is under /admin/** and rejects viewers.
+-->
+<body>
+
+<div th:fragment="jalur(kini)" class="jalur" aria-label="Jalur halaman wawasan">
+  <span th:if="${kini == 'wawasan'}" class="kini">Wawasan</span>
+  <a th:unless="${kini == 'wawasan'}" th:href="@{/wawasan}">Wawasan</a>
+
+  <span class="pisah">|</span>
+
+  <span th:if="${kini == 'agen'}" class="kini">Agen SOC</span>
+  <a th:unless="${kini == 'agen'}" th:href="@{/agen}">Agen SOC</a>
+
+  <th:block th:if="${isAdmin}">
+    <span class="pisah">|</span>
+    <span th:if="${kini == 'tenant'}" class="kini">Tenant</span>
+    <a th:unless="${kini == 'tenant'}" th:href="@{/admin/tenant}">Tenant</a>
+  </th:block>
+</div>
+
+</body>
+</html>

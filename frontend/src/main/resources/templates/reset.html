@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Reset Password - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+</head>
+<body class="terpusat">
+
+<div class="panel panel-rapat">
+  <h2>Reset Password</h2>
+  <div class="pengantar">
+    Buat password baru untuk akunmu. Setelah tersimpan, kunci akun akibat gagal
+    masuk berulang ikut dilepas.
+  </div>
+
+  <div class="pesan-galat" th:if="${error}" th:text="${error}"></div>
+
+  <form th:if="${token}" th:action="@{/reset}" method="post">
+    <input type="hidden" name="token" th:value="${token}">
+
+    <label class="label-atas" for="pw">Password Baru</label>
+    <input type="password" name="password" id="pw" required autofocus autocomplete="new-password">
+    <div class="meter"><div id="bar"></div></div>
+    <div class="meter-teks" id="lbl">Ketik password baru</div>
+    <ul class="aturan">
+      <li id="r-len">Minimal 8 karakter</li>
+      <li id="r-upper">Ada huruf besar</li>
+      <li id="r-lower">Ada huruf kecil</li>
+      <li id="r-digit">Ada angka</li>
+    </ul>
+
+    <label class="label-atas" for="pw2">Ulangi Password Baru</label>
+    <input type="password" name="confirm" id="pw2" required autocomplete="new-password">
+    <div class="meter-teks" id="matchlbl"></div>
+
+    <label class="baris-centang"><input type="checkbox" id="showpw"> Lihat password</label>
+    <button type="submit" class="tombol-utama tombol-lebar" style="margin-top:var(--sp-5)">
+      Simpan Password Baru
+    </button>
+  </form>
+
+  <div class="tautan-bawah"><a th:href="@{/login}">Kembali ke halaman masuk</a></div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/kekuatan-password.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

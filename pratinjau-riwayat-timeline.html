@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pratinjau B — Riwayat Device dengan Garis Waktu sebagai Tulang Punggung</title>
+<!--
+  nsm.css is inlined, not linked, so this preview opens with a double-click and no server.
+  It is a copy and may lag behind nsm.css.
+-->
+<style>/* NSM shared styles for the whole app (single source of truth for colors and spacing). Color rules: status colors (green/red/yellow/gray) only express device state and never decorate buttons or titles; the action color (blue) is for buttons and links; BSP green (--brand) is organization identity (top line, report header), not a button color. Order: 1) tokens 2) base 3) layout 4) components 5) helpers */
+
+:root {
+  /* Identitas */
+  --brand:            #2b6049;   /* hijau PT Bumi Siak Pusako */
+  --brand-terang:     #3d8a68;
+
+  --bg:               #1a1a1a;
+  --permukaan:        #1f1f1f;
+  --permukaan-2:      #222222;
+  --permukaan-3:      #262626;
+  --garis:            #333333;
+  --garis-terang:     #444444;
+
+  --teks:             #eeeeee;
+  --teks-2:           #bbbbbb;
+  --teks-redup:       #8a8a8a;
+  --teks-samar:       #6b7280;
+
+  /* Aksi */
+  --aksi:             #2563eb;
+  --aksi-gelap:       #1d4ed8;
+  --aksi-tepi:        #3b82f6;
+  --tautan:           #60a5fa;
+
+  --up:               #4ade80;
+  --down:             #f87171;
+  --hati-hati:        #facc15;
+  --tak-diketahui:    #9ca3af;
+
+  --up-latar:         #16301c;
+  --up-tepi:          #285034;
+  --down-latar:       #3b1a1a;
+  --down-tepi:        #5a2a2a;
+  --hati-hati-latar:  #2e2717;
+  --hati-hati-tepi:   #a16207;
+
+  /*
+   * Spacing, multiples of 4. Values are scaled by `--rapat`, one multiplier for the whole app.
+   * Only spacing is scaled, never font size.
+   */
+  --rapat: 0.72;
+  --sp-1: calc(4px * var(--rapat));  --sp-2: calc(8px * var(--rapat));
+  --sp-3: calc(12px * var(--rapat)); --sp-4: calc(16px * var(--rapat));
+  --sp-5: calc(20px * var(--rapat)); --sp-6: calc(24px * var(--rapat));
+  --sp-8: calc(32px * var(--rapat));
+
+  /* Lengkung sudut */
+  --r-kecil: 4px; --r-sedang: 8px; --r-besar: 15px; --r-bulat: 999px;
+
+  /* Ukuran huruf */
+  --f-xs: 11px; --f-s: 12px; --f-m: 13px; --f-n: 14px;
+  --f-bagian: 15px;
+  --f-l: 17px;  --f-xl: 22px; --f-angka: 30px;
+
+
+  --huruf: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+           Roboto, "Helvetica Neue", Arial, sans-serif;
+  --huruf-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas,
+                "Liberation Mono", "Courier New", monospace;
+
+  --alih: .18s ease;   /* durasi transisi baku */
+}
+
+/* ---------------------------------------------------------------------
+   2) DASAR
+   --------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+/* Base color is set on <html>, not <body>: a body background propagates to the page canvas and would cover the animated background. */
+html { background: var(--bg); }
+
+body {
+  font-family: var(--huruf);
+  background: transparent;
+  color: var(--teks);
+  margin: 0;
+  padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fixed-width digits: the page refreshes every 5-10 seconds, and proportional digits would make columns jitter. */
+table, .kartu .angka, .kartu-mini .isi, .ubin .isi,
+.waktu, .asal, .mono, .meter-teks {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+body.terpusat {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; padding: var(--sp-6);
+}
+body.terpusat-atas {
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; padding: 40px var(--sp-4);
+}
+
+.kecil { font-size: var(--f-s); }
+
+h1 { font-size: var(--f-xl); margin: 0; font-weight: 700; }
+h2 { font-size: var(--f-l); margin: 0 0 var(--sp-3); font-weight: 700; }
+
+/* Identity card at the top of per-object pages (device, SSH). Name size is a token (`--f-xl`) so pages cannot drift apart. */
+#kepala {
+  background: var(--permukaan-2); border: 1px solid var(--garis-terang);
+  border-radius: var(--r-sedang); padding: 18px 22px; margin-top: var(--sp-2);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: var(--sp-5); flex-wrap: wrap;
+}
+#kepala .kiri { display: flex; align-items: center; gap: var(--sp-4); }
+#kepala .nama { font-size: var(--f-xl); font-weight: 700; }
+#kepala .rinci { color: #999; font-size: var(--f-m); margin-top: 6px; line-height: 1.7; }
+#kepala .rinci b { color: #ccc; font-weight: 400; }
+#kepala .sub { color: #999; font-size: var(--f-m); margin-top: var(--sp-1); }
+
+#vonis h2 { margin: 0 0 4px; font-size: var(--f-xl); }
+#vonis.aman h2 { color: var(--up); }
+#vonis.bahaya h2 { color: var(--down); }
+#vonis.perhatian h2 { color: var(--hati-hati); }
+
+a { color: var(--tautan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus indicator; without it keyboard users cannot tell where they are. */
+:focus-visible {
+  outline: 2px solid var(--aksi-tepi);
+  outline-offset: 2px;
+  border-radius: var(--r-kecil);
+}
+
+.bilah {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--sp-4); flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--garis);
+  margin-bottom: var(--sp-5);
+}
+.bilah .judul-kiri { display: flex; align-items: baseline; gap: var(--sp-3); }
+.bilah .anak-judul { color: var(--teks-redup); font-size: var(--f-m); }
+
+.nav {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--f-m); color: var(--teks-2); flex-wrap: wrap;
+}
+
+.nav a {
+  color: var(--teks-2); padding: 6px 10px; border-radius: var(--r-kecil);
+  transition: background var(--alih), color var(--alih);
+}
+.nav a:hover { background: var(--permukaan-3); color: var(--teks); text-decoration: none; }
+
+.nav a.aktif {
+  color: #fff; background: var(--permukaan-3);
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+.nav form { margin: 0; }
+
+/* Sortable table headers: only columns declared sortable get this style (reasons in js/urut.js). */
+th.bisa-urut {
+  cursor: pointer; user-select: none; position: relative;
+  padding-right: 18px;
+}
+th.bisa-urut:hover { color: var(--teks); }
+
+th.bisa-urut::after {
+  content: ""; position: absolute; right: 6px; top: 50%;
+  margin-top: -2px; opacity: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-bottom: 5px solid currentColor;
+  transition: opacity var(--alih), transform .15s ease;
+}
+th.bisa-urut:hover::after { opacity: .35; }
+th.bisa-urut.urut-naik::after   { opacity: .9; }
+th.bisa-urut.urut-turun::after  { opacity: .9; transform: rotate(180deg); }
+
+@media print {
+  th.bisa-urut { cursor: auto; padding-right: 0; }
+  th.bisa-urut::after { display: none !important; }
+}
+
+/*
+ * Group menus in the nav: the rarely used groups (Admin, Account) are folded into
+ * <details>/<summary> menus so the row fits narrow laptops. js/menu.js only adds
+ * close-on-outside-click and Escape.
+ */
+.nav details.menu-nav { position: relative; }
+
+.nav details.menu-nav > summary {
+  list-style: none; cursor: pointer;
+  color: var(--teks-2); padding: 6px 10px; border-radius: var(--r-kecil);
+  display: flex; align-items: center; gap: 5px;
+  transition: background var(--alih), color var(--alih);
+}
+.nav details.menu-nav > summary::-webkit-details-marker { display: none; }
+.nav details.menu-nav > summary:hover { background: var(--permukaan-3); color: var(--teks); }
+.nav details.menu-nav > summary b { color: var(--teks); font-weight: 700; }
+
+.nav details.menu-nav > summary::after {
+  content: ""; flex: 0 0 auto;
+  border-top: 4px solid currentColor;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  transition: transform .15s ease; opacity: .7;
+}
+.nav details.menu-nav[open] > summary::after { transform: rotate(180deg); }
+
+/* If the current page is inside a menu, the menu title is highlighted too, so the nav still shows the active page. */
+.nav details.menu-nav.punya-aktif > summary {
+  color: #fff; background: var(--permukaan-3);
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+.nav details.menu-nav .isi-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 60;
+  min-width: 190px; padding: var(--sp-1);
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--permukaan-2); border: 1px solid var(--garis-terang);
+  border-radius: var(--r-sedang);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+}
+.nav details.menu-nav .isi-menu a { display: block; white-space: nowrap; }
+
+.nav details.menu-nav .isi-menu .butir-menu {
+  display: block; white-space: nowrap; text-align: left; width: 100%;
+  background: none; border: 0; cursor: pointer;
+  font: inherit; color: var(--teks-2);
+  padding: 6px 10px; border-radius: var(--r-kecil);
+  transition: background var(--alih), color var(--alih);
+}
+.nav details.menu-nav .isi-menu .butir-menu:hover {
+  background: var(--permukaan-3); color: var(--teks);
+}
+.nav details.menu-nav .isi-menu .butir-menu[aria-pressed="true"] {
+  color: #fff; background: var(--permukaan-3);
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+/* Floating menus are hidden when printing. */
+@media print {
+  .nav details.menu-nav { display: none !important; }
+}
+
+/*
+ * Animated background, drawn by latar.js: behind everything, not clickable, very low
+ * opacity so it does not compete with device cards. The blur is done in CSS on the finished image.
+ */
+#latar-nsm {
+  position: fixed; inset: 0; z-index: -10;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+
+  /* contrast and brightness are deliberately not used: with the "lighter" blend mode they made the background glare and table text unreadable. */
+  filter: blur(90px) saturate(140%);
+
+  opacity: .34;
+  transform: translateZ(0);   
+}
+
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -9;
+  background: radial-gradient(130% 100% at 50% 8%,
+              rgba(22,22,22,.42) 0%, rgba(22,22,22,.66) 55%, rgba(22,22,22,.80) 100%);
+  pointer-events: none;
+}
+
+/* Tables sit on their own backing so row text stays readable whatever the animated background does. */
+table {
+  background: rgba(24,24,24,.80);
+  border-radius: var(--r-sedang);
+  /* overflow: hidden is deliberately not used: sticky table headers (Audit Log) stop working when an ancestor clips overflow. */
+}
+.catatan {
+  background: rgba(24,24,24,.62);
+  border-radius: var(--r-sedang);
+  padding: var(--sp-4) 18px;
+}
+
+/* Thin brand-color line at the top of the page; the only place BSP green appears (identity, not status). */
+.pita-merek {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-terang));
+  z-index: 50;
+}
+
+/* ---------------------------------------------------------------------
+   4) KOMPONEN
+   --------------------------------------------------------------------- */
+
+/* --- Tombol --- */
+button, .tombol {
+  font-family: inherit; font-size: var(--f-s); line-height: 1.6;
+  background: var(--permukaan-3); color: var(--teks);
+  border: 1px solid var(--garis-terang);
+  padding: 6px 12px; border-radius: var(--r-kecil);
+  cursor: pointer; text-decoration: none; display: inline-block;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+button:hover, .tombol:hover {
+  background: var(--garis-terang); border-color: #666; text-decoration: none;
+}
+
+.tombol-utama, button.utama {
+  background: var(--aksi); border-color: var(--aksi-tepi); color: #fff;
+  font-weight: 600;
+}
+.tombol-utama:hover, button.utama:hover { background: var(--aksi-gelap); }
+
+.tombol-lebar { display: block; width: 100%; text-align: center; padding: 10px; font-size: var(--f-n); }
+
+/* Tombol berbentuk pil: pemilih periode, unduhan */
+.pil {
+  padding: 6px 14px; border-radius: var(--r-bulat);
+  border: 1px solid var(--garis-terang); background: var(--permukaan-2);
+  color: var(--teks-2); cursor: pointer; font-size: var(--f-s);
+  text-decoration: none; display: inline-block; line-height: 1.6;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+.pil:hover { background: var(--permukaan-3); border-color: #666; color: var(--teks); text-decoration: none; }
+
+/*
+ * Color language: GREEN means state (device status, current selection); BLUE means
+ * action (buttons, links). The selected period pill therefore uses the same form as `.nav a.aktif`.
+ */
+.pil.aktif {
+  background: var(--permukaan-3); border-color: var(--garis-terang);
+  color: #fff; font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+.tombol[aria-disabled="true"], .tombol.mati-tombol {
+  opacity: .35; pointer-events: none;
+}
+
+/* Button with a request in flight: must look different from a plain disabled button (busy, not forbidden). */
+button:disabled { cursor: default; opacity: .55; }
+button.sibuk {
+  position: relative; color: transparent !important;
+  opacity: .8; cursor: progress;
+}
+button.sibuk > * { visibility: hidden; }
+button.sibuk::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--teks) 30%, transparent);
+  border-top-color: var(--teks);
+  animation: nsm-berputar .7s linear infinite;
+}
+@keyframes nsm-berputar { to { transform: rotate(360deg); } }
+
+/* --- Kotak isi (kartu angka, panel form) --- */
+.kartu {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: var(--sp-4) 18px;
+}
+.kartu .judul {
+  color: var(--teks-redup); font-size: var(--f-xs);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.kartu .angka { font-size: var(--f-angka); font-weight: 700; margin: var(--sp-2) 0 var(--sp-1); }
+.kartu .sub { color: #999; font-size: var(--f-s); line-height: 1.5; }
+.kartu .sub-bertanya {
+  color: #999; font-size: var(--f-s); line-height: 1.5;
+  cursor: help; display: inline-block;
+  border-bottom: 1px dashed var(--garis-terang);
+}
+.kartu .sub-bertanya:hover { color: var(--teks-2); border-color: var(--teks-redup); }
+.sub-penuh { display: none; }
+
+.kartu-sorot { background: linear-gradient(160deg, #262626, var(--permukaan-2) 60%); }
+.kartu-sorot .angka { font-size: 40px; letter-spacing: -.5px; }
+
+.kartu-mini {
+  background: var(--permukaan); border: 1px solid var(--garis);
+  border-radius: 6px; padding: 10px 14px;
+}
+.kartu-mini .judul { color: #777; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+.kartu-mini .isi { font-size: var(--f-n); margin-top: var(--sp-1); }
+
+.panel {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: 30px 34px;
+  width: 380px; max-width: 100%;
+}
+
+.panel-rapat { padding: 22px 30px; }
+.panel-rapat h2 { margin-bottom: var(--sp-1); }
+.panel-rapat .pengantar { margin: var(--sp-1) 0 var(--sp-3); font-size: var(--f-s); }
+.panel-rapat label { margin: var(--sp-2) 0 3px; }
+.panel-rapat input { padding: 7px 11px; }
+.panel-rapat .meter { margin-top: 5px; }
+.panel-rapat .meter-teks { margin-top: 3px; }
+.panel-rapat .aturan { margin-top: 5px; line-height: 1.35; }
+.panel-rapat .baris-centang { margin-top: 7px; }
+.panel-rapat .tombol-lebar { margin-top: var(--sp-3) !important; padding: 9px; }
+.panel-rapat .tautan-bawah { margin-top: var(--sp-3); }
+.panel-lebar { width: 520px; }
+
+.panel-2kolom { width: 760px; }
+.panel-2kolom .isi-2kolom {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--sp-6);
+}
+.panel-2kolom .lajur-penuh { grid-column: 1 / -1; }
+@media (max-width: 800px) {
+  .panel-2kolom { width: 380px; }
+  .panel-2kolom .isi-2kolom { grid-template-columns: 1fr; }
+}
+.panel .pengantar {
+  color: var(--teks-redup); font-size: var(--f-m);
+  margin: var(--sp-1) 0 18px; line-height: 1.55;
+}
+
+/* --- Formulir --- */
+label { display: block; font-size: var(--f-s); color: #aaa; margin: var(--sp-3) 0 var(--sp-1); }
+label.label-atas { text-transform: uppercase; letter-spacing: .4px; }
+
+input[type="text"], input[type="password"], input[type="email"], select {
+  width: 100%; font-family: inherit; font-size: var(--f-n);
+  background: #111; border: 1px solid var(--garis-terang); color: var(--teks);
+  padding: 9px 11px; border-radius: var(--r-kecil);
+  transition: border-color var(--alih);
+}
+input:focus, select:focus { border-color: var(--aksi-tepi); }
+
+.baris-centang {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 10px; font-size: var(--f-s); color: #aaa;
+  text-transform: none; cursor: pointer;
+}
+.baris-centang input { width: auto; }
+
+.meter { height: 6px; border-radius: 3px; background: var(--garis); margin-top: var(--sp-2); overflow: hidden; }
+.meter > div { height: 100%; width: 0; transition: width .2s ease, background .2s ease; }
+.meter-teks { font-size: var(--f-s); margin-top: 5px; color: var(--teks-redup); }
+
+.aturan { list-style: none; padding: 0; margin: var(--sp-2) 0 0; font-size: var(--f-s); }
+.aturan li { color: var(--teks-redup); margin: 2px 0; }
+.aturan li.ok { color: var(--up); }
+.aturan li::before { content: "\2717\00a0\00a0"; }
+.aturan li.ok::before { content: "\2713\00a0\00a0"; }
+
+/* --- Kotak pesan --- */
+.pesan-sukses, .pesan-galat, .pesan-hati-hati {
+  padding: 9px 12px; border-radius: var(--r-kecil);
+  font-size: var(--f-m); margin-bottom: var(--sp-3); line-height: 1.5;
+}
+.pesan-sukses     { background: var(--up-latar);   color: var(--up);   border: 1px solid var(--up-tepi); }
+.pesan-galat      { background: var(--down-latar); color: var(--down); border: 1px solid var(--down-tepi); }
+.pesan-hati-hati  { background: var(--hati-hati-latar); color: #eab308; border: 1px solid var(--hati-hati-tepi); }
+
+table { border-collapse: collapse; width: 100%; }
+th, td {
+  padding: calc(9px * var(--rapat)) calc(14px * var(--rapat)); text-align: left;
+  border-bottom: 1px solid var(--garis); font-size: var(--f-m);
+}
+th {
+  background: var(--permukaan-3); font-size: var(--f-s);
+  text-transform: uppercase; letter-spacing: .4px; color: #aaa;
+  font-weight: 600; white-space: nowrap;
+}
+tbody tr { transition: background var(--alih); }
+tbody tr:hover { background: #242424; }
+
+/* --- Lencana kecil --- */
+.lencana {
+  display: inline-block; padding: 2px 9px; border-radius: var(--r-bulat);
+  font-size: var(--f-xs); font-weight: 600; letter-spacing: .3px;
+  border: 1px solid transparent;
+}
+.lencana-up        { background: var(--up-latar); color: var(--up); border-color: var(--up-tepi); }
+.lencana-down      { background: var(--down-latar); color: var(--down); border-color: var(--down-tepi); }
+.lencana-menunggu  { background: var(--hati-hati-latar); color: var(--hati-hati); border-color: var(--hati-hati-tepi); }
+.lencana-netral    { background: #33333a; color: #b9b9c4; border-color: #44444d; }
+
+/* Status dots differ in shape, not only color, so color-blind readers can tell them apart. */
+.titik {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; margin-right: var(--sp-2); flex: none;
+}
+.titik-up { background: var(--up); }
+.titik-down { background: var(--down); }
+.titik-tanya { background: var(--tak-diketahui); }
+
+/* --- Bilah persentase --- */
+.bilah-nilai {
+  background: var(--garis); border-radius: 3px; height: 6px; width: 90px;
+  display: inline-block; vertical-align: middle; margin-right: var(--sp-2);
+  overflow: hidden;
+}
+.bilah-nilai > i { display: block; height: 100%; }
+
+/*
+ * Bars whose observation window is too short to compare are hatched: a device observed
+ * for only 3 of 24 hours otherwise looks healthiest. Hatching reads as "incomplete";
+ * dimming alone could read as "less important".
+ */
+.bilah-nilai.belum-layak {
+  outline: 1px dashed var(--teks-redup); outline-offset: 1px;
+}
+.bilah-nilai.belum-layak > i {
+  opacity: .5;
+  background-image: repeating-linear-gradient(
+    -45deg, transparent 0 3px, rgba(0, 0, 0, .55) 3px 6px);
+}
+.catatan-jeda.belum-layak { color: var(--hati-hati); }
+
+/* --- Keluaran perintah / teks mentah --- */
+.keluaran {
+  font-family: var(--huruf-mono); font-size: var(--f-s);
+  background: #141414; border: 1px solid var(--garis);
+  border-radius: 6px; padding: var(--sp-3) var(--sp-4);
+  white-space: pre-wrap; overflow-x: auto; color: #d6d6d6;
+}
+
+/* --- Catatan kaki halaman --- */
+.catatan {
+  color: var(--teks-samar); font-size: var(--f-xs);
+  margin-top: var(--sp-6); line-height: 1.7;
+  padding-top: var(--sp-4); border-top: 1px solid #2a2a2a;
+}
+
+.bantu {
+  border-bottom: 1px dashed var(--garis-terang);
+  cursor: help; color: var(--teks-2); margin-left: var(--sp-1);
+  transition: color var(--alih), border-color var(--alih);
+}
+.bantu:hover, .bantu:focus-visible { color: var(--teks); border-color: var(--teks-redup); }
+
+.beristilah {
+  cursor: help;
+  border-bottom: 1px dotted color-mix(in srgb, currentColor 35%, transparent);
+}
+.beristilah:hover { border-bottom-color: currentColor; }
+th .beristilah, th.beristilah { border-bottom: 0; }
+
+/* Collapsible panels (js/lipatan.js): the panel head holds the answer, the body holds the evidence. */
+/* The selector deliberately omits the tag: lipatan.js applies this class to any element with `data-lipat`, not just h2. */
+.kepala-panel {
+  display: flex; align-items: center; gap: var(--sp-2);
+  cursor: pointer; user-select: none;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color .12s ease;
+}
+.kepala-panel:hover { border-bottom-color: var(--garis-terang); }
+.kepala-panel:focus-visible {
+  outline: 2px solid var(--up); outline-offset: 3px; border-radius: var(--r-kecil);
+}
+
+.tanda-lipat {
+  flex: 0 0 auto; width: 0; height: 0;
+  border-left: 6px solid var(--teks-2);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transform: rotate(90deg);
+  transition: transform .15s ease;
+}
+.kepala-panel.tertutup .tanda-lipat { transform: rotate(0deg); }
+
+.ringkas-panel {
+  margin-left: auto; font-size: var(--f-s); font-weight: 400;
+  color: var(--teks-redup); text-transform: none; letter-spacing: 0;
+}
+.ringkas-panel.buruk { color: var(--down); font-weight: 700; }
+.ringkas-panel.hati  { color: var(--hati-hati); }
+.ringkas-panel.baik  { color: var(--up); }
+
+/*
+ * Tabs (js/tab.js), for pages with several topics where only one is read at a time
+ * (collapsible panels are for content that may not need reading). Tab heads carry a
+ * summary count (`.tab-cacah`), not just the topic name.
+ * Usage: a `.tab-bar` (role=tablist) of `button.tab[data-tab]`, and `.tab-panel[data-tab-panel]`
+ * panels; call `NSMTab.pasang(".tab-bar")` once when the page is ready.
+ */
+.tab-bar {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  border-bottom: 1px solid var(--garis); margin: var(--sp-4) 0 0;
+}
+.tab {
+  appearance: none; background: none; border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--sp-2) var(--sp-3) 10px;
+  font: inherit; font-size: var(--f-n); color: var(--teks-redup);
+  cursor: pointer; display: flex; align-items: baseline; gap: 6px;
+  transition: color var(--alih), border-color var(--alih);
+}
+.tab:hover { color: var(--teks); }
+.tab:focus-visible { outline: 2px solid var(--up); outline-offset: -2px; }
+.tab[aria-selected="true"] {
+  color: var(--teks); border-bottom-color: var(--tautan); font-weight: 600;
+}
+.tab-cacah {
+  font-size: var(--f-xs); color: var(--teks-samar);
+  background: var(--permukaan-3); border-radius: var(--r-bulat);
+  padding: 1px 7px; font-weight: 400; font-variant-numeric: tabular-nums;
+}
+.tab[aria-selected="true"] .tab-cacah { color: var(--teks-2); }
+/* Empty tabs are dimmed, not hidden, so the page does not appear to have fewer sections. */
+.tab-cacah.nol { opacity: .5; }
+
+.tab-panel { padding-top: var(--sp-4); }
+.tab-panel[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .tab { padding: var(--sp-2) var(--sp-2) var(--sp-2); font-size: var(--f-s); }
+}
+
+.keterangan-bersama {
+  margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  background: var(--permukaan-2); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); font-size: var(--f-s);
+}
+.keterangan-bersama .judul-ket {
+  color: var(--teks-redup); font-size: var(--f-xs);
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: var(--sp-2);
+}
+.keterangan-bersama .baris-ket {
+  display: flex; gap: var(--sp-2); align-items: baseline; line-height: 1.6;
+}
+.keterangan-bersama .baris-ket + .baris-ket { margin-top: var(--sp-2); }
+.keterangan-bersama .cap-jumlah {
+  flex: 0 0 auto; font-family: var(--huruf-mono); font-size: var(--f-xs);
+  padding: 1px 7px; border-radius: var(--r-kecil);
+  background: #2a2a2a; color: var(--teks-2);
+}
+.keterangan-bersama .isi-ket { color: var(--teks-2); }
+
+/* Client cell in the traffic table: first line is the address (monospace, as the access log records it), device name below. */
+.nama-klien {
+  font-weight: 600; font-family: var(--huruf-mono);
+  font-size: var(--f-s); letter-spacing: -.2px;
+}
+.ip-klien { color: var(--teks-redup); font-size: var(--f-s); }
+
+.tombol-catatan {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: var(--sp-4); padding: 5px 12px;
+  background: transparent; border: 1px dashed var(--garis-terang);
+  border-radius: var(--r-bulat);
+  color: var(--teks-redup); font-size: var(--f-s); cursor: pointer;
+}
+.tombol-catatan::before { content: "?"; font-weight: 700; }
+.tombol-catatan:hover { color: var(--teks); border-color: var(--teks-redup); }
+
+/* When printing, all panels are opened. */
+@media print {
+  .isi-panel { display: block !important; }
+  .isi-panel[hidden] { display: block !important; }
+  .kepala-panel { cursor: auto; border-bottom: 0; }
+  .tanda-lipat { display: none !important; }
+  .ringkas-panel { color: #333 !important; }
+  .tombol-catatan { display: none !important; }
+  .catatan[hidden] { display: block !important; }
+}
+
+.bisa-ditanya {
+  cursor: help;
+  border-bottom: 1px dotted color-mix(in srgb, currentColor 45%, transparent);
+}
+.bisa-ditanya:hover { border-bottom-color: currentColor; }
+
+.kosong-judul {
+  color: var(--teks); font-size: var(--f-l);
+  font-weight: 600; margin-bottom: var(--sp-2);
+}
+.kosong-perintah {
+  display: inline-block; margin-top: var(--sp-4);
+  padding: 6px 12px; border-radius: var(--r-kecil);
+  background: rgba(255,255,255,.05); border: 1px solid var(--garis);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: var(--f-s); color: var(--teks);
+}
+
+.catatan-jeda {
+  color: var(--teks-redup); font-size: var(--f-xs);
+  font-weight: 400; margin-top: 2px; white-space: nowrap;
+}
+
+.tautan-bawah { text-align: center; margin-top: var(--sp-4); font-size: var(--f-m); }
+
+.kosong {
+  color: var(--teks-redup); font-size: var(--f-m);
+  padding: var(--sp-6); text-align: center;
+  border: 1px dashed var(--garis); border-radius: var(--r-sedang);
+}
+
+.petunjuk {
+  position: fixed; z-index: 200; pointer-events: none;
+  max-width: 260px; padding: 7px 10px;
+  background: #0f0f0f; color: var(--teks);
+  border: 1px solid var(--garis-terang); border-radius: 6px;
+  font-size: var(--f-s); line-height: 1.45;
+  box-shadow: 0 6px 20px -6px rgba(0,0,0,.8);
+  white-space: pre-line;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+  visibility: hidden;
+}
+.petunjuk.siap { visibility: visible; }
+.petunjuk.terlihat { opacity: 1; transform: translateY(0); }
+.petunjuk.bawah { transform: translateY(-4px); }
+.petunjuk.bawah.terlihat { transform: translateY(0); }
+
+.petunjuk-grafik {
+  position: fixed; z-index: 200; pointer-events: none;
+  min-width: 150px; padding: 8px 10px;
+  background: #0f0f0f; border: 1px solid var(--garis-terang);
+  border-radius: 7px; box-shadow: 0 8px 24px -8px rgba(0,0,0,.85);
+  font-size: var(--f-s); color: var(--teks);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .12s ease, transform .12s ease;
+  visibility: hidden;
+}
+.petunjuk-grafik.terlihat { opacity: 1; transform: translateY(0); visibility: visible; }
+.petunjuk-grafik .waktu {
+  font-family: var(--huruf-mono); color: var(--teks-redup);
+  font-size: var(--f-xs); padding-bottom: 5px; margin-bottom: 5px;
+  border-bottom: 1px solid var(--garis);
+}
+.petunjuk-grafik .baris { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+.petunjuk-grafik .tanda { width: 9px; height: 3px; border-radius: 2px; flex: none; }
+.petunjuk-grafik .nama { color: var(--teks-2); }
+.petunjuk-grafik .angka {
+  margin-left: auto; font-family: var(--huruf-mono);
+  font-weight: 700; color: #fff;
+}
+
+/* Motion explains change, not decoration; only the pulse on down devices repeats continuously. */
+@keyframes nsm-muncul {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes nsm-denyut {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--down) 42%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--down) 0%, transparent); }
+}
+@keyframes nsm-masuk-halus {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.muncul { animation: nsm-muncul .34s cubic-bezier(.22,.9,.3,1) both; }
+
+.titik-down { animation: nsm-denyut 2s ease-out infinite; }
+
+/* ---------------------------------------------------------------------
+   5) KELAS BANTU
+   --------------------------------------------------------------------- */
+.hijau { color: var(--up); }
+.merah { color: var(--down); }
+.kuning { color: var(--hati-hati); }
+.biru  { color: var(--tautan); }
+.abu   { color: var(--tak-diketahui); }
+.redup { color: var(--teks-redup); }
+
+.mono { font-family: var(--huruf-mono); }
+.kanan { text-align: right; }
+.nowrap { white-space: nowrap; }
+.dorong-kanan { margin-left: auto; }
+
+/* Screen-reader only; not visible on screen. */
+.khusus-pembaca-layar {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.kisi-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1100px) { .kisi-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px)  { .kisi-4 { grid-template-columns: 1fr; } }
+
+@media (max-width: 720px) {
+  body { padding: var(--sp-4); }
+  .bilah { align-items: flex-start; }
+}
+
+/* Table paging controls, bottom right; shown only when rows are actually hidden. */
+.hal-tabel {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) 0; font-size: var(--f-s); color: var(--teks-redup);
+  flex-wrap: wrap;
+}
+.hal-tabel .hal-info { font-variant-numeric: tabular-nums; }
+.hal-tabel .hal-tombol {
+  margin-left: auto; display: flex; align-items: center; gap: var(--sp-2);
+}
+.hal-tabel .hal-posisi {
+  font-variant-numeric: tabular-nums; color: var(--teks-2);
+  min-width: 44px; text-align: center;
+}
+.hal-tabel button {
+  padding: 3px 10px; font-size: var(--f-s);
+  background: var(--permukaan-2); color: var(--teks-2);
+  border: 1px solid var(--garis); border-radius: var(--r-kecil);
+  cursor: pointer;
+}
+.hal-tabel button:hover:not(:disabled) {
+  background: var(--permukaan-3); color: #fff;
+}
+.hal-tabel button:disabled { opacity: .35; cursor: default; }
+
+/*
+ * Explanations live behind a small `?` icon on each card: faint until hover, always
+ * visible on keyboard focus and on touch screens (no hover).
+ */
+.jelas-tombol {
+  flex: none; margin-left: var(--sp-2);
+  width: 18px; height: 18px; padding: 0;
+  border: 1px solid var(--garis-terang); border-radius: 50%;
+  background: transparent; color: var(--teks-redup);
+  font-size: 11px; line-height: 1; font-weight: 700;
+  cursor: pointer; opacity: .35;
+  transition: opacity .12s ease, color .12s ease, background .12s ease;
+}
+.periksa:hover .jelas-tombol,
+.jelas-tombol:hover,
+.jelas-tombol:focus-visible { opacity: 1; }
+.jelas-tombol:hover { color: var(--teks); background: var(--permukaan-3); }
+.jelas-tombol.terbuka {
+  opacity: 1; color: #fff;
+  background: var(--aksi); border-color: var(--aksi-tepi);
+}
+@media (hover: none) {
+  .jelas-tombol { opacity: .75; }
+}
+
+.jelas-isi {
+  margin-top: var(--sp-2); padding-top: var(--sp-2);
+  border-top: 1px dashed var(--garis);
+  color: var(--teks-redup); font-size: var(--f-s); line-height: 1.55;
+}
+
+h3.judul-berikon, h4.judul-berikon {
+  display: flex; align-items: center; gap: 0;
+}
+h3.judul-berikon .jelas-tombol,
+h4.judul-berikon .jelas-tombol { margin-left: var(--sp-2); }
+h3.judul-berikon .jelas-tombol,
+h4.judul-berikon .jelas-tombol { opacity: .5; }
+h3.judul-berikon:hover .jelas-tombol,
+h4.judul-berikon:hover .jelas-tombol { opacity: 1; }
+
+/* Wide tables on narrow screens: `display: block` plus `overflow-x: auto` makes only the table scroll, not the whole page. */
+@media (max-width: 800px) {
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Respect users who disable animations in their system settings. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* When printing, the animated background and its dark overlay are removed. */
+@media print {
+  html { background: #fff !important; }
+  #latar-nsm, body::before { display: none !important; }
+  table, .catatan { background: transparent !important; }
+
+  /*
+   * Tooltips must not print: `.petunjuk` and `.petunjuk-grafik` are position: fixed and
+   * would repeat on every printed page, covering content. Removed entirely when printing.
+   */
+  .petunjuk, .petunjuk-grafik { display: none !important; }
+  /* Text hidden behind tooltips on screen must appear in full on paper. */
+  .sub-layar { display: none !important; }
+  .sub-penuh { display: inline !important; }
+  .sub-bertanya { border-bottom: 0 !important; cursor: auto; }
+
+  /* Other position: fixed elements hidden when printing: `.pita-merek` (3px brand line) and `.kartu-ikon` (device detail card). */
+  .pita-merek, .kartu-ikon { display: none !important; }
+
+  /*
+   * Diagnosis blocks stay closed on paper (they can hold hundreds of lines of raw SSH output);
+   * the disclosure marker and link color are removed.
+   */
+  details.diagnosa summary {
+    list-style: none; color: #333 !important; cursor: auto;
+  }
+  details.diagnosa summary::marker,
+  details.diagnosa summary::-webkit-details-marker { display: none; }
+  details.diagnosa summary::after {
+    content: "  (isinya hanya bisa dibuka di layar)";
+    color: #777; font-style: italic;
+  }
+}
+</style>
+<style>
+/*
+ * Preview B: timeline as the backbone. Temporary file, to be deleted after a layout is chosen.
+ * Sample data only. One chronological sequence for all event types instead of per-type
+ * lists; each event has a type icon (color is reserved for status); a type filter and
+ * collapsed evidence limit noise; summary numbers become side context.
+ */
+
+.sprite { display: none; }
+.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none;
+     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+     vertical-align: -.14em; }
+
+body { padding: var(--sp-4) var(--sp-6) var(--sp-8); }
+
+.pita-uji { background: var(--hati-hati-latar); border: 1px solid var(--hati-hati-tepi);
+            color: #eab308; padding: var(--sp-2) var(--sp-4); border-radius: var(--r-sedang);
+            font-size: var(--f-s); margin-bottom: var(--sp-4); }
+
+.kepala-alat { display: flex; align-items: center; gap: var(--sp-3);
+               flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.kepala-alat .nama { font-size: var(--f-xl); font-weight: 700; display: flex;
+                     align-items: center; gap: var(--sp-2); }
+.kepala-alat .nama .i { width: 20px; height: 20px; color: var(--teks-redup); }
+.alamat { font-family: var(--huruf-mono); color: var(--teks-2); font-size: var(--f-m); }
+.titik-besar { width: 9px; height: 9px; border-radius: 50%; background: var(--up);
+               box-shadow: 0 0 0 3px color-mix(in srgb, var(--up) 22%, transparent); }
+.kepala-alat .kanan { margin-left: auto; display: flex; gap: var(--sp-2);
+                      align-items: center; flex-wrap: wrap; }
+.keping-identitas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--sp-4); }
+.keping { display: flex; align-items: center; gap: 7px; padding: 5px 10px;
+          border-radius: 6px; background: var(--permukaan-3);
+          border: 1px solid var(--garis); cursor: help; }
+.keping .i { width: 14px; height: 14px; color: var(--teks-samar); }
+.keping-teks { display: flex; flex-direction: column; line-height: 1.25; }
+.keping-label { font-size: 9px; color: var(--teks-samar); text-transform: uppercase;
+                letter-spacing: .05em; }
+.keping-nilai { font-size: var(--f-s); color: var(--teks-2); font-family: var(--huruf-mono); }
+
+.pita-kotak { background: var(--permukaan-2); border: 1px solid var(--garis);
+              border-radius: var(--r-besar); padding: var(--sp-4);
+              margin-bottom: var(--sp-4); }
+.pita-kepala { display: flex; align-items: center; gap: var(--sp-2);
+               margin-bottom: var(--sp-3); }
+.pita-kepala .i { width: 15px; height: 15px; color: var(--teks-samar); }
+.pita-kepala h3 { font-size: var(--f-s); font-weight: 700; margin: 0;
+                  text-transform: uppercase; letter-spacing: .05em;
+                  color: var(--teks-redup); }
+.pita-kepala .kanan { margin-left: auto; font-size: var(--f-xs); color: var(--teks-samar); }
+
+.pita { position: relative; height: 26px; border-radius: var(--r-kecil);
+        overflow: hidden; display: flex; background: var(--permukaan-3); }
+.pita > span { display: block; height: 100%; }
+.pita .s-up { background: var(--up); opacity: .78; }
+.pita .s-down { background: var(--down); }
+.pita .s-blokir { background: var(--hati-hati); }
+/* Unmonitored time is neither green nor red: it is hatched so it reads as an observation gap, not a state. */
+.pita .s-buta {
+  background: repeating-linear-gradient(45deg, var(--permukaan-3) 0 5px,
+              #2c2c2c 5px 10px);
+}
+.pita-jam { display: flex; margin-top: 5px; font-size: 9px;
+            color: var(--teks-samar); font-variant-numeric: tabular-nums; }
+.pita-jam > span { flex: 1; }
+.pita-jam > span:last-child { flex: none; }
+.pita-kunci { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+              margin-top: var(--sp-3); font-size: var(--f-xs);
+              color: var(--teks-samar); }
+.pita-kunci span { display: flex; align-items: center; gap: 5px; }
+.kotak-kunci { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+.dua-lajur { display: grid; grid-template-columns: minmax(0,1fr) 300px;
+             gap: var(--sp-4); align-items: start; }
+@media (max-width: 1080px) { .dua-lajur { grid-template-columns: 1fr; } }
+
+.saring { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.saring .pil { display: flex; align-items: center; gap: 5px; }
+.saring .pil .i { width: 12px; height: 12px; }
+
+.jalur { position: relative; padding-left: 30px; }
+.jalur::before { content: ""; position: absolute; left: 10px; top: 4px; bottom: 4px;
+                 width: 2px; background: var(--garis); }
+
+.hari { font-size: var(--f-xs); color: var(--teks-samar); text-transform: uppercase;
+        letter-spacing: .06em; font-weight: 700; margin: var(--sp-4) 0 var(--sp-2);
+        position: relative; }
+.hari:first-child { margin-top: 0; }
+
+.kejadian { position: relative; margin-bottom: var(--sp-2);
+            background: var(--permukaan-2); border: 1px solid var(--garis);
+            border-left-width: 3px; border-left-color: var(--garis-terang);
+            border-radius: var(--r-sedang); padding: var(--sp-3) var(--sp-4); }
+.kejadian.k-mati { border-left-color: var(--down); }
+.kejadian.k-hati { border-left-color: var(--hati-hati); }
+.kejadian.k-pulih { border-left-color: var(--up); }
+
+.bulat { position: absolute; left: -30px; top: 12px; width: 21px; height: 21px;
+         border-radius: 50%; background: var(--permukaan-3);
+         border: 1px solid var(--garis-terang); display: flex;
+         align-items: center; justify-content: center; color: var(--teks-redup); }
+.bulat .i { width: 11px; height: 11px; }
+.kejadian.k-mati .bulat { border-color: var(--down-tepi); color: var(--down);
+                          background: var(--down-latar); }
+.kejadian.k-hati .bulat { border-color: var(--hati-hati-tepi); color: var(--hati-hati);
+                          background: var(--hati-hati-latar); }
+.kejadian.k-pulih .bulat { border-color: var(--up-tepi); color: var(--up);
+                           background: var(--up-latar); }
+
+.k-atas { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+.k-jam { font-family: var(--huruf-mono); font-size: var(--f-s);
+         color: var(--teks-samar); flex: none; }
+.k-judul { font-weight: 600; font-size: var(--f-m); }
+.k-lama { margin-left: auto; font-size: var(--f-s); font-weight: 700;
+          font-variant-numeric: tabular-nums; }
+.k-lama.merah { color: var(--down); } .k-lama.kuning { color: var(--hati-hati); }
+.k-isi { margin-top: 4px; font-size: var(--f-s); color: var(--teks-2);
+         line-height: 1.5; }
+.k-tanda { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.lencana-kecil { font-size: 10px; padding: 1px 6px; border-radius: var(--r-bulat);
+                 border: 1px solid var(--garis); background: var(--permukaan-3);
+                 color: var(--teks-redup); white-space: nowrap; }
+.lencana-kecil.merah { background: var(--down-latar); border-color: var(--down-tepi);
+                       color: var(--down); }
+.lencana-kecil.kuning { background: var(--hati-hati-latar);
+                        border-color: var(--hati-hati-tepi); color: var(--hati-hati); }
+.mono { font-family: var(--huruf-mono); }
+
+details.bukti { margin-top: 7px; }
+details.bukti summary { cursor: pointer; font-size: var(--f-xs); color: var(--tautan);
+                        list-style: none; display: flex; align-items: center; gap: 5px; }
+details.bukti summary .i { width: 11px; height: 11px; transition: transform var(--alih); }
+details.bukti[open] summary .i { transform: rotate(180deg); }
+details.bukti ul { list-style: none; padding: 0; margin: 6px 0 0; font-size: var(--f-xs); }
+details.bukti li { padding: 2px 0 2px 18px; position: relative; color: var(--teks-redup);
+                   line-height: 1.5; }
+details.bukti li.ok { color: var(--up); }
+details.bukti li.gagal { color: var(--down); }
+details.bukti li.ok::before { content: "\2713"; position: absolute; left: 2px; }
+details.bukti li.gagal::before { content: "\2717"; position: absolute; left: 2px; }
+details.bukti li.netral::before { content: "\00b7"; position: absolute; left: 5px; }
+
+.kartu-sisi { background: var(--permukaan-2); border: 1px solid var(--garis);
+              border-radius: var(--r-besar); padding: var(--sp-4);
+              margin-bottom: var(--sp-3); }
+.kartu-sisi > header { display: flex; align-items: center; gap: var(--sp-2);
+                       margin-bottom: var(--sp-3); }
+.kartu-sisi > header .i { width: 14px; height: 14px; color: var(--teks-samar); }
+.kartu-sisi > header h3 { font-size: var(--f-xs); font-weight: 700; margin: 0;
+                          text-transform: uppercase; letter-spacing: .05em;
+                          color: var(--teks-redup); }
+.angka-utama { font-size: 30px; font-weight: 700; line-height: 1;
+               font-variant-numeric: tabular-nums; color: var(--up); }
+.angka-ket { font-size: var(--f-xs); color: var(--teks-samar); margin-top: 5px;
+             line-height: 1.45; }
+.pasang { display: flex; align-items: baseline; gap: var(--sp-2); padding: 5px 0;
+          border-bottom: 1px solid var(--garis); }
+.pasang:last-child { border-bottom: 0; }
+.pasang .lab { font-size: var(--f-xs); color: var(--teks-samar); flex: 1;
+               display: flex; align-items: center; gap: 5px; }
+.pasang .lab .i { width: 12px; height: 12px; }
+.pasang .val { font-size: var(--f-s); font-weight: 700;
+               font-variant-numeric: tabular-nums; }
+.pasang .val.kuning { color: var(--hati-hati); }
+.pasang .val.biru { color: var(--tautan); }
+
+.mini-batang { height: 4px; border-radius: 2px; background: var(--permukaan-3);
+               margin-top: 4px; overflow: hidden; }
+.mini-batang > span { display: block; height: 100%; background: var(--tautan); }
+.sisi-baris { padding: 6px 0; border-bottom: 1px solid var(--garis); }
+.sisi-baris:last-child { border-bottom: 0; }
+.sisi-atas { display: flex; align-items: baseline; gap: var(--sp-2); }
+.sisi-atas .nm { font-size: var(--f-s); }
+.sisi-atas .kanan { margin-left: auto; font-size: var(--f-s); font-weight: 700;
+                    font-variant-numeric: tabular-nums; }
+.sisi-sub { font-size: 10px; color: var(--teks-samar); margin-top: 2px; }
+.titik { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
+.titik.up { background: var(--up); } .titik.down { background: var(--down); }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+<!-- Ikon: Lucide v1.31.0, lisensi ISC. https://lucide.dev -->
+<symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol>
+<symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol>
+<symbol id="i-arrow-down-to-line" viewBox="0 0 24 24"><path d="M12 17V3" /> <path d="m6 11 6 6 6-6" /> <path d="M19 21H5" /></symbol>
+<symbol id="i-arrow-up-from-line" viewBox="0 0 24 24"><path d="m18 9-6-6-6 6" /> <path d="M12 3v14" /> <path d="M5 21h14" /></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+<symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol>
+<symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" /></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2" /> <path d="M12 2v2" /> <path d="M17 20v2" /> <path d="M17 2v2" /> <path d="M2 12h2" /> <path d="M2 17h2" /> <path d="M2 7h2" /> <path d="M20 12h2" /> <path d="M20 17h2" /> <path d="M20 7h2" /> <path d="M7 20v2" /> <path d="M7 2v2" /> <rect x="4" y="4" width="16" height="16" rx="2" /> <rect x="8" y="8" width="8" height="8" rx="1" /></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></symbol>
+<symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" /></symbol>
+<symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4" /> <path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /> <path d="M12 7v5l4 2" /></symbol>
+<symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" /> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" /> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" /></symbol>
+<symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1" /> <rect x="2" y="16" width="6" height="6" rx="1" /> <rect x="9" y="2" width="6" height="6" rx="1" /> <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /> <path d="M12 12V8" /></symbol>
+<symbol id="i-plug-zap" viewBox="0 0 24 24"><path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z" /> <path d="m2 22 3-3" /> <path d="M7.5 13.5 10 11" /> <path d="M10.5 16.5 13 14" /> <path d="m18 3-4 4h6l-4 4" /></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /> <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" /> <rect x="6" y="14" width="12" height="8" rx="1" /></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /> <rect width="20" height="8" x="2" y="14" rx="2" ry="2" /> <line x1="6" x2="6.01" y1="6" y2="6" /> <line x1="6" x2="6.01" y1="18" y2="18" /></symbol>
+<symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="M12 8v4" /> <path d="M12 16h.01" /></symbol>
+<symbol id="i-table-2" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" /></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12" /> <path d="m17 8-5-5-5 5" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <path d="M16 3.128a4 4 0 0 1 0 7.744" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <circle cx="9" cy="7" r="4" /></symbol>
+<symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01" /> <path d="M8.5 16.429a5 5 0 0 1 7 0" /> <path d="M5 12.859a10 10 0 0 1 5.17-2.69" /> <path d="M19 12.859a10 10 0 0 0-2.007-1.523" /> <path d="M2 8.82a15 15 0 0 1 4.177-2.643" /> <path d="M22 8.82a15 15 0 0 0-11.288-3.764" /> <path d="m2 2 20 20" /></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol>
+</svg>
+
+<div class="pita-uji">
+  <b>Pratinjau B — Garis Waktu.</b> Berkas sementara untuk dipilih, semua angkanya
+  data contoh yang ditulis tangan. Bandingkan dengan Pratinjau A (Bento),
+  lalu yang tidak dipilih dihapus.
+</div>
+
+<div class="kepala-alat">
+  <span class="titik-besar"></span>
+  <span class="nama"><svg class="i"><use href="#i-server"/></svg>Server Web (Lokasi A)</span>
+  <span class="alamat">192.168.56.103</span>
+  <span class="lencana lencana-up">UP · 1.29 ms</span>
+  <span class="kanan">
+    <span class="redup kecil">Periode</span>
+    <span class="pil">1 Jam</span>
+    <span class="pil aktif">24 Jam</span>
+    <span class="pil">7 Hari</span>
+    <span class="pil">30 Hari</span>
+    <span class="pil"><svg class="i"><use href="#i-table-2"/></svg> Excel</span>
+    <span class="pil"><svg class="i"><use href="#i-printer"/></svg> PDF</span>
+  </span>
+</div>
+
+<div class="keping-identitas">
+  <div class="keping" title="Nama yang dipakai mesin ini untuk dirinya sendiri">
+    <svg class="i"><use href="#i-cpu"/></svg>
+    <span class="keping-teks"><span class="keping-label">Hostname</span>
+    <span class="keping-nilai">testUbuntu</span></span></div>
+  <div class="keping" title="Sistem operasi dan versinya">
+    <svg class="i"><use href="#i-layers"/></svg>
+    <span class="keping-teks"><span class="keping-label">Platform</span>
+    <span class="keping-nilai">Ubuntu 26.04 LTS</span></span></div>
+  <div class="keping" title="Sudah berapa lama mesin ini menyala tanpa dimatikan">
+    <svg class="i"><use href="#i-clock"/></svg>
+    <span class="keping-teks"><span class="keping-label">Uptime</span>
+    <span class="keping-nilai">47 menit</span></span></div>
+  <div class="keping" title="Rata-rata antrean kerja CPU 1, 5, dan 15 menit terakhir">
+    <svg class="i"><use href="#i-gauge"/></svg>
+    <span class="keping-teks"><span class="keping-label">Beban CPU</span>
+    <span class="keping-nilai">1.98 / 0.66 / 0.28</span></span></div>
+  <div class="keping" title="Memori terpakai dari total yang tersedia">
+    <svg class="i"><use href="#i-zap"/></svg>
+    <span class="keping-teks"><span class="keping-label">Memori</span>
+    <span class="keping-nilai">622 Mi / 1.4 Gi</span></span></div>
+  <div class="keping" title="Lokasi fisik menurut pendaftaran di NSM">
+    <svg class="i"><use href="#i-globe"/></svg>
+    <span class="keping-teks"><span class="keping-label">Lokasi</span>
+    <span class="keping-nilai">Lokasi A</span></span></div>
+</div>
+
+<div class="pita-kotak">
+  <div class="pita-kepala">
+    <svg class="i"><use href="#i-history"/></svg>
+    <h3>24 jam terakhir</h3>
+    <span class="kanan">tiap kotak = 1 jam · klik untuk melompat ke jamnya</span>
+  </div>
+  <div class="pita">
+    <span class="s-buta" style="width:29.2%"></span>
+    <span class="s-up" style="width:14.6%"></span>
+    <span class="s-hati" style="width:0"></span>
+    <span class="s-blokir" style="width:2.1%"></span>
+    <span class="s-up" style="width:20.8%"></span>
+    <span class="s-down" style="width:3.7%"></span>
+    <span class="s-up" style="width:29.6%"></span>
+  </div>
+  <div class="pita-jam">
+    <span>15.00</span><span>19.00</span><span>23.00</span><span>03.00</span>
+    <span>07.00</span><span>11.00</span><span>15.00</span>
+  </div>
+  <div class="pita-kunci">
+    <span><i class="kotak-kunci" style="background:var(--up);opacity:.78"></i> hidup</span>
+    <span><i class="kotak-kunci" style="background:var(--down)"></i> tidak ada respons</span>
+    <span><i class="kotak-kunci" style="background:var(--hati-hati)"></i> ping diblokir</span>
+    <span><i class="kotak-kunci" style="background:repeating-linear-gradient(45deg,var(--permukaan-3) 0 4px,#2c2c2c 4px 8px)"></i>
+      tidak terpantau — NSM tidak melihat apa pun, bukan berarti sehat</span>
+  </div>
+</div>
+
+<div class="dua-lajur">
+
+  <div>
+    <div class="saring">
+      <span class="pil aktif">Semua <span class="tab-cacah">9</span></span>
+      <span class="pil"><svg class="i"><use href="#i-alert-triangle"/></svg> Gangguan 2</span>
+      <span class="pil"><svg class="i"><use href="#i-layers"/></svg> Layanan 2</span>
+      <span class="pil"><svg class="i"><use href="#i-folder-open"/></svg> Berkas 3</span>
+      <span class="pil"><svg class="i"><use href="#i-network"/></svg> Lalu lintas 2</span>
+    </div>
+
+    <div class="jalur">
+
+      <div class="hari">Hari ini &middot; Kamis, 14 Agustus 2026</div>
+
+      <div class="kejadian">
+        <span class="bulat"><svg class="i"><use href="#i-upload"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">14.43</span>
+          <span class="k-judul">intan mengunggah satu berkas</span>
+        </div>
+        <div class="k-isi">
+          <span class="mono">/unggah/catatan-magang.txt</span> · 840 B lewat SFTP.
+          Intan Permata &middot; Magang IT.
+        </div>
+      </div>
+
+      <div class="kejadian">
+        <span class="bulat"><svg class="i"><use href="#i-download"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">14.41</span>
+          <span class="k-judul">arif menarik rekaman CCTV</span>
+          <span class="k-lama">40.00 MB</span>
+        </div>
+        <div class="k-isi">
+          <span class="mono">/publik/rekaman-cctv-lobi.zip</span> ditarik lewat SFTP.
+          Arif Rahman &middot; Auditor.
+        </div>
+        <div class="k-tanda">
+          <span class="lencana-kecil">berkas terbesar hari ini</span>
+          <span class="lencana-kecil kuning">2&times; dalam 15 menit</span>
+        </div>
+      </div>
+
+      <div class="kejadian">
+        <span class="bulat"><svg class="i"><use href="#i-network"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">14.38</span>
+          <span class="k-judul">Lalu lintas keluar naik tajam</span>
+          <span class="k-lama">100 MB</span>
+        </div>
+        <div class="k-isi">
+          <span class="mono">192.168.56.104</span> menarik
+          <span class="mono">/uji-50mb.bin</span> dua kali lewat HTTP port 80.
+        </div>
+        <div class="k-tanda">
+          <span class="lencana-kecil">vs 4.1 MB per jam biasanya</span>
+        </div>
+      </div>
+
+      <div class="kejadian k-pulih">
+        <span class="bulat"><svg class="i"><use href="#i-circle-check"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">09.18</span>
+          <span class="k-judul">Perangkat pulih</span>
+          <span class="k-lama">setelah 5m 18s</span>
+        </div>
+        <div class="k-isi">Ping menjawab lagi pada 3.1 ms.</div>
+      </div>
+
+      <div class="kejadian k-mati">
+        <span class="bulat"><svg class="i"><use href="#i-wifi-off"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">09.12</span>
+          <span class="k-judul">Tidak ada respons</span>
+          <span class="k-lama merah">5m 18s</span>
+        </div>
+        <div class="k-isi">
+          Ping gagal dan tidak ada satu pun port TCP yang menjawab, jadi mesinnya
+          kemungkinan mati atau kabelnya terputus. Sebab fisik seperti listrik
+          padam tidak bisa dilihat dari jaringan.
+        </div>
+        <details class="bukti">
+          <summary><svg class="i"><use href="#i-chevron-down"/></svg>Pemeriksaan otomatis saat itu</summary>
+          <ul>
+            <li class="gagal">ping 192.168.56.103 &mdash; 4 paket dikirim, 0 kembali</li>
+            <li class="gagal">tcp/22 &mdash; tidak menjawab dalam 5 detik</li>
+            <li class="gagal">tcp/80 &mdash; tidak menjawab dalam 5 detik</li>
+            <li class="netral">ARP &mdash; alamat tidak ada di tabel tetangga</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="kejadian k-mati">
+        <span class="bulat"><svg class="i"><use href="#i-layers"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">08.55</span>
+          <span class="k-judul">Layanan Cadangan Harian berhenti menjawab</span>
+          <span class="k-lama merah">masih berlangsung</span>
+        </div>
+        <div class="k-isi">
+          <span class="mono">tcp/873</span> tidak menjawab, sedangkan mesinnya
+          sendiri tetap hidup dan tiga layanan lain normal.
+        </div>
+        <div class="k-tanda"><span class="lencana-kecil merah">belum pulih</span></div>
+      </div>
+
+      <div class="kejadian k-pulih">
+        <span class="bulat"><svg class="i"><use href="#i-circle-check"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">03.54</span>
+          <span class="k-judul">Ping menjawab lagi</span>
+          <span class="k-lama">setelah 3m 03s</span>
+        </div>
+        <div class="k-isi">Layanan di atasnya tidak pernah ikut berhenti.</div>
+      </div>
+
+      <div class="kejadian k-hati">
+        <span class="bulat"><svg class="i"><use href="#i-shield-alert"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">03.51</span>
+          <span class="k-judul">Ping diblokir</span>
+          <span class="k-lama kuning">3m 03s</span>
+        </div>
+        <div class="k-isi">
+          Ping gagal tetapi port 22 tetap menjawab, jadi mesinnya kemungkinan
+          masih hidup dan yang berubah adalah aturan filter, bukan keadaan mesin.
+        </div>
+        <details class="bukti">
+          <summary><svg class="i"><use href="#i-chevron-down"/></svg>Pemeriksaan otomatis saat itu</summary>
+          <ul>
+            <li class="gagal">ping 192.168.56.103 &mdash; 4 paket dikirim, 0 kembali</li>
+            <li class="ok">tcp/22 &mdash; menjawab dalam 2.0 ms</li>
+            <li class="ok">tcp/8080 &mdash; menjawab dalam 11 ms</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="hari">Kemarin &middot; Rabu, 13 Agustus 2026</div>
+
+      <div class="kejadian">
+        <span class="bulat"><svg class="i"><use href="#i-key-round"/></svg></span>
+        <div class="k-atas">
+          <span class="k-jam">21.30</span>
+          <span class="k-judul">doni mengirim berkas pemasangan</span>
+        </div>
+        <div class="k-isi">
+          <span class="mono">/tmp/ecanteen-baru.jar</span> ditaruh ke server lewat scp.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: summary numbers as context, not the page opener. -->
+  <aside>
+    <div class="kartu-sisi">
+      <header><svg class="i"><use href="#i-activity"/></svg><h3>Kesehatan periode ini</h3></header>
+      <div class="angka-utama">99.42%</div>
+      <div class="angka-ket">
+        Baru diamati <b>7 jam 1 menit</b> dari 24 jam yang diminta; 16 jam 59 menit
+        tidak terpantau dan tidak ikut dihitung.
+      </div>
+      <div style="margin-top:var(--sp-3)">
+        <div class="pasang">
+          <span class="lab"><svg class="i"><use href="#i-alert-triangle"/></svg>Insiden</span>
+          <span class="val kuning">2</span></div>
+        <div class="pasang">
+          <span class="lab"><svg class="i"><use href="#i-wifi-off"/></svg>Total mati</span>
+          <span class="val">8m 21s</span></div>
+        <div class="pasang">
+          <span class="lab"><svg class="i"><use href="#i-history"/></svg>Rata-rata pulih</span>
+          <span class="val">4m 10s</span></div>
+        <div class="pasang">
+          <span class="lab"><svg class="i"><use href="#i-zap"/></svg>Balasan ping</span>
+          <span class="val biru">2.66 ms</span></div>
+      </div>
+    </div>
+
+    <div class="kartu-sisi">
+      <header><svg class="i"><use href="#i-activity"/></svg><h3>Waktu balas ping</h3></header>
+      <svg viewBox="0 0 260 70" preserveAspectRatio="none" height="70" style="width:100%;display:block">
+        <defs><linearGradient id="gr2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#60a5fa" stop-opacity=".28"/>
+          <stop offset="1" stop-color="#60a5fa" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0 56 L15 53 L30 58 L45 50 L60 55 L75 33 L90 52 L105 56 L120 53 L135 57
+                 L150 16 L165 51 L180 54 L195 52 L210 56 L225 53 L240 57 L260 55
+                 L260 70 L0 70 Z" fill="url(#gr2)"/>
+        <path d="M0 56 L15 53 L30 58 L45 50 L60 55 L75 33 L90 52 L105 56 L120 53 L135 57
+                 L150 16 L165 51 L180 54 L195 52 L210 56 L225 53 L240 57 L260 55"
+              fill="none" stroke="#60a5fa" stroke-width="1.6"/>
+      </svg>
+      <div class="angka-ket">Sekarang 1.29 ms · terburuk 24.8 ms.</div>
+    </div>
+
+    <div class="kartu-sisi">
+      <header><svg class="i"><use href="#i-layers"/></svg><h3>Layanan · 4 dari 5 hidup</h3></header>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="titik up"></span><span class="nm">SSH testUbuntu</span>
+        <span class="kanan">1.93 ms</span></div>
+        <div class="sisi-sub">tcp/22 · 100%</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="titik up"></span><span class="nm">Web Server BSP</span>
+        <span class="kanan">3.4 ms</span></div>
+        <div class="sisi-sub">http/80 · 100%</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="titik up"></span><span class="nm">E-Canteen v2</span>
+        <span class="kanan">12 ms</span></div>
+        <div class="sisi-sub">http/8080 · 99.8%</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="titik up"></span><span class="nm">Server Berkas SFTP</span>
+        <span class="kanan">2.1 ms</span></div>
+        <div class="sisi-sub">sftp/22 · 100%</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="titik down"></span><span class="nm">Cadangan Harian</span>
+        <span class="kanan" style="color:var(--down)">mati</span></div>
+        <div class="sisi-sub">tcp/873 · 88.2% · sejak 08.55</div></div>
+    </div>
+
+    <div class="kartu-sisi">
+      <header><svg class="i"><use href="#i-network"/></svg><h3>Interface</h3></header>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="nm mono">enp0s8</span><span class="kanan">1.84 Mbps</span></div>
+        <div class="mini-batang"><span style="width:82%"></span></div>
+        <div class="sisi-sub">192.168.56.103/24 · masuk 1.31 · keluar 0.53</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="nm mono">enp0s3</span><span class="kanan">0.21 Mbps</span></div>
+        <div class="mini-batang"><span style="width:9%"></span></div>
+        <div class="sisi-sub">10.0.2.15/24 · masuk 0.18 · keluar 0.03</div></div>
+    </div>
+
+    <div class="kartu-sisi">
+      <header><svg class="i"><use href="#i-download"/></svg><h3>Siapa mengambil apa</h3></header>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="nm">Server Data</span><span class="kanan">100.15 MB</span></div>
+        <div class="mini-batang"><span style="width:61%"></span></div>
+        <div class="sisi-sub mono">192.168.56.104 · 20 permintaan</div></div>
+      <div class="sisi-baris"><div class="sisi-atas">
+        <span class="nm">Laptop</span><span class="kanan">63.30 MB</span></div>
+        <div class="mini-batang"><span style="width:39%"></span></div>
+        <div class="sisi-sub mono">192.168.56.1 · 1001 permintaan · 962 dari NSM</div></div>
+    </div>
+  </aside>
+</div>
+
+<div class="catatan" style="margin-top:var(--sp-5)">
+  <b>Yang berubah dibanding halaman sekarang.</b>
+  Poros halaman jadi WAKTU: gangguan ping, layanan yang berhenti, berkas yang
+  diambil orang, dan lonjakan lalu lintas berdiri dalam SATU urutan, sehingga
+  pertanyaan "apa yang terjadi jam sembilan tadi" dijawab dengan menggulir, bukan
+  dengan membuka empat bagian lalu mencocokkan jamnya sendiri. Pita 24 jam di atas
+  menampakkan hal yang paling mudah disembunyikan halaman lama: jam-jam ketika NSM
+  tidak melihat apa pun. Angka ringkasnya tidak dihapus, cuma turun jadi konteks di
+  lajur kanan.
+  <br><br>
+  <b>Risiko yang harus disebut.</b> Timeline mudah jadi bising begitu kejadiannya
+  ratusan; penyaring jenis di atas wajib, bukan tambahan. Dan pada periode 30 hari
+  urutan ini akan sangat panjang, jadi ia butuh pemuatan bertahap seperti tabel
+  riwayat sekarang.
+</div>
+
+</body>
+</html>

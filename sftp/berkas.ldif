@@ -1,0 +1,17 @@
+# Group `berkas`: who may use the SFTP file server on .103.
+#
+# A separate group on purpose: reusing `ecanteen` would silently give every canteen account access to the office files.
+#
+# Sysadmins (arif, joko) are deliberately excluded: sshd has `Match Group berkas` with `ForceCommand internal-sftp`, which would take away their SSH shell.
+#
+# The four members all have `/usr/sbin/nologin` shells. `arif` (auditor) is here although SSH login is denied: he may fetch files but not log in to the machine.
+
+dn: cn=berkas,ou=groups,dc=bsp,dc=id
+objectClass: posixGroup
+cn: berkas
+gidNumber: 20005
+description: Boleh memakai server berkas SFTP di .103 (sftp saja, tanpa shell)
+memberUid: dewi
+memberUid: bagas
+memberUid: intan
+memberUid: arif

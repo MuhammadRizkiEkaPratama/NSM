@@ -1,0 +1,540 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">
+<title>Sistem Desain NSM</title>
+<style>/* NSM shared styles for the whole app (single source of truth for colors and spacing). Color rules: status colors (green/red/yellow/gray) only express device state and never decorate buttons or titles; the action color (blue) is for buttons and links; BSP green (--brand) is organization identity (top line, report header), not a button color. Order: 1) tokens 2) base 3) layout 4) components 5) helpers */
+
+/* Design tokens: change them here and the whole page follows. */
+:root {
+  /* Identitas */
+  --brand:            #2b6049;   /* hijau PT Bumi Siak Pusako */
+  --brand-terang:     #3d8a68;
+
+  --bg:               #1a1a1a;
+  --permukaan:        #1f1f1f;
+  --permukaan-2:      #222222;
+  --permukaan-3:      #262626;
+  --garis:            #333333;
+  --garis-terang:     #444444;
+
+  --teks:             #eeeeee;
+  --teks-2:           #bbbbbb;
+  --teks-redup:       #8a8a8a;
+  --teks-samar:       #6b7280;
+
+  /* Aksi */
+  --aksi:             #2563eb;
+  --aksi-gelap:       #1d4ed8;
+  --aksi-tepi:        #3b82f6;
+  --tautan:           #60a5fa;
+
+  --up:               #4ade80;
+  --down:             #f87171;
+  --hati-hati:        #facc15;
+  --tak-diketahui:    #9ca3af;
+
+  --up-latar:         #16301c;
+  --up-tepi:          #285034;
+  --down-latar:       #3b1a1a;
+  --down-tepi:        #5a2a2a;
+  --hati-hati-latar:  #2e2717;
+  --hati-hati-tepi:   #a16207;
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+
+  /* Lengkung sudut */
+  --r-kecil: 4px; --r-sedang: 8px; --r-besar: 15px; --r-bulat: 999px;
+
+  /* Ukuran huruf */
+  --f-xs: 11px; --f-s: 12px; --f-m: 13px; --f-n: 14px;
+  --f-l: 17px;  --f-xl: 22px; --f-angka: 30px;
+
+  --huruf: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --huruf-mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+
+  --alih: .18s ease;   /* durasi transisi baku */
+}
+
+/* ---------------------------------------------------------------------
+   2) DASAR
+   --------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--huruf);
+  background: var(--bg);
+  color: var(--teks);
+  margin: 0;
+  padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  line-height: 1.5;
+}
+
+body.terpusat {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; padding: var(--sp-6);
+}
+body.terpusat-atas {
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; padding: 40px var(--sp-4);
+}
+
+h1 { font-size: var(--f-xl); margin: 0; font-weight: 700; }
+h2 { font-size: var(--f-l); margin: 0 0 var(--sp-3); font-weight: 700; }
+
+a { color: var(--tautan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus indicator; without it keyboard users cannot tell where they are. */
+:focus-visible {
+  outline: 2px solid var(--aksi-tepi);
+  outline-offset: 2px;
+  border-radius: var(--r-kecil);
+}
+
+.bilah {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--sp-4); flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--garis);
+  margin-bottom: var(--sp-5);
+}
+.bilah .judul-kiri { display: flex; align-items: baseline; gap: var(--sp-3); }
+.bilah .anak-judul { color: var(--teks-redup); font-size: var(--f-m); }
+
+.nav {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--f-m); color: var(--teks-2); flex-wrap: wrap;
+}
+.nav .sapa { color: var(--teks-redup); margin-right: var(--sp-2); }
+.nav .sapa b { color: var(--teks); }
+
+.nav a {
+  color: var(--teks-2); padding: 6px 10px; border-radius: var(--r-kecil);
+  transition: background var(--alih), color var(--alih);
+}
+.nav a:hover { background: var(--permukaan-3); color: var(--teks); text-decoration: none; }
+
+.nav a.aktif {
+  color: #fff; background: var(--permukaan-3);
+  box-shadow: inset 0 -2px 0 var(--brand-terang);
+}
+
+.nav form { margin: 0; }
+
+/* Thin brand-color line at the top of the page; the only place BSP green appears (identity, not status). */
+.pita-merek {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-terang));
+  z-index: 50;
+}
+
+/* ---------------------------------------------------------------------
+   4) KOMPONEN
+   --------------------------------------------------------------------- */
+
+/* --- Tombol --- */
+button, .tombol {
+  font-family: inherit; font-size: var(--f-s); line-height: 1.6;
+  background: var(--permukaan-3); color: var(--teks);
+  border: 1px solid var(--garis-terang);
+  padding: 6px 12px; border-radius: var(--r-kecil);
+  cursor: pointer; text-decoration: none; display: inline-block;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+button:hover, .tombol:hover {
+  background: var(--garis-terang); border-color: #666; text-decoration: none;
+}
+
+.tombol-utama, button.utama {
+  background: var(--aksi); border-color: var(--aksi-tepi); color: #fff;
+  font-weight: 600;
+}
+.tombol-utama:hover, button.utama:hover { background: var(--aksi-gelap); }
+
+.tombol-lebar { display: block; width: 100%; text-align: center; padding: 10px; font-size: var(--f-n); }
+
+/* Tombol berbentuk pil: pemilih periode, unduhan */
+.pil {
+  padding: 6px 14px; border-radius: var(--r-bulat);
+  border: 1px solid var(--garis-terang); background: var(--permukaan-2);
+  color: var(--teks-2); cursor: pointer; font-size: var(--f-s);
+  text-decoration: none; display: inline-block; line-height: 1.6;
+  transition: background var(--alih), border-color var(--alih), color var(--alih);
+}
+.pil:hover { background: var(--permukaan-3); border-color: #666; color: var(--teks); text-decoration: none; }
+.pil.aktif { background: var(--aksi-gelap); border-color: var(--aksi-tepi); color: #fff; font-weight: 700; }
+
+.tombol[aria-disabled="true"], .tombol.mati-tombol {
+  opacity: .35; pointer-events: none;
+}
+
+/* --- Kotak isi (kartu angka, panel form) --- */
+.kartu {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: var(--sp-4) 18px;
+}
+.kartu .judul {
+  color: var(--teks-redup); font-size: var(--f-xs);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.kartu .angka { font-size: var(--f-angka); font-weight: 700; margin: var(--sp-2) 0 var(--sp-1); }
+.kartu .sub { color: #999; font-size: var(--f-s); line-height: 1.5; }
+
+.kartu-mini {
+  background: var(--permukaan); border: 1px solid var(--garis);
+  border-radius: 6px; padding: 10px 14px;
+}
+.kartu-mini .judul { color: #777; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+.kartu-mini .isi { font-size: var(--f-n); margin-top: var(--sp-1); }
+
+.panel {
+  background: var(--permukaan-2); border: 1px solid #383838;
+  border-radius: var(--r-sedang); padding: 30px 34px;
+  width: 380px; max-width: 100%;
+}
+.panel-lebar { width: 520px; }
+.panel .pengantar {
+  color: var(--teks-redup); font-size: var(--f-m);
+  margin: var(--sp-1) 0 18px; line-height: 1.55;
+}
+
+/* --- Formulir --- */
+label { display: block; font-size: var(--f-s); color: #aaa; margin: var(--sp-3) 0 var(--sp-1); }
+label.label-atas { text-transform: uppercase; letter-spacing: .4px; }
+
+input[type="text"], input[type="password"], input[type="email"], select {
+  width: 100%; font-family: inherit; font-size: var(--f-n);
+  background: #111; border: 1px solid var(--garis-terang); color: var(--teks);
+  padding: 9px 11px; border-radius: var(--r-kecil);
+  transition: border-color var(--alih);
+}
+input:focus, select:focus { border-color: var(--aksi-tepi); }
+
+.baris-centang {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 10px; font-size: var(--f-s); color: #aaa;
+  text-transform: none; cursor: pointer;
+}
+.baris-centang input { width: auto; }
+
+.meter { height: 6px; border-radius: 3px; background: var(--garis); margin-top: var(--sp-2); overflow: hidden; }
+.meter > div { height: 100%; width: 0; transition: width .2s ease, background .2s ease; }
+.meter-teks { font-size: var(--f-s); margin-top: 5px; color: var(--teks-redup); }
+
+.aturan { list-style: none; padding: 0; margin: var(--sp-2) 0 0; font-size: var(--f-s); }
+.aturan li { color: var(--teks-redup); margin: 2px 0; }
+.aturan li.ok { color: var(--up); }
+.aturan li::before { content: "\2717\00a0\00a0"; }
+.aturan li.ok::before { content: "\2713\00a0\00a0"; }
+
+/* --- Kotak pesan --- */
+.pesan-sukses, .pesan-galat, .pesan-hati-hati {
+  padding: 9px 12px; border-radius: var(--r-kecil);
+  font-size: var(--f-m); margin-bottom: var(--sp-3); line-height: 1.5;
+}
+.pesan-sukses     { background: var(--up-latar);   color: var(--up);   border: 1px solid var(--up-tepi); }
+.pesan-galat      { background: var(--down-latar); color: var(--down); border: 1px solid var(--down-tepi); }
+.pesan-hati-hati  { background: var(--hati-hati-latar); color: #eab308; border: 1px solid var(--hati-hati-tepi); }
+
+table { border-collapse: collapse; width: 100%; }
+th, td {
+  padding: 9px 14px; text-align: left;
+  border-bottom: 1px solid var(--garis); font-size: var(--f-m);
+}
+th {
+  background: var(--permukaan-3); font-size: var(--f-s);
+  text-transform: uppercase; letter-spacing: .4px; color: #aaa;
+  font-weight: 600; white-space: nowrap;
+}
+tbody tr { transition: background var(--alih); }
+tbody tr:hover { background: #242424; }
+
+/* --- Lencana kecil --- */
+.lencana {
+  display: inline-block; padding: 2px 9px; border-radius: var(--r-bulat);
+  font-size: var(--f-xs); font-weight: 600; letter-spacing: .3px;
+  border: 1px solid transparent;
+}
+.lencana-up        { background: var(--up-latar); color: var(--up); border-color: var(--up-tepi); }
+.lencana-down      { background: var(--down-latar); color: var(--down); border-color: var(--down-tepi); }
+.lencana-menunggu  { background: var(--hati-hati-latar); color: var(--hati-hati); border-color: var(--hati-hati-tepi); }
+.lencana-netral    { background: #33333a; color: #b9b9c4; border-color: #44444d; }
+
+/* Status dots differ in shape, not only color, so color-blind readers can tell them apart. */
+.titik {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; margin-right: var(--sp-2); flex: none;
+}
+.titik-up { background: var(--up); }
+.titik-down { background: var(--down); }
+.titik-tanya { background: var(--tak-diketahui); }
+
+/* --- Bilah persentase --- */
+.bilah-nilai {
+  background: var(--garis); border-radius: 3px; height: 6px; width: 90px;
+  display: inline-block; vertical-align: middle; margin-right: var(--sp-2);
+  overflow: hidden;
+}
+.bilah-nilai > i { display: block; height: 100%; }
+
+/* --- Keluaran perintah / teks mentah --- */
+.keluaran {
+  font-family: var(--huruf-mono); font-size: var(--f-s);
+  background: #141414; border: 1px solid var(--garis);
+  border-radius: 6px; padding: var(--sp-3) var(--sp-4);
+  white-space: pre-wrap; overflow-x: auto; color: #d6d6d6;
+}
+
+/* --- Catatan kaki halaman --- */
+.catatan {
+  color: var(--teks-samar); font-size: var(--f-xs);
+  margin-top: var(--sp-6); line-height: 1.7;
+  padding-top: var(--sp-4); border-top: 1px solid #2a2a2a;
+}
+
+.tautan-bawah { text-align: center; margin-top: var(--sp-4); font-size: var(--f-m); }
+
+.kosong {
+  color: var(--teks-redup); font-size: var(--f-m);
+  padding: var(--sp-6); text-align: center;
+  border: 1px dashed var(--garis); border-radius: var(--r-sedang);
+}
+
+/* ---------------------------------------------------------------------
+   5) KELAS BANTU
+   --------------------------------------------------------------------- */
+.hijau { color: var(--up); }
+.merah { color: var(--down); }
+.kuning { color: var(--hati-hati); }
+.biru  { color: var(--tautan); }
+.abu   { color: var(--tak-diketahui); }
+.redup { color: var(--teks-redup); }
+
+.mono { font-family: var(--huruf-mono); }
+.kanan { text-align: right; }
+.nowrap { white-space: nowrap; }
+.dorong-kanan { margin-left: auto; }
+
+/* Read by screen readers, not visible on screen. */
+.khusus-pembaca-layar {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.kisi-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1100px) { .kisi-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px)  { .kisi-4 { grid-template-columns: 1fr; } }
+
+@media (max-width: 720px) {
+  body { padding: var(--sp-4); }
+  .bilah { align-items: flex-start; }
+}
+
+/* Respect users who disable animations in their system settings. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+.demo-blok { margin: 34px 0; }
+.demo-judul { font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--teks-samar); border-bottom: 1px solid var(--garis);
+  padding-bottom: 6px; margin-bottom: 14px; }
+.deret { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.contoh-token { display: flex; gap: 10px; flex-wrap: wrap; }
+.token { width: 128px; }
+.token .kotak { height: 42px; border-radius: 6px; border: 1px solid #00000055; }
+.token .nm { font-size: 11px; color: var(--teks-redup); margin-top: 5px; }
+</style></head><body>
+
+<div class="pita-merek"></div>
+
+<div class="bilah">
+  <div class="judul-kiri">
+    <h1>Sistem Desain NSM</h1>
+    <span class="anak-judul">pratinjau komponen bersama</span>
+  </div>
+  <nav class="nav">
+    <span class="sapa">Halo, <b>admin</b></span>
+    <a href="#" class="aktif">Dashboard</a>
+    <a href="#">Report</a>
+    <a href="#">Kelola User</a>
+    <a href="#">Audit Log</a>
+    <a href="#">Notifikasi</a>
+    <button>Logout</button>
+  </nav>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Warna: identitas, aksi, status</div>
+  <div class="contoh-token">
+    <div class="token"><div class="kotak" style="background:var(--brand)"></div><div class="nm">--brand<br>identitas BSP</div></div>
+    <div class="token"><div class="kotak" style="background:var(--aksi)"></div><div class="nm">--aksi<br>tombol utama</div></div>
+    <div class="token"><div class="kotak" style="background:var(--up)"></div><div class="nm">--up<br>device hidup</div></div>
+    <div class="token"><div class="kotak" style="background:var(--down)"></div><div class="nm">--down<br>device mati</div></div>
+    <div class="token"><div class="kotak" style="background:var(--hati-hati)"></div><div class="nm">--hati-hati<br>perlu perhatian</div></div>
+    <div class="token"><div class="kotak" style="background:var(--tak-diketahui)"></div><div class="nm">--tak-diketahui<br>dijeda</div></div>
+  </div>
+  <p class="catatan" style="margin-top:14px;border:0;padding:0">
+    Hijau BSP tidak dipakai untuk tombol. Di aplikasi ini hijau sudah berarti UP,
+    jadi kalau tombol ikut hijau, mata kehilangan patokan saat memindai status.
+  </p>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Tombol dan ikon</div>
+  <div class="deret">
+    <button class="utama">Tombol Utama</button>
+    <button>Tombol Biasa</button>
+    <a href="#" class="tombol">Tautan Tombol</a>
+    <span class="pil aktif">24 Jam</span>
+    <span class="pil">7 Hari</span>
+    <a href="#" class="pil">Excel</a>
+  </div>
+  <div class="deret" style="margin-top:14px" id="deret-ikon"></div>
+  <p class="catatan" style="margin-top:10px;border:0;padding:0">
+    Ikon digambar sendiri sebagai SVG pada kotak 24x24, tebal garis 2, mewarisi
+    warna teks. Tidak memakai emoji, yang tampilannya berbeda di tiap sistem.
+  </p>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Kartu angka</div>
+  <div class="kisi-4">
+    <div class="kartu"><div class="judul">Device Hidup</div><div class="angka hijau">5 / 5</div><div class="sub">Semua device merespons</div></div>
+    <div class="kartu"><div class="judul">Availability</div><div class="angka merah">81.49%</div><div class="sub">Rata-rata pada periode ini</div></div>
+    <div class="kartu"><div class="judul">Insiden</div><div class="angka kuning">75</div><div class="sub">Total down 22 jam 12 menit</div></div>
+    <div class="kartu"><div class="judul">Latency</div><div class="angka biru">10.41 ms</div><div class="sub">Paling lambat Gateway WiFi</div></div>
+  </div>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Tabel, lencana, bilah nilai</div>
+  <table>
+    <thead><tr><th>Status</th><th>Device</th><th>Availability</th><th>Insiden</th><th>Aksi</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="titik titik-up"></span><span class="hijau">UP</span></td>
+        <td>VM Ubuntu</td>
+        <td><span class="bilah-nilai"><i style="width:100%;background:var(--up)"></i></span><span class="hijau">100.00%</span></td>
+        <td>0</td><td><a href="#" class="tombol nowrap">Riwayat</a></td>
+      </tr>
+      <tr>
+        <td><span class="titik titik-down"></span><span class="merah">DOWN</span></td>
+        <td>Gateway WiFi</td>
+        <td><span class="bilah-nilai"><i style="width:54%;background:var(--down)"></i></span><span class="merah">53.63%</span></td>
+        <td class="kuning">69 <span class="lencana lencana-menunggu" style="margin-left:6px">tidak stabil</span></td>
+        <td><a href="#" class="tombol nowrap">Riwayat (69)</a></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="deret" style="margin-top:14px">
+    <span class="lencana lencana-up">AKTIF</span>
+    <span class="lencana lencana-menunggu">MENUNGGU</span>
+    <span class="lencana lencana-down">Tingkat 2</span>
+    <span class="lencana lencana-netral">DIJEDA</span>
+  </div>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Pesan dan keadaan kosong</div>
+  <div class="pesan-sukses">Pengaturan notifikasi disimpan.</div>
+  <div class="pesan-galat">Password lama salah.</div>
+  <div class="pesan-hati-hati">Tautan verifikasi berlaku 30 menit.</div>
+  <div class="kosong" style="margin-top:12px">Belum ada device yang terdaftar.</div>
+</div>
+
+<div class="demo-blok">
+  <div class="demo-judul">Formulir</div>
+  <div class="panel">
+    <h2>Contoh Panel</h2>
+    <div class="pengantar">Panel dipakai halaman masuk, daftar, dan halaman akun.</div>
+    <label class="label-atas">Username</label>
+    <input type="text" value="admin">
+    <label class="label-atas">Password</label>
+    <input type="password" value="rahasia">
+    <div class="meter"><div style="width:85%;background:#84cc16"></div></div>
+    <div class="meter-teks">Kuat</div>
+    <ul class="aturan">
+      <li class="ok">Minimal 8 karakter</li>
+      <li class="ok">Ada huruf besar</li>
+      <li>Ada angka</li>
+    </ul>
+    <label class="baris-centang"><input type="checkbox"> Lihat password</label>
+    <button class="tombol-utama tombol-lebar" style="margin-top:20px">Masuk</button>
+  </div>
+</div>
+
+<div class="catatan">
+  Seluruh tampilan di atas berasal dari satu berkas <b>nsm.css</b>. Mengubah satu
+  nilai token akan mengubah seluruh halaman sekaligus, dan itulah yang membuat
+  tampilan antar halaman tidak bisa lagi melenceng sendiri-sendiri.
+</div>
+
+<script>/* NSM interface icons (controls: pause, resume, download, copy, close), drawn as inline SVG instead of emoji so they render the same everywhere and follow the theme. All icons use a 24x24 box, 2px strokes, round caps, and currentColor. ikon.js draws devices; this file draws controls. */
+
+var IKON_UI_JALUR = {
+  // Kontrol pemantauan
+  jeda:      ["M10 5v14", "M16 5v14"],
+  lanjut:    ["M7 4.5l12 7.5-12 7.5z"],
+
+  unduh:     ["M12 3v12", "M7 11l5 5 5-5", "M4 20h16"],
+  salin:     ["M9 9h10v10H9z", "M5 15V5h10"],
+  segarkan:  ["M20 12a8 8 0 1 1-2.6-5.9", "M20 4v4h-4"],
+
+  kembali:   ["M15 5l-7 7 7 7"],
+  tutup:     ["M6 6l12 12", "M18 6L6 18"],
+  cari:      ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "M20 20l-4-4"],
+
+  // Penanda keadaan
+  ceklis:    ["M5 13l4 4L19 7"],
+  peringatan:["M12 4l9 16H3z", "M12 10v4", "M12 17.5v.5"],
+  info:      ["M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z", "M12 11v5", "M12 7.5v.5"],
+  jam:       ["M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z", "M12 8v4.5l3 1.8"],
+  lonceng:   ["M6 16V11a6 6 0 1 1 12 0v5l2 3H4z", "M10 22h4"]
+};
+
+/* Returns a new <svg> element (never an HTML string), so the app has no innerHTML path. */
+function ikonUI(nama, ukuran) {
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.createElementNS(NS, "svg");
+  var s = ukuran || 16;
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", s);
+  svg.setAttribute("height", s);
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  var jalur = IKON_UI_JALUR[nama] || [];
+  jalur.forEach(function (d) {
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d);
+    svg.appendChild(p);
+  });
+  return svg;
+}
+
+/* Icon-only button; the label is required so screen reader and new users can understand it. */
+function tombolIkon(nama, penjelasan, kelas) {
+  var b = document.createElement("button");
+  b.className = kelas || "";
+  b.setAttribute("title", penjelasan);
+  b.setAttribute("aria-label", penjelasan);
+  b.appendChild(ikonUI(nama, 15));
+  return b;
+}
+
+var nama = ["jeda","lanjut","unduh","salin","segarkan","kembali","tutup","cari","ceklis","peringatan","info","jam","lonceng"];
+var deret = document.getElementById("deret-ikon");
+nama.forEach(function (n) {
+  var b = document.createElement("button");
+  b.title = n; b.style.display = "grid"; b.style.placeItems = "center";
+  b.style.width = "34px"; b.style.height = "30px";
+  b.appendChild(ikonUI(n, 16));
+  deret.appendChild(b);
+});
+</script>
+</body></html>

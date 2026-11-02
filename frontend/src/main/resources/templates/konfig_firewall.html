@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- CSRF token for the block/unblock POSTs; without it Spring Security returns 403, which reads like a permissions problem. -->
+<meta name="_csrf" th:content="${_csrf.token}" content="">
+<meta name="_csrf_header" th:content="${_csrf.headerName}" content="">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Firewall - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+<link rel="stylesheet" href="/ikon.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Firewall', 'lubang mana yang terbuka, dan siapa yang ditolak', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('firewall')}"></div>
+
+<!-- Firewall sits in the Configuration group, not Traffic: it shows configured state ("which holes are open"), not flows. -->
+<div class="bagian">
+  <div class="hal-singkat">
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Dibaca dari `ufw status` di tiap perangkat Linux memakai izin sudo yang HANYA BOLEH MEMBACA — `ufw disable` ditolak sistem, bukan sekadar tidak dipanggil NSM.">
+      Dibaca dengan izin yang hanya boleh membaca
+    </span>
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Pemeriksaan port di halaman Layanan menjawab '3306 bisa saya sambung dari sini'; aturan firewall menjawab '3306 terbuka untuk siapa saja'. Dua-duanya bisa benar sekaligus, dan yang kedua yang menentukan apakah lubangnya wajar.">
+      Beda dengan pemeriksaan port di halaman Layanan
+    </span>
+  </div>
+
+  <!-- Three-layer map, one card per firewall NSM uses: ufw (Linux servers), router ACL (the only door to Location B), Windows Firewall (the laptop running NSM). Placed before the posture strip. -->
+  <h4 id="judul-peta" class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-layers"/></svg>Tiga lapis firewall di lab ini</h4>
+  <div class="jelas-isi" data-untuk="#judul-peta">Tiga firewall yang sifatnya berbeda, dibaca lewat tiga jalur berbeda. <b>ufw</b> di tiap server Linux melindungi host itu sendiri, dibaca lewat SSH dengan izin yang hanya boleh membaca. <b>ACL router</b> di R2 adalah satu-satunya pintu dari Lokasi A ke Lokasi B — paket yang tidak berhak ditolak sebelum masuk jaringan lokal, dan baris terakhirnya (<code>deny ip any any log</code>) mencatat semua yang tidak diizinkan. <b>Windows Firewall</b> di laptop ini baru mulai dibaca 15 Agustus 2026, langsung lewat <code>netsh</code> tanpa SSH sama sekali — laptop ini yang menjalankan NSM sendiri.</div>
+  <div class="peta-lapis" id="peta-lapis"></div>
+
+  <div class="postur-b" id="postur-firewall"></div>
+
+  <!-- Breach detection: did anything actually get through? Read from live connections (flow_koneksi), not the deny log, and placed above "Percobaan yang ditolak" because a successful breach is more urgent. -->
+  <h4 id="judul-bobol" class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-siren"/></svg>Deteksi pembobolan</h4>
+  <div class="jelas-isi" data-untuk="#judul-bobol">Menjawab "adakah yang berhasil TEMBUS", bukan "siapa yang mencoba". Log firewall hanya memuat yang DIBLOKIR — menurut definisinya pembobolan tidak akan muncul di sana. Bukti "berhasil masuk" ada di KONEKSI YANG BENAR-BENAR TERHUBUNG: NSM membaca koneksi TCP hidup di tiap perangkat (`ss -tin`) dan menandai koneksi ke port layanan sensitif (SSH, LDAP, MySQL, dst) yang datang dari alamat yang TIDAK terdaftar. Koneksi yang hidup berarti firewall meloloskannya; alamat yang tak dikenal berarti bukan pihak sah. Ini potret tiap 60 detik — ia membuktikan ADANYA koneksi tak sah, bukan meniadakannya.</div>
+  <div id="pembobolan"></div>
+
+  <!-- Automatic guard: decides who is protected (never banned) and which foreign hosts are blocked automatically versus only reviewed. The Block button really blocks: `penjaga_aksi` -> `ubah_firewall` -> `nsm-ubah-firewall` wrapper on the server. Blocks are temporary (60 minutes, lifted by the server). Blocking without a click is not implemented. -->
+  <h4 id="judul-jaga" class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-shield-check"/></svg>Penjagaan otomatis</h4>
+  <div class="jelas-isi" data-untuk="#judul-jaga">Otak auto-ban, dengan dua pengaman. PERTAMA, ALLOWLIST: tiap perangkat terdaftar (server, router, switch, gateway, NSM sendiri) tidak pernah diblokir otomatis, apa pun perilakunya — inilah yang mencegah salah tanda mengunci server sendiri. Server baru yang sah dilindungi dengan mendaftarkannya lebih dulu. KEDUA, otomatis hanya untuk POLA JELAS (memindai banyak port, gedoran berulang, atau koneksi TEMBUS ke layanan); host asing dengan satu koneksi wajar cuma ditandai untuk ditinjau, tidak diblokir. Tombol <b>Blokir</b> di tiap kartu BENAR-BENAR memasang aturan di firewall perangkat sasaran, lewat wrapper `nsm-ubah-firewall` di server — dan blokirnya SEMENTARA (60 menit, dibuka sendiri oleh server), supaya satu salah tanda tidak jadi aturan permanen yang terlupakan. Yang BELUM menyala: memblokir tanpa ada yang mengklik. Semua blokir sekarang menunggu keputusan manusia, dan tiap tindakannya tercatat di Audit Log serta tabel "Perubahan lewat NSM" di bawah.</div>
+  <div id="penjagaan"></div>
+
+  <h4 id="judul-tolak" class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-shield-x"/></svg>Percobaan yang ditolak</h4>
+  <div class="jelas-isi" data-untuk="#judul-tolak">Dari DUA sumber, digabung satu daftar. Router Cisco (ACL, `show logging`) mencatat percobaan ke Lokasi B — baris `deny ip any any log` di ujung ACL yang menghasilkannya, dan IOS menggabungkan penolakan serupa dalam satu jendela waktu, jadi angka paket berarti SEDIKITNYA sekian, bukan tepat sekian. `ufw` di server Linux (`/var/log/ufw.log`) mencatat percobaan ke Lokasi A — ditambahkan 14 Agustus 2026; sebelumnya ufw hanya dibaca aturannya, bukan pernah dibaca siapa yang mencoba menembusnya. Dikelompokkan per ALAMAT ASAL: satu percobaan itu kekeliruan, seratus percobaan dari satu alamat itu pemindaian.</div>
+  <div id="penolakan-acl"></div>
+
+  <!-- Rule quality: which rules should not be here. Uses the same queue shape as Config Compliance; similar findings across devices are merged. -->
+  <h4 id="judul-mutu" class="kepala judul-ikon" style="margin-top:18px">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>Mutu aturan</h4>
+  <div class="jelas-isi" data-untuk="#judul-mutu">Empat pemeriksaan, semuanya dihitung dari data yang sudah dimiliki NSM tanpa satu pun izin baru di perangkat: aturan yang terbuka untuk siapa saja, aturan kembar, aturan yang tidak pernah bisa cocok karena sudah tercakup aturan di atasnya, dan layanan yang dipantau tetapi portnya tidak diizinkan. Yang terakhir itu arah sebaliknya, dan justru yang memprediksi kerusakan: layanan yang tertutup firewall terbaca persis seperti layanan yang mati. Satu jenis temuan sengaja TIDAK dikerjakan — aturan yang tidak pernah kena lalu lintas — karena ufw tidak menyediakan pencacahnya, dan menebaknya berarti menyuruh orang menghapus aturan atas tuduhan yang tidak pernah diukur.</div>
+  <div id="mutu-aturan"></div>
+
+  <h4 id="judul-aturan" class="kepala judul-ikon" style="margin-top:18px">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-layers"/></svg>Aturan tiap perangkat, per lapis</h4>
+  <div class="jelas-isi" data-untuk="#judul-aturan">Tiga keadaan yang semuanya menghasilkan daftar aturan kosong, dan artinya berlawanan: firewall MENYALA tanpa aturan berarti kebijakan bawaan yang berlaku — kalau bawaannya deny incoming, mesin itu justru tertutup rapat. Firewall MATI berarti mesin itu terbuka. Belum pernah terbaca berarti NSM tidak tahu apa-apa. Karena itu tiap perangkat selalu menyatakan keadaannya lebih dulu, sebelum tabelnya. ACL router ditampilkan ringkas di sini — daftar barisnya yang lengkap dan bisa dibandingkan antar waktu ada di halaman Potret Konfigurasi.</div>
+
+  <div class="sub-lapis"><svg class="ikon"><use href="/ikon-tabler.svg#i-server"/></svg>ufw &mdash; server Linux</div>
+  <div id="firewall-ufw" class="grid-fw"></div>
+
+  <div class="sub-lapis"><svg class="ikon"><use href="/ikon-tabler.svg#i-router"/></svg>ACL router &mdash; Lokasi B</div>
+  <div id="firewall-acl"></div>
+
+  <div class="sub-lapis"><svg class="ikon"><use href="/ikon-tabler.svg#i-hard-drive"/></svg>Windows Firewall &mdash; laptop</div>
+  <div id="firewall-winfw" class="grid-fw"></div>
+
+  <!-- Change history made through NSM, separate from the state cards above: it answers who changed what and why. -->
+  <h4 id="judul-ubah" class="sub-judul-fw kepala">Perubahan lewat NSM</h4>
+  <div class="jelas-isi" data-untuk="#judul-ubah">Percobaan yang DITOLAK ikut ditampilkan: seseorang mencoba memblokir alamat NSM sendiri adalah kejadian yang pantas diketahui, apa pun niatnya, dan daftar yang hanya memuat keberhasilan tidak meninggalkan jejak apa pun untuk percobaan seperti itu. Semua blokir dari NSM punya batas waktu dan membuka sendiri — blokir permanen yang dipasang mesin akan tetap ada lama setelah alasannya terlupakan, dan tidak ada yang berani menghapusnya karena tidak ada yang tahu kenapa ia ada.</div>
+  <div class="gulir-tabel"><table data-hal="5">
+    <thead>
+      <tr>
+        <th>Waktu</th>
+        <th>Perangkat</th>
+        <th>Aksi</th>
+        <th>Sasaran</th>
+        <th>Lama</th>
+        <th>Alasan</th>
+        <th>Oleh</th>
+        <th>Hasil</th>
+      </tr>
+    </thead>
+    <tbody id="baris-fw-ubah"></tbody>
+  </table></div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/ikon.js"></script>
+<script src="/konfig.js"></script>
+<!-- The `?` button on each section title carries long, searchable explanations; hover hints are for short notes on rows and badges. It also works on touch screens. -->
+<script src="/js/jelas.js"></script>
+<!-- History table pagination (5 rows). Called again by the renderer after its tbody is filled, since the table is empty at load. -->
+<script src="/js/halaman-tabel.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

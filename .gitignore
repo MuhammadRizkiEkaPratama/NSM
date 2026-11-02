@@ -1,0 +1,78 @@
+# =============================================================================
+# NSM -- .gitignore
+#
+# Secrets never enter Git. Secret files stay on disk and are ignored; their
+# `*.contoh` (example) counterparts are tracked and show the shape without values.
+# =============================================================================
+
+# --- SECRETS: NEVER TRACK ---------------------------------------------------
+.env
+*.env
+!*.env.contoh
+backend/.env
+
+# Local application settings (credentials). Copy from `application.properties.contoh`.
+frontend/src/main/resources/application.properties
+frontend/target/classes/application.properties
+
+# Lab LDAP account passwords, plaintext.
+ldap/sandi-user.txt
+
+# LDAP password-hash backups.
+backend/ldap-userPassword-cadangan-*.json
+
+# Lab keystore/truststore and CA key.
+*.jks
+*.p12
+*.key
+*.pem
+nsm-truststore.jks
+
+# SSH private keys, in case one is ever copied into the project folder.
+id_rsa
+id_ed25519
+nsm_vm
+nsm_laptop
+
+# --- ENVIRONMENT & BUILD OUTPUT ---------------------------------------------
+venv/
+__pycache__/
+*.pyc
+*.pyo
+target/
+node_modules/
+.mvn/wrapper/maven-wrapper.jar
+
+# --- DATABASE & RUNTIME DATA ------------------------------------------------
+# Not secret, but not code: this DATA grows on its own, and committing it
+# adds large binary diffs nobody can read.
+nsm.db
+penyangga.db
+penyangga.db-shm
+penyangga.db-wal
+*.db-shm
+*.db-wal
+
+# Encrypted backups (large and growing daily).
+backup/
+
+# --- TEMPORARY OUTPUT -------------------------------------------------------
+*.log
+*.tmp
+laporan_*.xlsx
+laporan_*.docx
+ci-hasil-*.txt
+
+# Runtime state that scripts write for themselves (what was last broken, what
+# was last restored). Changes on every run and means nothing on another machine.
+backend/injeksi-terakhir.json
+backend/verifikasi-pulih-terakhir.json
+
+
+# Manual copies made before editing. Git already keeps previous versions;
+# another copy just creates two sources of truth.
+*.sebelum-redesign
+
+# Guide documents: screenshots and setting values may contain secrets.
+Buku-Panduan-NSM.docx
+*.docx.sebelum-sensor

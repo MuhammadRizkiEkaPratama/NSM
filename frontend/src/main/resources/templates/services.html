@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Layanan - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#alat .pemisah { width: 1px; height: 22px; background: var(--garis); margin: 0 6px; }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+#kartu { margin-top: var(--sp-3); }
+table { margin-top: var(--sp-5); }
+th, td { vertical-align: top; }
+
+.sel-status { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+td .nama-layanan { font-weight: 600; }
+td .alamat-layanan { color: var(--teks-redup); font-size: var(--f-s);
+                     font-family: var(--huruf-mono); }
+td.angka { font-variant-numeric: tabular-nums; }
+td.nowrap { white-space: nowrap; }
+
+/* Cause row, directly under the failing service row so "red" and "why red" read together. */
+tr.baris-sebab td { border-top: none; padding-top: 0; color: var(--down);
+                    font-size: var(--f-s); line-height: 1.5; }
+
+tr.baris-riwayat > td { background: var(--permukaan); padding: 0; }
+.panel-riwayat { padding: 16px 18px; }
+.panel-riwayat h4 { margin: 0 0 var(--sp-2); font-size: var(--f-n); }
+.kejadian { border: 1px solid var(--garis); border-radius: var(--r-sedang);
+            padding: 12px 14px; margin-bottom: var(--sp-3);
+            background: var(--permukaan-2); }
+.kejadian .waktu-kejadian { font-size: var(--f-s); color: var(--teks-redup); }
+.kejadian .sebab-kejadian { margin-top: 6px; line-height: 1.55; }
+
+/* Evidence chain: each layer checked and its result, pointing at the layer that failed. */
+ul.bukti { list-style: none; padding: 0; margin: var(--sp-3) 0 0;
+           font-size: var(--f-s); }
+ul.bukti li { margin: 3px 0; padding-left: 20px; position: relative;
+              line-height: 1.5; }
+ul.bukti li.ok { color: var(--up); }
+ul.bukti li.gagal { color: var(--down); }
+ul.bukti li.netral { color: var(--teks-redup); }
+ul.bukti li.ok::before { content: "\2713"; position: absolute; left: 2px; }
+ul.bukti li.gagal::before { content: "\2717"; position: absolute; left: 2px; }
+ul.bukti li.netral::before { content: "\00b7"; position: absolute; left: 4px; }
+
+.saran { margin-top: var(--sp-3); padding: 10px 12px; border-radius: var(--r-kecil);
+         background: var(--hati-hati-latar); border: 1px solid var(--hati-hati-tepi);
+         color: var(--hati-hati); font-size: var(--f-s); line-height: 1.55; }
+.saran b { color: #fde68a; }
+
+details.diagnosa { margin-top: var(--sp-3); }
+details.diagnosa summary { cursor: pointer; font-size: var(--f-s);
+                           color: var(--tautan); }
+details.diagnosa pre { background: var(--permukaan-0); padding: var(--sp-3); margin: var(--sp-2) 0 0;
+                       border-radius: var(--r-kecil); overflow-x: auto;
+                       font-size: var(--f-s); color: var(--teks-2);
+                       font-family: var(--huruf-mono); max-height: 340px; }
+</style>
+</head>
+<body th:attr="data-periode=${period}">
+
+<div th:replace="~{fragmen/nav :: bilah('Layanan', 'apakah yang di atas device benar-benar melayani', 'services')}"></div>
+
+<div id="alat">
+  <span class="redup kecil">Periode</span>
+  <span class="pil" data-p="1h" role="button" tabindex="0">1 Jam</span>
+  <span class="pil" data-p="24h" role="button" tabindex="0">24 Jam</span>
+  <span class="pil" data-p="7d" role="button" tabindex="0">7 Hari</span>
+  <span class="pil" data-p="30d" role="button" tabindex="0">30 Hari</span>
+  <span class="pemisah"></span>
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<div id="kartu" class="kisi-4"></div>
+
+<div class="gulir-tabel"><table>
+  <thead>
+    <tr>
+      <!-- Columns without `data-urut` are intentionally unsortable: Status is already the default order and Action only holds buttons. Number columns sort by the `data-nilai` set in services.js (see js/urut.js). -->
+      <th>Status</th>
+      <th data-urut="teks">Layanan</th>
+      <th data-urut="teks">Device</th>
+      <th data-istilah="lapis-layanan" data-urut="teks">Jenis</th>
+      <th data-istilah="availability" data-urut="angka">Availability</th>
+      <th data-istilah="insiden" data-urut="angka">Insiden</th>
+      <th data-istilah="total-down" data-urut="angka">Total Down</th>
+      <th data-urut="angka">Waktu Jawab</th>
+      <th data-urut="waktu">Terakhir Cek</th>
+      <th><span class="khusus-pembaca-layar">Aksi</span></th>
+    </tr>
+  </thead>
+  <tbody id="baris"></tbody>
+</table></div>
+
+<div class="catatan">
+  Halaman ini menjawab pertanyaan yang <b>tidak bisa</b> dijawab dashboard:
+  ping hanya membuktikan mesinnya menyala, sedangkan layanan di atasnya bisa
+  mati tanpa mengubah hasil ping sama sekali. Kartu device tetap hijau dan
+  memang benar; yang berhenti Apache, dan ping tidak tahu apa-apa soal Apache.
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Pemeriksaan dilakukan berlapis, dan lapis mana yang jatuh itulah diagnosisnya. ICMP menjawab apakah mesinnya menyala. TCP menjawab apakah ada program yang mendengarkan di port itu. HTTP menjawab apakah jawabannya benar, bukan sekadar ada. MySQL menjawab apakah yang menjawab di port itu benar-benar MySQL. Layanan Web Server BSP juga mencari penanda teks di halaman, jadi kalau MySQL di device lain mati, layanan HTTP ikut merah karena halamannya kehilangan kalimat itu.">
+    Bagaimana sebuah layanan dinyatakan bermasalah?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/services.js"></script>
+<script src="/js/urut.js"></script>
+<script src="/js/lipatan.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Penemuan Perangkat - NSM</title>
+<meta name="_csrf" th:content="${_csrf.token}" content="">
+<meta name="_csrf_header" th:content="${_csrf.headerName}" content="">
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Penemuan Perangkat', 'pindai subnet, kenali, lalu putuskan sendiri', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('penemuan')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-pindai">Memindai sebuah subnet berarti
+  mengirim paket ke tiap alamat di dalamnya. Yang menjawab dicatat sebagai
+  TAWARAN, bukan ditambahkan jadi perangkat: alat pemantau yang menambahkan
+  sendiri apa pun yang dilihatnya memberi siapa pun yang bisa memasang satu
+  alamat IP kemampuan menambah beban ke alat itu. Rentang alamat publik dan
+  rentang di atas 1024 alamat ditolak sebelum satu paket pun dikirim. Tiap
+  pemindaian tercatat di Audit Log.</div>
+
+<h4 id="judul-pindai" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-radar"/></svg>
+  Pindai jaringan</h4>
+
+<div class="kotak-pratinjau">
+  <div class="alat-penemuan">
+    <label><span class="judul-ikon"><svg class="ikon"><use href="/ikon-tabler.svg#i-network"/></svg>Jaringan</span>
+      <input type="text" id="jaringan" placeholder="192.168.1.0/24"
+             autocomplete="off" spellcheck="false">
+    </label>
+    <button type="button" id="tombol-pindai" class="tombol">Pindai</button>
+  </div>
+  <div class="ket">
+    Contoh: <span class="mono">192.168.1.0/24</span> (254 alamat),
+    <span class="mono">10.0.0.0/28</span> (14 alamat).
+    Kredensial SNMP <b>tidak</b> diminta di sini, jadi platform perangkat belum
+    dikenali &mdash; ping, TCP, dan layanan tetap berjalan tanpa itu.
+  </div>
+  <div id="hasil-pindai"></div>
+</div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>
+  Menunggu keputusan</h4>
+
+<div class="alat-penemuan">
+  <label><span class="judul-ikon"><svg class="ikon"><use href="/ikon-tabler.svg#i-filter"/></svg>Tampilkan</span>
+  <select id="saring-status">
+    <option value="baru" selected>Menunggu keputusan</option>
+    <option value="disetujui">Sudah jadi perangkat</option>
+    <option value="diabaikan">Diabaikan</option>
+    <option value="semua">Semua</option>
+  </select>
+  </label>
+</div>
+
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-penemuan">
+  <thead>
+    <tr><th>Alamat</th><th>Port terbuka</th><th>Platform</th>
+    <th>Pertama terlihat</th><th>Terakhir terlihat</th><th>Keputusan</th></tr>
+  </thead>
+  <tbody id="baris-penemuan">
+    <tr><td colspan="6" class="redup">Memuat&hellip;</td></tr>
+  </tbody>
+</table></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Menyetujui berarti &quot;benar, ini perangkat kita&quot; -- pernyataan yang BERBEDA dari &quot;silakan mulai dipantau sekarang&quot;. Perangkat yang dibuat dari sini SELALU dalam keadaan BELUM AKTIF: ia belum di-ping, belum menghasilkan insiden, dan belum menambah beban. Menyalakannya satu langkah lagi, di halaman device, tempat kredensial dan ambang batasnya memang diisi. Alasannya: perangkat yang langsung aktif mulai menghasilkan gangguan palsu pada saat kredensialnya belum diisi, dan gangguan palsu pada hari pertama adalah cara tercepat membuat orang berhenti mempercayai halaman insiden.">
+    Apa yang terjadi setelah saya menekan &ldquo;Setujui&rdquo;?
+  </span>
+</div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Tingkat bukti menyatakan seberapa kuat dasar pengenalan platform itu. `lab` = perintahnya pernah dijalankan pada perangkat sungguhan di sini. `rekaman` = penguraiannya diuji terhadap keluaran asli yang direkam. `dokumentasi` = disusun dari dokumentasi vendor, BELUM PERNAH dijalankan pada perangkat mana pun -- pengenalannya bisa saja benar, tetapi tidak ada yang pernah membuktikannya. Jalur menulis ke perangkat hanya menyala untuk tingkat `lab`, apa pun yang tertulis di berkas definisinya.">
+    Apa arti tingkat bukti di kolom Platform?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/penemuan.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

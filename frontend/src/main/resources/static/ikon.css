@@ -1,0 +1,184 @@
+/* Icon and status-dot animations. Only transform and opacity are animated, so the GPU can handle them without relayout. */
+
+.ikon { display: block; overflow: visible; }
+
+@keyframes napas {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.06); opacity: .88; }
+}
+.ikon.hidup { animation: napas 3.4s ease-in-out infinite; transform-origin: 50% 50%; }
+
+/* Dead device: fades slowly instead of blinking hard. */
+@keyframes redup {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+.ikon.mati { animation: redup 1.9s ease-in-out infinite; }
+.ikon.tanya { opacity: .5; }
+
+/* --- Titik status --- */
+.titik-status {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  position: relative; flex: none;
+}
+.titik-status.st-hidup { background: var(--up); }
+.titik-status.st-mati  { background: var(--down); }
+.titik-status.st-tanya { background: var(--teks-samar); }
+
+.titik-status.st-hidup::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--up); animation: menyebar 2.2s ease-out infinite;
+}
+@keyframes menyebar {
+  0%   { transform: scale(1);   opacity: .55; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.titik-status.st-mati::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--down); animation: menyebar 1.3s ease-out infinite;
+}
+
+/* Isometric style: floats gently to convey depth. */
+@keyframes mengapung {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2.5px); }
+}
+.ikon.iso.hidup { animation: mengapung 3.6s ease-in-out infinite; }
+.ikon.iso.mati  { animation: redup 2.2s ease-in-out infinite; }
+
+/* Tilt on touch. Needs `perspective` on the parent, otherwise the rotation looks flat. */
+.bungkus-ikon { perspective: 260px; }
+.ikon.iso { transition: transform .28s cubic-bezier(.2,.9,.3,1.2); }
+.bungkus-ikon:hover .ikon.iso {
+  animation: none;
+  transform: rotateX(14deg) rotateY(-16deg) scale(1.14);
+}
+
+/* Style 6: neon halo behind the shape. */
+.ikon.halo { overflow: visible; }
+@keyframes berpendar {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .78; }
+}
+.ikon.halo.hidup { animation: berpendar 2.8s ease-in-out infinite; }
+
+.ikon-gambar {
+  position: relative; display: inline-block; line-height: 0;
+  transition: transform .25s cubic-bezier(.2,.9,.3,1.2);
+}
+.ikon-gambar img { position: relative; z-index: 1; display: block; }
+
+.ikon-gambar::before {
+  content: ""; position: absolute; left: -28%; top: -28%;
+  width: 156%; height: 156%; border-radius: 50%; z-index: 0;
+}
+.ikon-gambar.hidup::before {
+  background: radial-gradient(circle,
+    rgba(74,222,128,.42) 0%, rgba(74,222,128,.14) 52%, rgba(74,222,128,0) 72%);
+  animation: berpendar 2.8s ease-in-out infinite;
+}
+.ikon-gambar.mati::before {
+  background: radial-gradient(circle,
+    rgba(248,113,113,.42) 0%, rgba(248,113,113,.14) 52%, rgba(248,113,113,0) 72%);
+  animation: berpendar 1.6s ease-in-out infinite;
+}
+.ikon-gambar.tanya::before {
+  background: radial-gradient(circle,
+    rgba(156,163,175,.24) 0%, rgba(156,163,175,0) 70%);
+}
+.ikon-gambar.mati img { filter: grayscale(.45) brightness(.78); }
+.ikon-gambar.tanya img { filter: grayscale(.85) brightness(.6); opacity: .65; }
+.bungkus-ikon:hover .ikon-gambar { transform: scale(1.12) translateY(-2px); }
+
+.sel-device { display: flex; align-items: center; gap: 11px; }
+.sel-device .bungkus-ikon {
+  cursor: pointer; border-radius: 10px; padding: 3px;
+  transition: transform .18s ease, background .18s ease;
+}
+.sel-device .bungkus-ikon:hover { background: #ffffff10; transform: translateY(-2px); }
+.sel-device .bungkus-ikon:active { transform: translateY(0) scale(.94); }
+.sel-device .nama { font-weight: 500; }
+.sel-device .jenis { color: var(--teks-redup); font-size: 11px; margin-top: 1px; }
+
+.kartu-ikon {
+  position: fixed; z-index: 60; background: var(--permukaan-2);
+  border: 1px solid var(--garis-terang); border-radius: 12px; padding: 14px 18px;
+  box-shadow: 0 14px 40px #000000aa; min-width: 232px;
+  animation: muncul .2s cubic-bezier(.2, .9, .3, 1.2);
+  transform-origin: top left;
+  /* Capped height: the fixed-position card can be taller than the screen for devices with many services, and page scrolling would not reach the last rows. */
+  max-height: calc(100vh - 24px); overflow-y: auto;
+}
+@keyframes muncul {
+  from { opacity: 0; transform: scale(.9) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+.kartu-ikon .atas { display: flex; align-items: center; gap: 12px; }
+.kartu-ikon .judul { font-size: 15px; font-weight: bold; }
+.kartu-ikon .sub { color: var(--teks-redup); font-size: 11px; margin-top: 2px; }
+.kartu-ikon .rinci { margin-top: 12px; font-size: 12px; color: var(--teks-2); line-height: 1.85; }
+.kartu-ikon .rinci b { color: var(--teks); font-weight: normal; }
+.kartu-ikon .nilai-hidup { color: var(--up); }
+.kartu-ikon .nilai-mati { color: var(--down); }
+
+.kartu-ikon .layanan-ikon {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--garis-terang);
+}
+.kartu-ikon .judul-bagian {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--teks-redup); margin-bottom: 7px;
+}
+.kartu-ikon .judul-bagian .cap-baik,
+.kartu-ikon .judul-bagian .cap-buruk {
+  margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 11px;
+}
+.kartu-ikon .judul-bagian .cap-baik  { color: var(--up); }
+.kartu-ikon .judul-bagian .cap-buruk { color: var(--down); font-weight: 700; }
+
+.kartu-ikon .kosong-layanan { font-size: 11px; color: var(--teks-samar); line-height: 1.5; }
+
+/* Note that the machine itself is unreachable, so the FAILED rows below do not prove the services are broken. Deliberately not red. */
+.kartu-ikon .catatan-layanan {
+  font-size: 11px; color: var(--teks-redup); line-height: 1.5;
+  margin-bottom: 8px; padding: 6px 8px;
+  background: var(--permukaan-3); border-left: 2px solid var(--teks-samar); border-radius: 3px;
+}
+
+.kartu-ikon .baris-layanan {
+  display: flex; align-items: center; gap: 8px; padding: 4px 0;
+}
+.kartu-ikon .baris-layanan + .baris-layanan { border-top: 1px solid var(--permukaan-3); }
+.kartu-ikon .isi-layanan { min-width: 0; flex: 1 1 auto; }
+.kartu-ikon .nama-svc {
+  font-size: 12px; color: var(--teks-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kartu-ikon .alamat-svc {
+  font-size: 10px; color: var(--teks-redup); font-family: var(--huruf-mono, monospace);
+}
+.kartu-ikon .vonis-svc {
+  font-size: 11px; font-weight: 700; white-space: nowrap; flex: 0 0 auto;
+}
+
+.kartu-ikon .titik-svc {
+  width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+}
+.kartu-ikon .svc-hidup { color: var(--up); }
+.kartu-ikon .svc-mati  { color: var(--down); }
+.kartu-ikon .svc-jeda,
+.kartu-ikon .svc-tanya { color: var(--tak-diketahui); }
+.kartu-ikon .titik-svc.svc-hidup { background: var(--up); box-shadow: 0 0 6px #4ade8088; }
+.kartu-ikon .titik-svc.svc-mati  { background: var(--down); box-shadow: 0 0 6px #f8717188; }
+.kartu-ikon .titik-svc.svc-jeda,
+.kartu-ikon .titik-svc.svc-tanya { background: var(--teks-samar); }
+
+/* Respect the user's reduced-motion system setting. */
+@media (prefers-reduced-motion: reduce) {
+  .ikon.hidup, .ikon.mati, .ikon.iso.hidup, .ikon.iso.mati, .ikon.halo.hidup,
+  .ikon-gambar.hidup::before, .ikon-gambar.mati::before,
+  .titik-status.st-hidup::after, .titik-status.st-mati::after,
+  .kartu-ikon { animation: none; }
+  .ikon.iso, .ikon-gambar { transition: none; }
+}

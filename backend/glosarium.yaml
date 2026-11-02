@@ -1,0 +1,854 @@
+# Indonesian -> English glossary for identifier renaming.
+#
+# SINGLE SOURCE OF TRUTH for all renames in this repo. The renaming tool reads
+# this file, not just people, so there are not two places that can disagree.
+#
+# ============================================================================
+# THREE BINDING RULES
+# ============================================================================
+#
+# 1. ONE INDONESIAN WORD -> EXACTLY ONE ENGLISH WORD.
+#
+#    This prevents the most likely damage: `hasil` becoming `result` in one
+#    module and `output` in another, so two functions that are really a pair stop
+#    looking like a pair. Drifting translations make code harder to read than
+#    before translation, because readers must guess whether two different names
+#    really mean something different.
+#
+# 2. WORDS NOT LISTED HERE ARE NOT REPLACED.
+#
+#    The tool refuses to guess. Identifiers containing an unknown word are left
+#    as is and reported, so the word enters this file as a decision rather than
+#    being translated silently with a guess nobody reads.
+#
+# 3. NAMES ALREADY IN ENGLISH ARE NOT TOUCHED.
+#
+#    `get`, `device`, `db`, `path`, `query`, `commit` and dozens more are already
+#    English. Listing them here only adds places to be wrong.
+#
+# ============================================================================
+# WHAT IS NOT TRANSLATED, AND WHY
+# ============================================================================
+#
+# USER-FACING TEXT stays Indonesian. The daily users of NSM are operators at BSP,
+# and changing "Perangkat tidak menjawab" into "Device is not responding" would
+# not translate the product but move it away from its users.
+#
+# That covers error messages, page labels, rejection sentences and audit lines.
+# What gets translated is the CODE: module names, function names, variable names,
+# comments and docstrings.
+#
+# Making user text switchable between languages is separate work (i18n) that needs
+# decisions not yet made: separate message files, how to choose the language, and
+# who maintains the translations.
+#
+# ============================================================================
+# WORD LEVEL, NOT IDENTIFIER LEVEL
+# ============================================================================
+#
+# The glossary works per WORD: `kirim_perintah` = kirim + perintah, so two entries
+# below cover thousands of names.
+
+# ---------------------------------------------------------------------------
+# WHOLE IDENTIFIERS -- when word-by-word gives awkward English
+# ---------------------------------------------------------------------------
+#
+# Indonesian puts the head noun FIRST, English puts it LAST:
+#
+#     peta ping    -> "map of ping"        -> ping_map,   not map_ping
+#     daftar putih -> "list that is white" -> allow_list, not list_allow
+#
+# Word-by-word translation therefore gives a reversed order for some names. This
+# section overrides it for WHOLE identifiers, and is checked BEFORE the
+# word-by-word translation.
+#
+# Only for the awkward ones, not all of them: a complete list of whole identifiers
+# would grow to thousands of lines and stop being read, which is the very problem
+# this word-level glossary avoids.
+pengenal:
+  # Phrases that must not be translated word by word. `buka blokir` is ONE English
+  # verb (`unblock`), not two; word-by-word gives `unblock_block`. All three
+  # members of the family are listed together so none is left in Indonesian alone.
+  unblock: unblock
+  unblock_acl: unblock_acl
+  unblock_any: unblock_any
+  # `jeda` here means a monitoring pause (gap), not a scheduler delay.
+  find_gaps: find_gaps
+  try_login: try_login
+  peta_ping: ping_map
+  peta_port: port_map
+  peta_hostname: hostname_map
+  peta_alamat: address_map
+  peta_device: device_map
+  daftar_putih: allow_list
+  daftar_hitam: deny_list
+  daftar_jeda: pause_list
+  jumlah_baris: line_count
+  batas_laju: rate_limit
+  jaring_pengaman: safety_net
+  akar_masalah: root_cause
+  radius_dampak: impact_radius
+  waktu_mulai: start_time
+  waktu_selesai: end_time
+  nama_host: hostname
+  nama_berkas: filename
+  jalur_berkas: file_path
+  pesan_galat: error_message
+  kode_status: status_code
+  interface_sekarang: current_interface
+  baris_sekarang: current_line
+  potret_sekarang: current_snapshot
+
+# ---------------------------------------------------------------------------
+# CORE -- words that appear in nearly every file
+# ---------------------------------------------------------------------------
+kata:
+  nama: name
+  hasil: result
+  gagal: fail
+  lolos: passed
+  baris: line
+  teks: text
+  isi: content
+  nilai: value
+  waktu: time
+  jam: hour
+  menit: minute
+  detik: second
+  hari: day
+  sekarang: now
+  mulai: start
+  selesai: finish
+  akhir: end
+  awal: begin
+  sebelum: before
+  sesudah: after
+  sejak: since
+  sampai: until
+  lama: old
+  baru: new
+  terakhir: last
+  pertama: first
+  jumlah: count
+  daftar: list
+  semua: all
+  satu: one
+  sisa: remaining
+  batas: limit
+  maks: max
+  rentang: range
+  jalur: path
+  berkas: file
+  induk: parent
+
+  mesin: engine
+  pesan: message
+  galat: error
+  dapat: got  # in tests: "expected X, got Y"
+  ada: exists
+  tidak: not
+  bukan: not
+  belum: not_yet
+  sudah: already
+  dari: from
+  ke: to
+  pada: at
+  di: at
+  yang: that
+
+  # `ket` is used as an abbreviation of `keterangan` in dozens of places. It maps
+  # to the FULL word, not to an English abbreviation: an abbreviation inherited into
+  # a new language is one new readers will never understand.
+  kode: code
+  tanda: mark
+  kini: current
+  pabrik: factory
+  lawan: opposite
+  rata: average
+  punya: has
+  asal: origin
+  jml: count
+  sebelumnya: previous
+  tak: not
+  titik: point
+  terbaru: latest
+  naik: rise
+  awalan: prefix
+  akhiran: suffix
+  lalu: past
+  persen: percent
+  anak: child
+  fungsi: function
+  diputar: rotated
+  kotak: box
+  angka: number
+  kerja: work
+  laju: rate
+  puncak: peak
+  entri: entry
+  orang: person
+  turun: fall
+  dilewati: skipped
+  hilang: missing
+  cap: stamp
+  bocor: leak
+  hanya: only
+  pasangan: pair
+  rencana: plan
+  tua: old_age
+  subjek: subject
+  bisa: can
+  pintu: gate
+  klien: client
+  berhasil: succeed
+  kurang: less
+  salinan: copy_of
+  rusak: broken
+  tertua: oldest
+  sambung: connect
+  sasaran: target
+  blok: block
+  rinci: detail
+  alat: tool
+  calon: prospective
+  lewat: via
+  dikenal: known
+  penolakan: rejection
+  buang: discard
+  ditulis: written
+  dijeda: paused
+  jarak: distance
+  diperiksa: checked
+  terlihat: visible
+  selisih: difference
+  cacah: tally
+  unik: unique
+  nyata: actual
+  tepi: edge
+  tertunda: pending
+  profil: profile
+  tumpuk: stack
+  acuan: reference
+  satuan: unit
+  lokasi: location
+  paket: package
+  terbuka: opened
+  tersimpan: stored
+  lihat: view
+  dibuat: created
+  paling: most
+  lebih: more
+  simpangan: deviation
+  inti: core
+  dipakai: used
+  terburuk: worst
+  tertahan: held
+  putus: disconnect
+  perlu: need
+  ditambah: added
+  antre: queue
+  tingkat: level
+  beku: frozen
+  potong: cut
+  grup: group
+  kenapa: why
+  banyak: many
+  denyut: pulse
+  lewati: bypass
+  badan: body
+  buruk: bad
+  wajib: required
+  kartu: card
+  dipantau: monitored
+  dinding: wall
+  kali: times
+  dua: two
+  dulu: earlier
+  tersedia: available
+  terbaca: readable
+  disaring: filtered
+  kolam: pool
+  diverifikasi: verified
+  dipenyangga: buffered
+  balasan: reply
+  parah: severe
+  gugus: cluster
+  heks: hex
+  ketemu: found
+  disentuh: touched
+  simpanan: saved
+  sah: valid
+  jawab: answer
+  pelaku: actor
+  diisi: filled
+  tercatat: recorded
+  nyala: on
+  ditahan: withheld
+  diteruskan: forwarded
+  ekor: tail
+  diganti: replaced
+  hulu: upstream
+  pasti: certain
+  pemeriksa: checker
+  dibutuhkan: needed
+  butuh: require
+  masih: still
+  permintaan: request
+  huruf: letter
+  dipindah: moved
+  geser: shift
+  disalin: copied
+  minggu: week
+  tanggal: date
+  arah: direction
+  utuh: whole
+  ganti: replace
+  terkunci: locked
+  bahaya: danger
+  milik: owned
+  sunting: edit
+  dibatalkan: cancelled
+  spek: spec
+  plat: plate
+  lingkaran: circle
+  henti: halt
+  sehat: healthy
+  efektif: effective
+  langgar: violate
+  penunjuk: pointer
+  tepat: exact
+  pembuka: opener
+  dipanggil: called
+  melempar: raises
+  jahat: malicious
+  kembali: back
+  pemilik: owner
+  penanda: marker
+  pohon: tree
+  kejadian: occurrence
+  versi: version
+  ket: note
+  keterangan: note
+  catatan: note
+  catat: record
+  keluaran: output
+  keluar: exit
+  masuk: enter
+  kepala: header
+  bagian: section
+  potongan: chunk
+  peta: map
+  tabel: table
+  kolom: column
+  sel: cell
+  judul: title
+
+# ---------------------------------------------------------------------------
+# DOMAIN TERMS -- the most decisive, and the easiest to get wrong
+# ---------------------------------------------------------------------------
+domain:
+  # DEVICES AND NETWORK
+  perangkat: device
+  jaringan: network
+  alamat: address
+  antarmuka: interface
+  rute: route
+  jalan: path
+  sambungan: connection
+  sesi: session
+  putaran: cycle
+  pemantau: monitor
+  pantau: monitor
+
+  # STATES
+  aktif: active
+  mati: down
+  hidup: alive
+  keadaan: state
+  jeda: pause
+  kestabilan: stability
+  ambang: threshold
+  diamati: observed
+
+  # INCIDENTS
+  insiden: incident
+  gangguan: outage
+  gejala: symptom
+  # `akar` = ROOT CAUSE analysis, not "root" as in directory or root user.
+  # Translated in full so it cannot be confused with either; both exist in the same
+  # code.
+  akar: root_cause
+  korelasi: correlation
+  keparahan: severity
+  dampak: impact
+  hilir: downstream
+
+  # CONFIGURATION
+  konfig: config
+  konfigurasi: configuration
+  potret: snapshot
+  # `sidik` = fingerprint (hash) of the configuration content. Not "signature": it
+  # is a sha256 of the text, and `signature` already means something else in
+  # cryptography and in Python (`inspect.signature`).
+  sidik: fingerprint
+  beda: diff
+  berubah: changed
+  penyimpangan: drift
+  definisi: definition
+  dialek: dialect
+  katalog: catalog
+  templat: template
+  aturan: rule
+  kepatuhan: compliance
+  temuan: finding
+  bukti: evidence
+  vonis: verdict
+
+  # SECURITY AND ACTIONS
+  # `pagar` and `penjaga` deliberately differ in English. Both guard, but at
+  # different layers and the code distinguishes them: `pagar_otomasi` is the six
+  # gates passed BEFORE an automatic action may run, while `penjaga_aksi` runs the
+  # action together with its own checks. Mapping both to `guard` would erase that
+  # distinction.
+  pagar: guardrail
+  penjaga: guard
+  jaring: net
+  pengaman: safety
+  aman: safe
+  izin: permission
+  boleh: allowed
+  ditolak: rejected
+  tolak: reject
+  blokir: block
+  # `buka` depends on context. In a firewall it is `unblock`; in "an outage still
+  # open" it is `open`. This glossary picks the former because it is more frequent,
+  # and the only place the second meaning appears (`hapus_event_hantu.py`) is
+  # already hand-written as `pending`.
+  buka: unblock
+  putih: allow          # `daftar_putih` -> `allow_list`
+  hitam: deny           # `daftar_hitam` -> `deny_list`
+  sandi: password
+  kunci: key
+  rahasia: secret
+  samarkan: mask
+  disamarkan: masked
+  identitas: identity
+  pengguna: user
+  akun: account
+  akses: access
+  risiko: risk
+
+  # AUTOMATION
+  otomasi: automation
+  pemulih: healer
+  pulih: recover
+  pemulihan: recovery
+  tindakan: action
+  aksi: action
+  keputusan: decision
+  putuskan: decide
+  eskalasi: escalation
+  beruntun: consecutive
+  verifikasi: verification
+  penemuan: discovery
+  kemampuan: capability
+
+  # DATA AND REPORTS
+  laporan: report
+  ringkasan: summary
+  ringkas: summarize
+  riwayat: history
+  sampel: sample
+  deret: series
+  prakiraan: forecast
+  kapasitas: capacity
+  wawasan: insight
+  agen: agent
+  usulan: proposal
+  layanan: service
+  lalu_lintas: traffic
+  sumberdaya: resource
+  penyangga: buffer
+  cadangan: backup
+  pangkas: prune
+
+  # PROCESS
+  kirim: send
+  terkirim: sent
+  ambil: fetch
+  baca: read
+  tulis: write
+  simpan: save
+  hapus: delete
+  tambah: add
+  ubah: change
+  buat: create
+  jalankan: run
+  periksa: check
+  cek: check
+  cari: find
+  urai: parse
+  olah: process
+  hitung: compute
+  susun: build
+  gabung: merge
+  bersih: clean
+  bersihkan: clean
+  cocok: match
+  banding: compare
+  bandingkan: compare
+  saring: filter
+  urut: sort
+  coba: attempt
+  ulang: retry
+  siapkan: prepare
+  pasang: install
+  kumpul: collect
+  sebar: broadcast
+  terima: receive
+  suntik: inject
+  injeksi: injection
+  tambal: patch
+  migrasi: migrate
+  pindah: move
+  salin: copy
+
+# ---------------------------------------------------------------------------
+# CONNECTIVES AND MODIFIERS -- common in test names
+# ---------------------------------------------------------------------------
+umum:
+  uji: test
+  harap: expected
+  benar: correct
+  salah: wrong
+  kosong: empty
+  penuh: full
+  lengkap: complete
+  sama: same
+  lain: other
+  sendiri: own
+  asli: original
+  mentah: raw
+  sungguhan: real
+  palsu: fake
+  tiruan: mock
+  contoh: example
+  sementara: temporary
+  tetap: permanent
+  bawaan: default
+  khusus: specific
+  umum: general
+  dasar: base
+  utama: primary
+  kedua: secondary
+  lokal: local
+  jauh: remote
+  dalam: inner
+  luar: outer
+  atas: upper
+  bawah: lower
+  kecil: small
+  besar: large
+  cepat: fast
+  lambat: slow
+  tinggi: high
+  rendah: low
+  jenis: kind
+  tipe: type
+  kategori: category
+  sumber: source
+  tujuan: destination
+  alasan: reason
+  sebab: cause
+  syarat: condition
+  kasus: case
+  pola: pattern
+  bentuk: form
+  cara: method
+  langkah: step
+  tahap: phase
+  urutan: order
+  posisi: position
+  ukuran: size
+  panjang: length
+  lebar: width
+  umur: age
+  durasi: duration
+  jendela: window
+  kandidat: candidate
+  pilihan: choice
+  bagi: for
+  oleh: by
+  tanpa: without
+  dengan: with
+  antara: between
+
+# ---------------------------------------------------------------------------
+# WORDS DELIBERATELY NOT TRANSLATED
+# ---------------------------------------------------------------------------
+#
+# Not forgotten. Each has a reason, and the reason must be written down so nobody
+# "tidies" it later.
+biarkan:
+  # Product and party names.
+  nsm: "nama produk"
+  bsp: "nama perusahaan"
+  gns3: "nama produk (emulator jaringan)"
+  ldap: "protokol"
+  snmp: "protokol"
+  ssh: "protokol"
+  smb: "protokol"
+  sftp: "protokol"
+  acl: "istilah jaringan yang sudah Inggris"
+  ufw: "nama program"
+  netsh: "nama program"
+  vlan: "istilah jaringan"
+  cisco: "nama vendor"
+  linux: "nama sistem operasi"
+  mysql: "nama produk"
+
+  # Already English, used as is.
+  device: "sudah Inggris"
+  service: "sudah Inggris"
+  interface: "sudah Inggris"
+  platform: "sudah Inggris"
+  firewall: "sudah Inggris"
+  backup: "sudah Inggris"
+  snapshot: "sudah Inggris"
+  syslog: "sudah Inggris"
+  tenant: "sudah Inggris"
+  baseline: "sudah Inggris"
+  intent: "sudah Inggris"
+
+  # SINGLE LETTERS. Neither Indonesian nor English: a short name for a short scope,
+  # valid in both languages. Translating them is impossible (`d` -> `d`?) and
+  # pointless.
+  #
+  # Registered ONE BY ONE rather than caught by a "length <= 1" rule: an automatic
+  # rule would also swallow a one-letter Indonesian word if one ever appeared, and
+  # nothing caught by a rule is ever re-read.
+  a: "huruf tunggal"
+  b: "huruf tunggal"
+  c: "huruf tunggal"
+  d: "huruf tunggal"
+  e: "huruf tunggal"
+  f: "huruf tunggal"
+  g: "huruf tunggal"
+  h: "huruf tunggal"
+  i: "huruf tunggal"
+  j: "huruf tunggal"
+  k: "huruf tunggal"
+  l: "huruf tunggal"
+  m: "huruf tunggal"
+  n: "huruf tunggal"
+  o: "huruf tunggal"
+  p: "huruf tunggal"
+  q: "huruf tunggal"
+  r: "huruf tunggal"
+  s: "huruf tunggal"
+  t: "huruf tunggal"
+  u: "huruf tunggal"
+  v: "huruf tunggal"
+  w: "huruf tunggal"
+  x: "huruf tunggal"
+  y: "huruf tunggal"
+  z: "huruf tunggal"
+
+  # Already English, and a common short name in Python code.
+  db: "sudah Inggris"
+  id: "sudah Inggris"
+  conn: "sudah Inggris"
+  self: "kata kunci Python"
+  cls: "kata kunci Python"
+  ok: "sudah Inggris"
+  out: "sudah Inggris"
+  in: "sudah Inggris"
+  port: "sudah Inggris"
+  data: "sudah Inggris"
+  dev: "singkatan device"
+  did: "singkatan device id"
+  down: "sudah Inggris"
+  up: "sudah Inggris"
+  period: "sudah Inggris"
+  key: "sudah Inggris"
+  value: "sudah Inggris"
+  type: "sudah Inggris"
+  min: "sudah Inggris"
+  max: "sudah Inggris"
+  sum: "sudah Inggris"
+  set: "sudah Inggris"
+  get: "sudah Inggris"
+  add: "sudah Inggris"
+  run: "sudah Inggris"
+  base: "sudah Inggris"
+  main: "sudah Inggris"
+  info: "sudah Inggris"
+  node: "sudah Inggris"
+  host: "sudah Inggris"
+  user: "sudah Inggris"
+  username: "sudah Inggris"
+  password: "sudah Inggris"
+  timeout: "sudah Inggris"
+  match: "sudah Inggris"
+  state: "sudah Inggris"
+  event: "sudah Inggris"
+  session: "sudah Inggris"
+  config: "sudah Inggris"
+  cache: "sudah Inggris"
+  job: "sudah Inggris"
+  poll: "sudah Inggris"
+  auto: "sudah Inggris"
+  latency: "sudah Inggris"
+  bandwidth: "sudah Inggris"
+  traffic: "sudah Inggris"
+  policy: "sudah Inggris"
+  severity: "sudah Inggris"
+  proto: "singkatan protocol"
+  iface: "singkatan interface"
+  env: "singkatan environment"
+  url: "sudah Inggris"
+  sql: "sudah Inggris"
+  byte: "sudah Inggris"
+  code: "sudah Inggris"
+  error: "sudah Inggris"
+  lat: "singkatan latency"
+  bw: "singkatan bandwidth"
+  mb: "satuan"
+  gb: "satuan"
+  top: "sudah Inggris"
+  svc: "singkatan service"
+  avail: "singkatan availability"
+  av: "singkatan availability"
+  reg: "singkatan register"
+  dirs: "sudah Inggris"
+  nodes: "sudah Inggris"
+  pos: "singkatan position"
+  dtk: "singkatan detik"
+  lab: "sudah sama di kedua bahasa"
+  streak: "sudah Inggris"
+  row: "sudah Inggris"
+  nm: "singkatan nama"
+  web: "sudah Inggris"
+  fh: "singkatan file handle"
+  vid: "singkatan video/vlan id"
+  laptop: "sudah sama di kedua bahasa"
+  mttr: "singkatan"
+  incr: "singkatan incremental"
+  devs: "singkatan devices"
+  model: "sudah Inggris"
+  arg: "singkatan argument"
+  argc: "singkatan"
+  argv: "singkatan"
+  hash: "sudah Inggris"
+  stdin: "sudah Inggris"
+  stdout: "sudah Inggris"
+  stderr: "sudah Inggris"
+  dirpath: "sudah Inggris"
+  dirnames: "sudah Inggris"
+  filenames: "sudah Inggris"
+  cmd: "singkatan command"
+  props: "singkatan properties"
+  epoch: "sudah Inggris"
+  tot: "singkatan total"
+  hw: "singkatan hardware"
+  kv: "singkatan key-value"
+  it: "singkatan iterator"
+  pill: "sudah Inggris"
+  level: "sudah Inggris"
+  global: "kata kunci Python"
+  uid: "singkatan"
+  srv: "singkatan server"
+  dn: "singkatan LDAP distinguished name"
+  no: "sudah Inggris"
+  ident: "singkatan identity"
+  mode: "sudah Inggris"
+  da: "singkatan"
+  startup: "sudah Inggris"
+  io: "sudah Inggris"
+  burst: "sudah Inggris"
+  transfer: "sudah Inggris"
+  fe: "singkatan FastEthernet"
+  nid: "singkatan node id"
+  tid: "singkatan tenant id"
+  cl: "singkatan"
+  cnf: "singkatan config"
+  sl: "singkatan"
+  ss: "singkatan"
+  um: "singkatan"
+  pr: "singkatan"
+  ang: "singkatan angka"
+  lap: "singkatan laporan"
+  jum: "singkatan jumlah"
+  cac: "singkatan cacah"
+  kep: "singkatan keparahan"
+  kol: "singkatan kolom"
+  jar: "singkatan jaring/jaringan"
+  pil: "singkatan pilihan"
+
+
+  # Words that used to be "translated" into THEMSELVES. Such an entry looks like
+  # work done without changing anything, and hides a word that is really undecided.
+  # They belong here.
+  audit: "sudah sama di kedua bahasa"
+  ban: "sudah sama di kedua bahasa"
+  dir: "singkatan directory"
+  flap: "istilah jaringan"
+  folder: "sudah sama di kedua bahasa"
+  interval: "sudah sama di kedua bahasa"
+  label: "sudah sama di kedua bahasa"
+  per: "sudah sama di kedua bahasa"
+  radius: "sudah sama di kedua bahasa"
+  rollup: "istilah agregasi"
+  status: "sudah sama di kedua bahasa"
+  total: "sudah sama di kedua bahasa"
+  path: "sudah Inggris"
+  meta: "sudah Inggris"
+  zip: "sudah Inggris"
+  server: "sudah Inggris"
+  client: "sudah Inggris"
+  rel: "singkatan relative"
+  cfg: "singkatan config"
+  insp: "singkatan inspector"
+  md: "singkatan"
+  winfw: "nama program (Windows Firewall)"
+  observed: "sudah Inggris"
+  engine: "sudah Inggris"
+  sub: "sudah Inggris"
+  log: "sudah Inggris"
+  ev: "singkatan event"
+  ids: "sudah Inggris"
+  ins: "singkatan inspector"
+  router: "sudah Inggris"
+  err: "singkatan error"
+  ts: "singkatan timestamp"
+  sid: "singkatan session id"
+  st: "singkatan status"
+  ping: "sudah Inggris"
+  devices: "sudah Inggris"
+  snap: "singkatan snapshot"
+  pid: "singkatan process id"
+  ldif: "format LDAP"
+  json: "format"
+  csv: "format"
+  yaml: "format"
+  html: "format"
+  http: "protokol"
+  udp: "protokol"
+  icmp: "protokol"
+  dns: "protokol"
+  smtp: "protokol"
+  vm: "singkatan virtual machine"
+  cpu: "sudah Inggris"
+  ram: "sudah Inggris"
+  disk: "sudah Inggris"
+
+  # Technical abbreviations that are clearer as they are.
+  ip: "singkatan protokol"
+  tcp: "singkatan protokol"
+  oid: "singkatan SNMP"
+  mac: "singkatan"
+  rtt: "singkatan (round-trip time)"
+  bps: "satuan"
+  ms: "satuan"
+  ewma: "singkatan statistik"
+  slo: "singkatan"

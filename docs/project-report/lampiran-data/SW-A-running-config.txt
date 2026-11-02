@@ -1,0 +1,134 @@
+Building configuration...
+
+Current configuration : 1938 bytes
+!
+version 15.1
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW-A
+!
+boot-start-marker
+boot-end-marker
+!
+!
+logging discriminator EXCESS severity drops 6 msg-body drops EXCESSCOLL 
+logging buffered 50000
+logging console discriminator EXCESS
+!
+username nsm privilege 15 secret 4 <disamarkan>
+no aaa new-model
+no ipv6 cef
+ipv6 multicast rpf use-bgp
+no ip routing
+no ip icmp rate-limit unreachable
+!
+no ip domain-lookup
+ip domain-name lab.local
+no ip cef
+!
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+!
+!
+vlan internal allocation policy ascending
+!
+ip tcp synwait-time 5
+ip ssh version 2
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ duplex auto
+!
+interface Ethernet0/1
+ duplex auto
+!
+interface Ethernet0/2
+ duplex auto
+!
+interface Ethernet0/3
+ duplex auto
+!
+interface Ethernet1/0
+ duplex auto
+!
+interface Ethernet1/1
+ duplex auto
+!
+interface Ethernet1/2
+ duplex auto
+!
+interface Ethernet1/3
+ duplex auto
+!
+interface Ethernet2/0
+ duplex auto
+!
+interface Ethernet2/1
+ duplex auto
+!
+interface Ethernet2/2
+ duplex auto
+!
+interface Ethernet2/3
+ duplex auto
+!
+interface Ethernet3/0
+ duplex auto
+!
+interface Ethernet3/1
+ duplex auto
+!
+interface Ethernet3/2
+ duplex auto
+!
+interface Ethernet3/3
+ duplex auto
+!
+interface Vlan1
+ ip address 192.168.56.61 255.255.255.0
+ no ip route-cache
+!
+ip default-gateway 192.168.56.60
+!
+no ip http server
+!
+!
+logging source-interface Vlan1
+logging host 192.168.56.156 transport udp port 1514
+!
+!
+snmp-server trap-source Vlan1
+snmp-server enable traps snmp linkdown linkup coldstart warmstart
+snmp-server host 192.168.56.156 version 2c public udp-port 1162 
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ login local
+ transport input ssh
+!
+end

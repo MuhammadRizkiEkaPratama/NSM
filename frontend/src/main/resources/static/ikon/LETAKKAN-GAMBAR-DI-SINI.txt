@@ -1,0 +1,38 @@
+Folder gambar ikon device (Gaya 7)
+==================================
+
+Taruh berkas PNG di folder ini dengan nama PERSIS seperti di bawah.
+Huruf kecil semua, berlatar transparan, ukuran 128x128 atau 256x256.
+
+    server.png    -> VM Ubuntu, VM testUbuntu
+    router.png    -> Gateway WiFi, Router Cisco GNS3
+    switch.png    -> Switch (belum ada di daftar device saat ini)
+    laptop.png    -> Laptop Sendiri
+    vm.png        -> device yang lokasinya VirtualBox / GNS3
+    tanya.png     -> device yang tipenya belum dikenali
+
+Berkas yang belum ada otomatis memakai Gaya 2, jadi boleh diunduh sebagian
+dulu dan halamannya tidak akan rusak atau menampilkan gambar pecah.
+
+Tempat mengunduh
+----------------
+  3dicons.co                          CC0, bebas tanpa syarat  <- paling disarankan
+  https://github.com/realvjy/3dicons  berkas sumber 3dicons
+  cisco.com/c/en/us/about/brand-center/network-topology-icons.html
+                                      resmi Cisco, gratis, TIDAK BOLEH DIUBAH
+  iconscout.com/3d-icons/router       campur gratis & berbayar, periksa tiap berkas
+  thenounproject.com                  gratis dengan pencantuman sumber
+
+Setelah menaruh berkasnya, restart frontend:
+
+    Ctrl+C di CMD mvnw
+    cd C:\Users\<user>\NSM\frontend
+    mvnw.cmd spring-boot:run
+
+lalu tekan Ctrl+Shift+R di browser.
+
+Catatan: berkas di folder ini ikut disalin ke target/classes saat build.
+Menaruh gambar saja tanpa restart tidak akan mengubah tampilan.
+
+Simpan bukti lisensi tiap ikon yang diunduh. "Ini ikon dari mana?" adalah
+pertanyaan yang wajar diajukan di lingkungan kerja.

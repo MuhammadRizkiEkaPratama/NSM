@@ -1,0 +1,79 @@
+nama: cisco_ios
+keterangan: Cisco IOS / IOS-XE
+teruji: lab
+sumber: >-
+  Lab NSM: R1 dan R2, Cisco 7206VXR (NPE400), IOS 15.2(4)S7, dijalankan di
+  GNS3/Dynamips. Setiap perintah di berkas ini sudah berjalan di nsm-app
+  sebelum dipindah ke sini -- tidak ada yang disalin dari dokumentasi.
+
+deteksi:
+  # Cisco enterprise prefix. Kept short on purpose: listing per-model OIDs
+  # would leave new models from the SAME vendor unrecognized.
+  sysobjectid:
+    - ".1.3.6.1.4.1.9."
+
+akses:
+  netmiko_device_type: cisco_ios
+  jenis: jaringan
+  butuh_enable: true
+
+baca:
+  # From connectors/konfig.py PERINTAH / PERINTAH_STARTUP
+  konfigurasi: show running-config
+  konfigurasi_startup: show startup-config
+
+  # From connectors/ssh.py _cisco_info()
+  nama_host: show run | include hostname
+  identitas: show version | include Cisco IOS Software
+  uptime: show version | include uptime
+  interface_ringkas: show ip interface brief
+  tabel_rute: show ip route
+  cpu: show processes cpu | include CPU utilization
+
+  # From connectors/ssh.py get_bandwidth() -> _cisco_bandwidth()
+  interface_rinci: show interfaces
+
+tulis:
+  didukung: true
+  simpan: write memory
+
+  # Safety net. Values match the existing flow in `kirim_perintah.py` exactly.
+  #
+  # Order: install the net FIRST, prove it is installed, then send the commands.
+  # If the connection drops nothing confirms the change, the device reloads to
+  # startup-config, and the change is discarded, as intended.
+  #
+  # `bukti` matters: installation can fail SILENTLY (privilege denied, an
+  # unanswered prompt, an unexpected reply). Continuing anyway would run the
+  # commands with no net at all, which looks identical from outside until
+  # something breaks.
+  #
+  # Two markers, not one: IOS replies "Reload scheduled for <time>" or
+  # "Reload scheduled in <duration>" depending on the command form.
+  #
+  # Applies to Cisco IOS on physical devices, NOT this lab. On GNS3/Dynamips
+  # `reload` powers the node off PERMANENTLY instead of rebooting
+  # (docs/POSTMORTEM-R1.md). That is a property of the device, not the platform,
+  # so it lives per device (`Device.gns3_node`). Per-device values may only make
+  # behavior STRICTER, never looser.
+  jaring_pengaman:
+    jenis: reload
+    pasang: "reload in {menit}"
+    bukti: show reload
+    penanda_terpasang:
+      - scheduled for
+      - scheduled in
+    kukuhkan: reload cancel
+    penanda_lepas:
+      - no reload is scheduled
+
+  mode_konfig: configure terminal
+
+kemampuan:
+  # Block addresses via router ACL (`ubah_acl_router.py`). Currently the only
+  # platform with this path; `penjaga_aksi.py` chooses between "acl" and "ufw".
+  firewall: acl
+
+  # Identity marker taken from `show version` (serial). The output format is
+  # Cisco-specific, so parsing is too; see `identitas_sumber.py`.
+  identitas: cisco

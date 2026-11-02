@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Identitas Perangkat - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Identitas Perangkat', 'yang dituju NSM benar-benar perangkat yang dimaksud', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('identitas')}"></div>
+
+<!-- In the Configuration group, not the dashboard: it asks what a device really is, like compliance, and the identity verdict that gates writes should be one click from the write button. -->
+<div class="bagian">
+  <div class="hal-singkat">
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="NSM mengenali perangkat dari alamat IP, dan empat dari enam perangkat di lab ini beralamat BAWAAN yang akan cocok di jaringan orang lain juga: 192.168.1.1, 192.168.56.101, 192.168.56.103, 192.168.56.1. Selama NSM hanya membaca, salah sasaran menghasilkan data yang salah; sejak jalur menulis ada, salah sasaran berarti mengubah konfigurasi perangkat orang lain.">
+      Alamat saja tidak cukup untuk mengenali perangkat
+    </span>
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Penolakannya terjadi di Python, bukan dengan menyembunyikan tombolnya. Jaring pengaman `reload in 10` tidak menolong di sini: ia melindungi dari perintah yang salah, bukan dari perangkat yang salah.">
+      Yang bertentangan diblokir dari jalur menulis
+    </span>
+  </div>
+  <div class="ket" id="ket-identitas"></div>
+  <div id="identitas"></div>
+</div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Penanda dikumpulkan dari perangkat itu sendiri (hostname, nomor seri, sidik kunci host SSH) lalu dibandingkan dengan yang tersimpan. 'Belum dikenali' sengaja tidak diberi warna merah: penanda kosong berarti NSM belum pernah bertanya, sedangkan penanda bertentangan berarti NSM bertanya dan mendapat jawaban berbeda. Menyamakan keduanya membuat perangkat yang belum sempat dikenali diperlakukan seperti perangkat asing.">
+    Penandanya apa saja, dan kenapa "belum dikenali" bukan merah?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/konfig.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

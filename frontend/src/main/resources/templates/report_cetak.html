@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Laporan Ketersediaan Perangkat Jaringan NSM</title>
+<style>
+/* This is a standalone A4 document, not a dashboard restyled for print; the screen view is only a preview of the paper. */
+@page { size: A4 portrait; margin: 18mm 16mm 16mm 16mm; }
+
+/* No page numbers here on purpose: browsers ignore CSS `@page` margin boxes (only PDF engines such as WeasyPrint support them). Real page numbers come from downloading the Word report (PAGE and NUMPAGES fields, see `laporan_word.py`) or enabling "Headers and footers" in the browser print dialog. */
+
+* { box-sizing: border-box; }
+body {
+  font-family: "Times New Roman", Times, serif; background: #6b6b6b;
+  margin: 0; padding: 26px 0; color: #000;
+}
+.kertas {
+  width: 210mm; min-height: 297mm; margin: 0 auto; background: #fff;
+  padding: 18mm 16mm; box-shadow: 0 6px 26px rgba(0,0,0,.4);
+}
+
+/* Report header. Green accent in the BSP brand color (#2b6049); body text stays black. */
+.kop { border-bottom: 3px double #2b6049; padding-bottom: 12px; }
+.kop .lembaga { font-size: 10.5pt; color: #2b6049; font-weight: 700; letter-spacing: .4px; }
+.kop h1 { font-size: 16pt; margin: 5px 0 3px 0; color: #2b6049;
+          text-transform: uppercase; letter-spacing: .3px; }
+.kop .anak-judul { font-size: 10pt; color: #000; }
+
+.identitas { display: table; width: 100%; margin-top: 14px; font-size: 9.5pt; }
+.identitas .baris { display: table-row; }
+.identitas .baris > div { display: table-cell; padding: 2.5px 0; }
+.identitas .label { width: 42mm; color: #000; }
+.identitas .titik { width: 5mm; color: #000; }
+
+h2 {
+  font-size: 11pt; margin: 20px 0 8px 0; color: #2b6049;
+  border-left: 4px solid #2b6049; padding-left: 8px; text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+/* Table: green header, soft green lines, subtle zebra striping. */
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+th, td { border: 1px solid #9bb3a8; padding: 5px 7px; vertical-align: top; }
+th { background: #2b6049; color: #fff; font-weight: 700; text-align: left; }
+tbody tr:nth-child(even) { background: #eaf3ee; }
+td.angka { text-align: right; font-variant-numeric: tabular-nums; }
+td.tengah { text-align: center; }
+.hijau { color: #000; font-weight: 700; }
+.hijau-gelap { color: #000; font-weight: 700; }
+.merah { color: #000; font-weight: 700; }
+.kuning { color: #000; font-weight: 700; }
+.oranye { color: #000; font-weight: 700; }
+.abu { color: #000; }
+
+.ringkas { display: table; width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.ringkas .baris { display: table-row; }
+.ringkas .baris > div { display: table-cell; border: 1px solid #9bb3a8; padding: 6px 8px; }
+.ringkas .k { width: 34%; color: #000; font-weight: 700; }
+.ringkas .n { width: 16%; text-align: right; font-weight: 700; }
+.ringkas .c { color: #000; font-size: 8.5pt; }
+
+.catatan-kaki { margin-top: 16px; font-size: 8pt; color: #000; line-height: 1.6;
+                border-top: 1px solid #9bb3a8; padding-top: 8px; }
+
+.perhatian-kotak {
+  border: 1px solid #9bb3a8; border-left: 4px solid #2b6049;
+  background: #fff; padding: 8px 11px; margin-bottom: 7px; font-size: 9pt;
+  break-inside: avoid;
+}
+.perhatian-kotak .nama { font-weight: 700; font-size: 9.5pt; }
+.perhatian-kotak .angka { color: #000; margin-top: 2px; }
+.perhatian-kotak .sebab { color: #000; margin-top: 3px; }
+.aman-kotak {
+  border: 1px solid #9bb3a8; border-left: 4px solid #2b6049;
+  background: #fff; padding: 8px 11px; font-size: 9pt; color: #000;
+}
+
+/* --- Kaki dokumen --- */
+.kaki-dokumen {
+  margin-top: 18px; border-top: 1px solid #2b6049; padding-top: 6px;
+  font-size: 8pt; color: #000; display: table; width: 100%;
+}
+.kaki-dokumen > div { display: table-cell; }
+.kaki-dokumen .kanan { text-align: right; }
+
+/* Control bar, screen only. */
+#kendali {
+  position: fixed; top: 0; left: 0; right: 0; background: #1f1f1f; color: #ddd;
+  padding: 10px 18px; display: flex; align-items: center; gap: 12px;
+  font-size: 13px; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+#kendali a, #kendali button {
+  background: #333; color: #eee; border: 1px solid #555; padding: 6px 14px;
+  border-radius: 5px; font-size: 12px; cursor: pointer; text-decoration: none;
+}
+#kendali button.utama { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+#kendali .pil { padding: 5px 12px; border-radius: 16px; border: 1px solid #444;
+                background: #262626; color: #bbb; cursor: pointer; font-size: 12px; }
+#kendali .pil.aktif { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+body { padding-top: 74px; }
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .kertas { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+  #kendali { display: none !important; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  h2 { break-after: avoid; }
+  .perhatian-kotak, .aman-kotak, .kaki-dokumen { break-inside: avoid; }
+}
+</style>
+</head>
+<body th:attr="data-periode=${period}">
+
+<div id="kendali">
+  <span>Periode:</span>
+  <span class="pil" data-p="1h">1 Jam</span>
+  <span class="pil" data-p="24h">24 Jam</span>
+  <span class="pil" data-p="7d">7 Hari</span>
+  <span class="pil" data-p="30d">30 Hari</span>
+  <button class="utama" id="cetak"
+          title="Dialog cetak peramban. Untuk nomor halaman, centang &quot;Headers and footers&quot; di sana, atau pakai Unduh Word yang sudah memuatnya sendiri">Unduh PDF</button>
+  <a id="unduh-word" href="#"
+     title="Berkas Word dengan kaki halaman &quot;hal. N dari M&quot;. Simpan sebagai PDF dari Word kalau perlu PDF bernomor">Unduh Word</a>
+  <a id="unduh-excel" href="#">Unduh Excel</a>
+  <a th:href="@{/report}">&larr; Kembali ke Report</a>
+  <span id="status" style="margin-left:auto;color:#888"></span>
+</div>
+
+<div class="kertas">
+  <div class="kop">
+    <div class="lembaga">Divisi Network Security</div>
+    <h1>Laporan Ketersediaan Perangkat Jaringan</h1>
+    <div class="anak-judul">NSM (Network Status Monitor)</div>
+  </div>
+
+  <div class="identitas">
+    <div class="baris">
+      <div class="label">Periode laporan</div><div class="titik">:</div>
+      <div id="i-periode">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Rentang waktu</div><div class="titik">:</div>
+      <div id="i-rentang">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Lama pemantauan</div><div class="titik">:</div>
+      <div id="i-diamati">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Jumlah perangkat</div><div class="titik">:</div>
+      <div id="i-jumlah">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Disusun oleh</div><div class="titik">:</div>
+      <div th:text="${username}">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Tanggal cetak</div><div class="titik">:</div>
+      <div id="i-tanggal">-</div>
+    </div>
+  </div>
+
+  <h2>I. Ringkasan</h2>
+  <div class="ringkas" id="ringkas"></div>
+
+  <h2>II. Perangkat yang Perlu Perhatian</h2>
+  <div id="ket-perhatian" style="font-size:8.5pt;color:#555;margin-bottom:6px"></div>
+  <div id="perhatian"></div>
+
+  <h2>III. Ketersediaan per Perangkat</h2>
+  <div class="gulir-tabel"><table>
+    <thead>
+      <tr>
+        <th style="width:8%">Status</th>
+        <th>Perangkat</th>
+        <th style="width:16%">Alamat IP</th>
+        <th style="width:14%">Lokasi</th>
+        <th style="width:11%">Ketersediaan</th>
+        <th style="width:8%">Gangguan</th>
+        <th style="width:15%">Total tidak merespons</th>
+        <th style="width:10%">Latency</th>
+      </tr>
+    </thead>
+    <tbody id="baris-device"></tbody>
+  </table></div>
+
+  <h2>IV. Daftar Gangguan</h2>
+  <div id="ket-gangguan" style="font-size:8.5pt;color:#555;margin-bottom:6px"></div>
+  <div class="gulir-tabel"><table>
+    <thead>
+      <tr>
+        <th style="width:5%">No</th>
+        <th style="width:20%">Perangkat</th>
+        <th style="width:16%">Mulai</th>
+        <th style="width:16%">Pulih</th>
+        <th style="width:13%">Lama</th>
+        <th>Penyebab menurut pemeriksaan</th>
+      </tr>
+    </thead>
+    <tbody id="baris-gangguan"></tbody>
+  </table></div>
+
+  <div class="catatan-kaki" id="catatan"></div>
+
+  <div class="kaki-dokumen" id="kaki"></div>
+</div>
+
+<script src="/js/halaman.js"></script>
+<script src="/report_cetak.js"></script>
+</body>
+</html>

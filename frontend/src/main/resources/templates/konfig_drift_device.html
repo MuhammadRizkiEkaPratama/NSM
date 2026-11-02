@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Deteksi Penyimpangan - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+<meta name="_drift_device_id" th:content="${deviceId}">
+</head>
+<body>
+
+<!-- Read-only page: no _csrf meta needed (unlike konfig_sot_device.html, which writes). -->
+<div th:replace="~{fragmen/nav :: bilah('Deteksi Penyimpangan', 'apakah yang sekarang cocok dengan Sumber Kebenaran', 'konfig')}"></div>
+
+<div class="jalur" aria-label="Jalur halaman Deteksi Penyimpangan">
+  <a class="pulang" th:href="@{/admin/konfig/drift}">&larr; Deteksi Penyimpangan</a>
+  <span class="pisah">|</span>
+  <span id="judul-device" class="kini">Memuat&hellip;</span>
+</div>
+
+<div id="ringkasan-drift"></div>
+<div id="pesan-drift"></div>
+
+<div id="bagian-nilai" style="display:none">
+  <h4 class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-sliders-horizontal"/></svg>
+    Nilai intent vs observed</h4>
+  <div class="gulir-tabel"><table class="tabel-rincian" id="tabel-nilai">
+    <thead><tr><th>Kunci</th><th>Status</th><th>Intended</th><th>Observed</th><th>Risiko</th></tr></thead>
+    <tbody id="baris-nilai"></tbody>
+  </table></div>
+</div>
+
+<div id="bagian-interface" style="display:none">
+  <h4 class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-git-branch"/></svg>
+    Interface</h4>
+  <div id="isi-interface"></div>
+</div>
+
+<div id="bagian-vlan" style="display:none">
+  <h4 class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-network"/></svg>
+    VLAN</h4>
+  <div id="isi-vlan"></div>
+</div>
+
+<div id="bagian-rute" style="display:none">
+  <h4 class="kepala judul-ikon">
+    <svg class="ikon"><use href="/ikon-tabler.svg#i-route"/></svg>
+    Rute statis</h4>
+  <div id="isi-rute"></div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/drift.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

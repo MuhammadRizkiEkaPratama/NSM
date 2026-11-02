@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Sumber Kebenaran - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+<meta name="_sot_device_id" th:content="${deviceId}">
+<!-- Required for POST (sot.js `kirimJson()`): without it Spring Security rejects every "Simpan" with 403. Read-only pages (konfig_sot.html) do not need it. -->
+<meta name="_csrf" th:content="${_csrf.token}" content="">
+<meta name="_csrf_header" th:content="${_csrf.headerName}" content="">
+</head>
+<body>
+
+<!-- The device name is filled in by sot.js via #judul-device after /api/sot/{id} responds (same pattern as report_device.html), avoiding two Java-to-Python calls for one page. -->
+<div th:replace="~{fragmen/nav :: bilah('Sumber Kebenaran', 'apa yang seharusnya terpasang', 'konfig')}"></div>
+
+<div class="jalur" aria-label="Jalur halaman Sumber Kebenaran">
+  <a class="pulang" th:href="@{/admin/konfig/sot}">&larr; Sumber Kebenaran</a>
+  <span class="pisah">|</span>
+  <span id="judul-device" class="kini">Memuat&hellip;</span>
+</div>
+
+<div id="status-lengkap" class="pesan-hati-hati" style="display:none"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-sliders-horizontal"/></svg>
+  Intent (apa yang seharusnya)</h4>
+<div class="jelas-isi" data-untuk="h4.judul-ikon">Bentuk dan validasi tiap kolom
+  ditentukan katalog di <code>sot/katalog.py</code>, bukan ditulis ulang di
+  sini -- kolom yang tampil dan aturan penolakannya datang langsung dari
+  jawaban <code>/api/sot/katalog</code>. Kolom kosong berarti "belum
+  dinyatakan", bukan "sengaja kosong"; kolom WAJIB harus terisi sebelum
+  bisa dirender.</div>
+
+<form id="form-nilai" class="panel panel-lebar">
+  <div id="medan-nilai"><span class="redup">Memuat katalog&hellip;</span></div>
+  <div id="pesan-nilai"></div>
+  <button type="submit" class="tombol-utama">Simpan nilai</button>
+</form>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-git-branch"/></svg>
+  Interface intended</h4>
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-interface">
+  <thead><tr><th>Nama</th><th>Deskripsi</th><th>IP</th><th>Subnet mask</th>
+  <th>VLAN</th><th>Mati?</th><th></th></tr></thead>
+  <tbody id="baris-interface"></tbody>
+</table></div>
+<button type="button" id="tambah-interface" class="tombol">+ Tambah interface</button>
+<button type="button" id="simpan-interface" class="tombol-utama">Simpan interface</button>
+<div id="pesan-interface"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-network"/></svg>
+  VLAN intended</h4>
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-vlan">
+  <thead><tr><th>Nomor VLAN</th><th>Nama</th><th></th></tr></thead>
+  <tbody id="baris-vlan"></tbody>
+</table></div>
+<button type="button" id="tambah-vlan" class="tombol">+ Tambah VLAN</button>
+<button type="button" id="simpan-vlan" class="tombol-utama">Simpan VLAN</button>
+<div id="pesan-vlan"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-route"/></svg>
+  Rute statis intended</h4>
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-rute">
+  <thead><tr><th>Tujuan</th><th>Subnet mask</th><th>Next hop</th><th>Catatan</th><th></th></tr></thead>
+  <tbody id="baris-rute"></tbody>
+</table></div>
+<button type="button" id="tambah-rute" class="tombol">+ Tambah rute</button>
+<button type="button" id="simpan-rute" class="tombol-utama">Simpan rute</button>
+<div id="pesan-rute"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-file-code-2"/></svg>
+  Render: konfigurasi intended</h4>
+<div class="jelas-isi" data-untuk="h4.judul-ikon">Dirender di server Python
+  (<code>sot/render.py</code>), NOL sentuhan ke perangkat. Sengaja TIDAK
+  memuat rahasia (password, community SNMP) -- lihat kenapa di katalog.
+  Sidik (sha256) yang sama untuk masukan yang sama, selamanya; kalau
+  sidiknya berubah tanpa data intent berubah, itu berarti TEMPLATE-nya yang
+  berubah, dicek lewat <code>sidik_template</code>.</div>
+<button type="button" id="tombol-render" class="tombol-utama">Render sekarang</button>
+<div id="hasil-render"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-history"/></svg>
+  Riwayat perubahan intent</h4>
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-riwayat">
+  <thead><tr><th>Waktu</th><th>Kategori</th><th>Kunci</th><th>Aksi</th><th>Lama &rarr; Baru</th><th>Oleh</th></tr></thead>
+  <tbody id="baris-riwayat"><tr><td colspan="6" class="redup">Memuat&hellip;</td></tr></tbody>
+</table></div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/sot.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

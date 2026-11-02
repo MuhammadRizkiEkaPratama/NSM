@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Daftar Akun - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+.baris-captcha { display: flex; gap: var(--sp-2); align-items: center; margin-top: var(--sp-1); }
+.baris-captcha img { border-radius: var(--r-kecil); border: 1px solid var(--garis-terang); }
+.baris-captcha button { padding: var(--sp-2) 10px; display: grid; place-items: center; }
+.merek { display: flex; align-items: baseline; gap: var(--sp-3); margin-bottom: var(--sp-2); }
+.merek .nama { font-size: 22px; font-weight: 700; letter-spacing: .5px; }
+.merek .sub { color: var(--teks-redup); font-size: var(--f-m); }
+</style>
+</head>
+<body class="terpusat">
+
+<div class="pita-merek"></div>
+
+<div class="panel panel-2kolom muncul">
+  <div class="merek">
+    <span class="nama">NSM</span>
+    <span class="sub">Network Status Monitor</span>
+  </div>
+  <h2>Daftar Akun</h2>
+  <div class="pengantar">
+    Akun baru harus disetujui admin sebelum bisa dipakai masuk, jadi setelah
+    mendaftar kamu perlu menunggu persetujuan.
+  </div>
+
+  <div class="pesan-galat" th:if="${error}" th:text="${error}"></div>
+  <div class="pesan-sukses" th:if="${success}" th:text="${success}"></div>
+
+  <form th:action="@{/signup}" method="post">
+    <div class="isi-2kolom">
+
+      <div>
+        <label class="label-atas" for="u">Username</label>
+        <input type="text" name="username" id="u" required autocomplete="username" autofocus>
+
+        <label class="label-atas" for="em">Email</label>
+        <input type="email" name="email" id="em" required autocomplete="email"
+               data-petunjuk="Dipakai untuk peringatan device dan pemulihan password, jadi pastikan alamatnya benar">
+
+        <label class="label-atas" for="cap">Captcha</label>
+        <div class="baris-captcha">
+          <img id="capimg" th:src="@{/captcha}" alt="Kode captcha" width="170" height="50">
+          <button type="button" id="capreload" data-petunjuk="Ganti kode captcha"
+                  aria-label="Ganti kode captcha"></button>
+        </div>
+        <input type="text" name="captcha" id="cap" autocomplete="off"
+               placeholder="Ketik kode di atas" required style="margin-top:var(--sp-2)">
+      </div>
+
+      <div>
+        <label class="label-atas" for="pw">Password</label>
+        <input type="password" name="password" id="pw" required autocomplete="new-password">
+        <div class="meter"><div id="bar"></div></div>
+        <div class="meter-teks" id="lbl">Ketik password</div>
+        <ul class="aturan">
+          <li id="r-len">Minimal 8 karakter</li>
+          <li id="r-upper">Ada huruf besar</li>
+          <li id="r-lower">Ada huruf kecil</li>
+          <li id="r-digit">Ada angka</li>
+        </ul>
+
+        <label class="label-atas" for="pw2">Ulangi Password</label>
+        <input type="password" name="confirm" id="pw2" required autocomplete="new-password">
+        <div class="meter-teks" id="matchlbl"></div>
+
+        <label class="baris-centang"><input type="checkbox" id="showpw"> Lihat password</label>
+      </div>
+
+      <div class="lajur-penuh">
+        <button type="submit" class="tombol-utama tombol-lebar" style="margin-top:var(--sp-5)">Daftar</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="tautan-bawah">Sudah punya akun? <a th:href="@{/login}">Masuk</a></div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/kekuatan-password.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

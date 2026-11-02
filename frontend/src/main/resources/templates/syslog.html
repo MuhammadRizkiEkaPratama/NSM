@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Syslog - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<link rel="stylesheet" href="/css/syslog.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Syslog', 'apa yang perangkat kabarkan sendiri', 'syslog')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-syslog">Selama ini NSM hanya tahu
+  apa yang IA TANYAKAN: ping tiap 5 detik, SSH tiap 30 detik. Perangkat Cisco
+  di lab ini sudah meneriakkan kejadiannya sejak lama &mdash; interface naik
+  turun, tetangga OSPF hilang, konfigurasi diubah dari alamat tertentu &mdash;
+  dan sampai Paket A dibangun tidak ada yang menampungnya. Halaman ini
+  memperlihatkan aliran itu apa adanya.</div>
+
+<div class="jelas-isi" data-untuk="#judul-jujur">Syslog memakai UDP dan
+  <strong>tidak terautentikasi</strong>. Siapa pun di jaringan bisa mengirim
+  pesan berpura-pura menjadi router. Karena itu nama perangkat di halaman ini
+  adalah TEBAKAN berdasarkan alamat pengirim, dan tidak ada satu pun isi
+  syslog yang boleh langsung menggerakkan NSM: ia bukti untuk dibaca manusia,
+  dan keputusan tetap lewat pagar otomasi yang memeriksa keadaan sungguhan
+  lebih dulu.</div>
+
+<section class="sl-kendali" aria-label="Penyaring">
+  <h2 id="judul-syslog" class="sl-judul">Aliran pesan</h2>
+
+  <div class="sl-kendali-kanan">
+    <label class="sl-label" for="sl-jam">Jendela</label>
+    <select id="sl-jam" class="sl-pilih">
+      <option value="1">1 jam</option>
+      <option value="6">6 jam</option>
+      <option value="24" selected>24 jam</option>
+      <option value="72">3 hari</option>
+      <option value="168">7 hari</option>
+    </select>
+
+    <label class="sl-label" for="sl-cari">Cari isi</label>
+    <input id="sl-cari" class="sl-cari" type="search" autocomplete="off"
+           placeholder="mis. DUPLEX, OSPF, 192.168">
+
+    <label class="sl-saklar">
+      <input type="checkbox" id="sl-penting">
+      <span>Hanya yang gawat</span>
+    </label>
+  </div>
+</section>
+
+<!-- ===================== KARTU RINGKAS ===================== -->
+<section class="sl-ubin" id="sl-ubin" aria-label="Ringkasan">
+  <p class="redup">Memuat&hellip;</p>
+</section>
+
+<!-- ===================== GRAFIK ===================== -->
+<section class="sl-panel">
+  <div class="sl-panel-kepala">
+    <h3 class="sl-panel-judul">Kapan mereka bicara</h3>
+    <span class="sl-panel-ket" id="sl-grafik-ket"></span>
+  </div>
+  <div id="sl-grafik" class="sl-grafik" role="img"
+       aria-label="Grafik jumlah pesan syslog per jam"></div>
+  <p class="sl-kosong" id="sl-grafik-kosong" hidden>
+    Belum ada pesan pada jendela waktu ini.
+  </p>
+</section>
+
+<div class="sl-dua">
+
+  <section class="sl-panel">
+    <div class="sl-panel-kepala">
+      <h3 class="sl-panel-judul">Apa yang mereka katakan</h3>
+      <span class="sl-panel-ket">klik untuk menyaring</span>
+    </div>
+    <div id="sl-tag" class="sl-tag-daftar">
+      <p class="redup">Memuat&hellip;</p>
+    </div>
+  </section>
+
+  <section class="sl-panel">
+    <div class="sl-panel-kepala">
+      <h3 class="sl-panel-judul">Siapa yang bicara</h3>
+      <span class="sl-panel-ket">klik untuk menyaring</span>
+    </div>
+    <div id="sl-pengirim" class="sl-kirim-daftar">
+      <p class="redup">Memuat&hellip;</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== DAFTAR PESAN ===================== -->
+<section class="sl-panel">
+  <div class="sl-panel-kepala">
+    <h3 class="sl-panel-judul">Pesan</h3>
+    <span class="sl-panel-ket" id="sl-saring-aktif"></span>
+  </div>
+
+  <!-- `gulir-tabel` is the standard NSM scroll wrapper and is required: without it a wide table pushes the whole page sideways. `uji_templat_tabel.py` enforces this for every table template. -->
+  <div class="gulir-tabel">
+    <table class="sl-tabel">
+      <thead>
+        <tr>
+          <th scope="col">Waktu</th>
+          <th scope="col">Perangkat</th>
+          <th scope="col">Tingkat</th>
+          <th scope="col">Tag</th>
+          <th scope="col">Isi</th>
+        </tr>
+      </thead>
+      <tbody id="sl-baris">
+        <tr><td colspan="5" class="redup">Memuat&hellip;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Five rows per page, per the NSM rule for history tables below a summary; see js/halaman-tabel.js. -->
+  <div class="sl-halaman">
+    <span id="sl-halaman-ket" class="sl-panel-ket"></span>
+    <span class="sl-halaman-tombol">
+      <button type="button" id="sl-sebelum" class="tombol-kecil">Sebelumnya</button>
+      <button type="button" id="sl-sesudah" class="tombol-kecil">Berikutnya</button>
+    </span>
+  </div>
+</section>
+
+<h2 id="judul-jujur" class="sl-jujur-judul">Yang harus disebut terus terang</h2>
+<p class="sl-jujur">
+  Angka di halaman ini datang dari protokol yang tidak memverifikasi
+  pengirimnya. Bacalah sebagai <em>petunjuk kuat</em>, bukan sebagai bukti
+  hukum &mdash; dan perhatikan baris &ldquo;pengirim tak dikenal&rdquo; kalau
+  ada, karena justru itu yang paling layak ditanyakan.
+</p>
+
+<script src="/vendor/echarts.min.js"></script>
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/syslog.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

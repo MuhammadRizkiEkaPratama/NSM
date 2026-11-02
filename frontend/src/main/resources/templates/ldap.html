@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>LDAP - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+.sub-judul { font-size: var(--f-s); text-transform: uppercase;
+             letter-spacing: .04em; color: var(--teks-redup);
+             margin: var(--sp-5) 0 var(--sp-2); font-weight: 700; }
+
+.ket { font-size: var(--f-s); color: var(--teks-2); line-height: 1.55;
+       max-width: 78ch; margin-bottom: var(--sp-3); }
+
+table { font-size: var(--f-m); }
+th, td { padding: var(--sp-2) 10px; vertical-align: top; }
+
+.lencana-grup { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px;
+                border-radius: var(--r-bulat); background: var(--permukaan-3);
+                color: var(--teks-2); font-size: var(--f-xs);
+                border: 1px solid var(--garis); margin: 2px 4px 2px 0; }
+.tanpa-grup { color: var(--teks-redup); font-style: italic; font-size: var(--f-xs); }
+
+.email { font-family: var(--huruf-mono); font-size: var(--f-s); color: var(--teks-2); }
+.jabatan { color: var(--teks-2); }
+.waktu { font-family: var(--huruf-mono); color: var(--teks-redup); white-space: nowrap; }
+
+/* LDAP server status card, same pattern as the Dashboard device cards: color shows state and is neutral until data arrives. */
+.kartu-server { border: 1px solid var(--garis); border-left-width: 3px;
+                border-radius: var(--r-sedang); background: var(--permukaan-2);
+                padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4);
+                display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+.kartu-server.hidup { border-left-color: var(--up); }
+.kartu-server.mati { border-left-color: var(--down); }
+.titik-status { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.titik-status.hidup { background: var(--up); }
+.titik-status.mati { background: var(--down); }
+.baris-server-nama { font-weight: 700; }
+.baris-server-sub { color: var(--teks-redup); font-size: var(--f-s); margin-top: 2px; }
+
+.peringatan-basi { border: 1px dashed var(--garis); border-radius: var(--r-sedang);
+                    padding: var(--sp-2) var(--sp-3); color: var(--hati-hati);
+                    font-size: var(--f-s); margin-bottom: var(--sp-3); }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('LDAP', 'siapa orangnya, jabatan apa, siapa terakhir masuk', 'ldap')}"></div>
+
+<div class="catatan" style="margin-bottom: var(--sp-4);">
+  Halaman ini BACA-SAJA. Isinya salinan direktori LDAP dan riwayat login NSM
+  yang sudah tercatat -- tidak ada satu pun tombol di sini yang mengubah,
+  menambah, atau menghapus apa pun di LDAP.
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Mengubah data LDAP berarti NSM butuh kredensial TULIS ke direktori LDAP lab yang sama menopang login NSM sendiri dan E-Canteen -- kelas risiko berbeda dari sekadar membaca. Belum dibangun sampai ada rancangan pengamanan tersendiri (siapa boleh menulis, ke mana dicatat).">
+    Kenapa tidak bisa mengubah dari sini?
+  </span>
+</div>
+
+<!-- LDAP server status, read from already-monitored data (same as the Dashboard card); this page triggers no new checks. -->
+<div th:if="${serverLdap != null}"
+     th:classappend="${serverLdap.isReachable} ? 'kartu-server hidup' : 'kartu-server mati'">
+  <span th:classappend="${serverLdap.isReachable} ? 'titik-status hidup' : 'titik-status mati'"></span>
+  <div>
+    <div class="baris-server-nama" th:text="${serverLdap.name} + ' (' + ${serverLdap.ipAddress} + ')'">Direktori LDAP</div>
+    <div class="baris-server-sub">
+      <span th:text="${serverLdap.isReachable} ? 'Hidup' : 'TIDAK TERJANGKAU'"></span>
+      <span th:if="${serverLdap.responseTimeMs != null}" th:text="' — ' + ${#numbers.formatDecimal(serverLdap.responseTimeMs, 1, 1)} + ' ms'"></span>
+      <span th:if="${serverLdap.lastChecked != null and serverLdap.lastChecked.length() >= 19}"
+            th:text="' — dicek ' + ${#strings.substring(serverLdap.lastChecked, 11, 19)}"></span>
+    </div>
+  </div>
+  <a class="tombol dorong-kanan" th:if="${serverLdap.id != null}"
+     th:href="@{'/report/device/' + ${serverLdap.id}}">Lihat riwayat lengkap →</a>
+</div>
+<div class="kosong" th:if="${serverLdap == null}">
+  Status server LDAP tidak terbaca. Python mungkin sedang mati, atau device-nya belum terdaftar.
+</div>
+
+<!-- People list. Source is `orang_ldap`, a copy synced periodically by the poller, not a live connection to the LDAP server on each page load. -->
+<h4 class="judul-panel kepala" style="margin-top:0;">Daftar Orang di Direktori</h4>
+<div class="ket">
+  Disalin poller dari <code>.101</code> secara berkala, bukan dibaca langsung
+  saat halaman ini dibuka -- supaya halaman tetap menjawab walau direktori
+  sedang mati. Grup menentukan hak apa yang dipunyai seseorang: <code>berkas</code>
+  bisa mengakses folder sharing file server, <code>ecanteen</code> bisa masuk
+  E-Canteen, <code>sysadmin</code>/<code>nsm-admin</code> berhak administratif.
+</div>
+
+<div class="peringatan-basi"
+     th:if="${direktori != null and direktori.salinan_tertua_menit != null and direktori.salinan_tertua_menit > 120}">
+  Salinan ini sudah <span th:text="${direktori.salinan_tertua_menit}">?</span> menit
+  tidak diperbarui -- poller mungkin gagal menyinkron direktori beberapa
+  putaran terakhir. Data di bawah masih yang terakhir berhasil dibaca, bukan
+  data yang hilang.
+</div>
+
+<div class="kosong" th:if="${direktori == null}">
+  Direktori tidak terbaca. Python mungkin sedang mati.
+</div>
+
+<div class="gulir-tabel"><table th:if="${direktori != null}">
+  <thead>
+    <tr>
+      <th>UID</th>
+      <th>Nama</th>
+      <th>Jabatan</th>
+      <th>Email</th>
+      <th>Grup</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="o : ${direktori.orang}">
+      <td><code th:text="${o.uid}"></code></td>
+      <td th:text="${o.nama} ?: '-'"></td>
+      <td class="jabatan" th:text="${o.jabatan} ?: '-'"></td>
+      <td class="email" th:text="${o.email} ?: '-'"></td>
+      <td>
+        <span th:each="g : ${o.grup}" class="lencana-grup" th:text="${g}"></span>
+        <span th:if="${#lists.isEmpty(o.grup)}" class="tanpa-grup">tidak ada grup</span>
+      </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<!-- Recent NSM logins: only the latest per person, not the raw history (that is in /admin/audit). -->
+<h4 class="judul-panel kepala">Login NSM Terbaru</h4>
+<div class="ket">
+  Login berhasil ke NSM ini sendiri, satu baris per orang (yang paling
+  terakhir). Dari <code>audit_logs</code>, tabel yang sama dipakai halaman
+  Audit Log -- lihat di sana untuk riwayat lengkap, termasuk percobaan yang
+  gagal.
+  <b>TIDAK ADA data E-Canteen di sini.</b> E-Canteen aplikasi terpisah yang
+  tidak menulis ke tabel ini, jadi NSM tidak tahu siapa login ke sana --
+  menampilkannya di sini akan jadi tebakan, bukan fakta.
+</div>
+
+<div class="kosong" th:if="${#lists.isEmpty(loginTerakhir)}">
+  Belum ada login berhasil yang tercatat.
+</div>
+
+<div class="gulir-tabel"><table th:unless="${#lists.isEmpty(loginTerakhir)}">
+  <thead>
+    <tr>
+      <th>Pengguna</th>
+      <th>Login Terakhir</th>
+      <th>Dari Alamat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="l : ${loginTerakhir}">
+      <td th:text="${l.actor}"></td>
+      <td class="waktu" th:text="${#temporals.format(l.timestamp, 'dd MMM HH:mm:ss')}"
+          th:title="${#temporals.format(l.timestamp, 'EEEE, dd MMMM yyyy HH:mm:ss')}"></td>
+      <td class="waktu" th:text="${l.ip == '0:0:0:0:0:0:0:1' or l.ip == '127.0.0.1' or l.ip == '::1'
+                                   ? 'localhost' : l.ip}"></td>
+    </tr>
+  </tbody>
+</table></div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

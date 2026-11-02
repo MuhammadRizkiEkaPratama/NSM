@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Sumber Kebenaran - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Sumber Kebenaran', 'perangkat SEHARUSNYA begini, dibandingkan dengan yang sekarang', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('sot')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-sot">Tahap 1 dari rencana network automation tertutup
+  (<code>docs/design/CLOSED-LOOP-AUTOMATION.md</code>). Halaman lain di Konfigurasi menjawab
+  "apa yang SEKARANG terpasang" (Potret) dan "apakah yang terpasang itu aman"
+  (Kepatuhan) — halaman ini yang pertama menjawab pertanyaan yang berbeda:
+  "apa yang SEHARUSNYA terpasang". Mengisi di sini TIDAK mengubah satu pun
+  perangkat; nol sentuhan ke jaringan. Tahap 2 (belum dibangun) yang nanti
+  membandingkan jawaban ini dengan Potret dan melaporkan bedanya.</div>
+
+<h4 id="judul-sot" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-file-check-2"/></svg>
+  Perangkat yang punya katalog intent</h4>
+
+<div class="gulir-tabel"><table id="tabel-sot" class="tabel-rincian">
+  <thead>
+    <tr>
+      <th>Perangkat</th>
+      <th>Platform</th>
+      <th>Kelengkapan</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="baris-sot">
+    <tr><td colspan="4" class="redup">Memuat&hellip;</td></tr>
+  </tbody>
+</table></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Hanya perangkat yang platformnya sudah punya template dan katalog kunci intent yang muncul di sini (saat ini: cisco_ios dan linux). Perangkat lain belum sampai giliran, bukan sedang bermasalah. Nilai intent TIDAK boleh memuat rahasia (password, community SNMP) -- lihat sot/katalog.py -- jadi konfigurasi hasil render sengaja tidak lengkap sepenuhnya.">
+    Kenapa cuma sebagian perangkat yang muncul?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/sot.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

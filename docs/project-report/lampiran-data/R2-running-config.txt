@@ -1,0 +1,131 @@
+Building configuration...
+
+Current configuration : 2812 bytes
+!
+! No configuration change since last restart
+!
+version 12.4
+service timestamps debug datetime msec
+service timestamps log datetime msec localtime show-timezone
+no service password-encryption
+!
+hostname R2
+!
+boot-start-marker
+boot-end-marker
+!
+logging buffered 16384 informational
+logging rate-limit 20 except errors
+!
+no aaa new-model
+memory-size iomem 5
+no ip icmp rate-limit unreachable
+ip cef
+!
+!
+!
+!
+no ip domain lookup
+ip domain name lab.local
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+username nsm privilege 15 secret 5 <disamarkan>
+!
+!
+ip tcp synwait-time 5
+ip ssh version 2
+!
+!
+!
+interface FastEthernet0/0
+ description LAN lokasi B ke SW-B
+ ip address 192.168.20.1 255.255.255.0
+ duplex auto
+ speed auto
+!
+interface FastEthernet0/1
+ description WAN ke ISP - disaring ACL DARI-LOKASI-A
+ ip address 10.10.20.2 255.255.255.252
+ ip access-group DARI-LOKASI-A in
+ duplex auto
+ speed auto
+!
+ip route 0.0.0.0 0.0.0.0 10.10.20.1
+ip route 192.168.56.0 255.255.255.0 10.10.20.1
+!
+!
+no ip http server
+no ip http secure-server
+!
+ip access-list extended DARI-LOKASI-A
+ remark dibuat NSM - memisahkan Lokasi A dari Lokasi B
+ remark balasan untuk koneksi yang dimulai dari Lokasi B
+ permit tcp any any established
+ remark pemantauan NSM: ping ke seluruh Lokasi B
+ permit icmp 192.168.56.0 0.0.0.255 192.168.20.0 0.0.0.255
+ remark NSM: SSH ke .101, R2, dan SW-B (ambil konfigurasi)
+ permit tcp host 192.168.56.1 192.168.20.0 0.0.0.255 eq 22
+ remark NSM: login lewat LDAP (satu-satunya yang masih perlu 389)
+ permit tcp host 192.168.56.1 host 192.168.20.101 eq 389
+ remark NSM: SNMP untuk sampel bandwidth (ditemukan lewat deny log)
+ permit udp host 192.168.56.1 host 192.168.20.101 eq snmp
+ remark server web .103: sssd dan E-Canteen ke direktori LDAP
+ permit tcp host 192.168.56.103 host 192.168.20.101 eq 389
+ remark data server .104: sssd ke direktori LDAP (login admin terpusat)
+ permit tcp host 192.168.56.104 host 192.168.20.101 eq 389
+ permit tcp host 192.168.56.105 host 192.168.20.101 eq 389
+ remark NTP: JAWABAN dari sumber waktu lab (UDP tidak tertutup established)
+ permit udp host 192.168.56.104 eq ntp 192.168.20.0 0.0.0.255
+ remark sisanya ditolak DAN DICATAT
+ deny   ip any any log
+!
+logging source-interface FastEthernet0/0
+logging host 192.168.56.156 transport udp port 1514
+snmp-server trap-source FastEthernet0/0
+snmp-server enable traps snmp linkdown linkup coldstart warmstart
+snmp-server enable traps config
+snmp-server host 192.168.56.156 version 2c public udp-port 1162 
+no cdp log mismatch duplex
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ login local
+ transport input ssh
+!
+ntp source FastEthernet0/0
+ntp server 192.168.56.104
+!
+end

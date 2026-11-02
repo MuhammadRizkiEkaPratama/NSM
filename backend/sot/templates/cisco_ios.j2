@@ -1,0 +1,82 @@
+{# cisco_ios.j2 -- INTENDED configuration for Cisco IOS devices. Rendered by sot/render.py and compared with REAL snapshots in konfig_snapshots by drift detection. Block order deliberately follows `show running-config`. Contains no secrets (see the docstring of sot/katalog.py). Lines holding password hashes or SNMP communities in real snapshots have no counterpart here and are ignored when comparing. `n` = dict of intent values (keys from sot/katalog.py). Undeclared optional keys are absent from `n` entirely, so each block checks `if n.key is defined` instead of relying on defaults. #}
+hostname {{ n.hostname }}
+{% if n.domain is defined %}
+ip domain-name {{ n.domain }}
+{% endif %}
+!
+clock timezone {{ zona_cisco(n.zona_waktu) }}
+{% for ip in n.ntp_server %}
+ntp server {{ ip }}
+{% endfor %}
+{% for ip in n.dns_server | default([]) %}
+ip name-server {{ ip }}
+{% endfor %}
+{% for ip in n.logging_server | default([]) %}
+logging host {{ ip }}
+{% endfor %}
+!
+{% if n.snmp_lokasi is defined %}
+snmp-server location {{ n.snmp_lokasi }}
+{% endif %}
+{% if n.snmp_kontak is defined %}
+snmp-server contact {{ n.snmp_kontak }}
+{% endif %}
+!
+{% if n.banner_masuk is defined %}
+banner motd ^C{{ n.banner_masuk }}^C
+{% endif %}
+!
+{% if n.layanan_http_mati %}
+no ip http server
+no ip http secure-server
+{% endif %}
+!
+{% for v in vlan %}
+vlan {{ v.vlan_id }}
+{% if v.nama %}
+ name {{ v.nama }}
+{% endif %}
+!
+{% endfor %}
+{% for i in interface %}
+interface {{ i.nama }}
+{% if i.deskripsi %}
+ description {{ i.deskripsi }}
+{% endif %}
+{% if i.ip and i.mask %}
+ ip address {{ i.ip }} {{ i.mask }}
+{% endif %}
+{% if i.vlan %}
+ switchport access vlan {{ i.vlan }}
+{% endif %}
+{% if i.shutdown %}
+ shutdown
+{% else %}
+ no shutdown
+{% endif %}
+!
+{% endfor %}
+{% for r in rute %}
+ip route {{ r.tujuan }} {{ r.mask }} {{ r.next_hop }}
+{% endfor %}
+!
+line con 0
+ exec-timeout {{ n.exec_timeout_menit }} 0
+!
+line vty 0 15
+ exec-timeout {{ n.exec_timeout_menit }} 0
+{% if n.ssh_saja %}
+ transport input ssh
+{% else %}
+ transport input telnet ssh
+{% endif %}
+{% if n.vty_izin is defined and n.vty_izin %}
+ access-class VTY-IZIN in
+!
+ip access-list standard VTY-IZIN
+{% for ip in n.vty_izin %}
+ permit host {{ ip }}
+{% endfor %}
+{% endif %}
+!
+end

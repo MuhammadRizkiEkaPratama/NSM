@@ -1,0 +1,1071 @@
+/*
+ * Styles for the Configuration page family (a home page plus five content pages). Styles shared
+ * by the whole app stay in `nsm.css`; only configuration-specific styles live here.
+ */
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+/*
+ * Explanatory paragraph. `.ket` is used in seven templates and previously had no CSS rule, so it
+ * fell back to the browser's 16px, larger than the labels it explains. It is fixed here, not in
+ * nsm.css, because `.ket` is also used by Traffic, Backup and Health and resizing it for all of
+ * them should be its own decision.
+ */
+.ket {
+  font-size: var(--f-s); color: var(--teks-2); line-height: 1.55;
+  max-width: 78ch;
+}
+
+td.angka { font-variant-numeric: tabular-nums; text-align: right; }
+td.sidik { font-family: var(--huruf-mono); font-size: var(--f-xs); color: var(--teks-redup); }
+
+
+/*
+ * 1) Configuration home: gateway cards. The page was split because five unrelated jobs (compose
+ * commands, compliance, identity matching, firewall, snapshot history) made one very long page.
+ * Each card carries the ANSWER for its section; the page behind it carries the evidence. Card
+ * sizes differ on purpose: compliance needs the most content so it is the largest, identity the smallest.
+ */
+
+#beranda {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--sp-4);
+}
+
+/*
+ * One card is three rows: section name (small), ANSWER (one sentence), details (at most four
+ * lines). The explanatory sentence appears on hover only and is supplementary, since hover does
+ * not exist on touch screens. The card is an <a>, not a clickable <div>, so it opens in a new
+ * tab, is reachable by Tab, and is announced as a link.
+ */
+.gerbang {
+  grid-column: span 6;
+  display: flex; flex-direction: column;
+  background: var(--permukaan-2);
+  border: 1px solid var(--garis-terang);
+  border-radius: var(--r-sedang);
+  padding: var(--sp-3) var(--sp-4);
+  color: inherit; text-decoration: none;
+  transition: border-color var(--alih), background var(--alih),
+              transform var(--alih);
+}
+.gerbang:hover {
+  background: var(--permukaan-3);
+  border-color: var(--garis-terang);
+  transform: translateY(-1px);
+}
+.gerbang:focus-visible { outline: 2px solid var(--up); outline-offset: 3px; }
+
+/* The left edge carries the section state. JavaScript sets the color from real data; the default is NEUTRAL, not green, so a card never claims health before data arrives. */
+.gerbang.g-buruk  { --aksen: var(--down); }
+.gerbang.g-hati   { --aksen: var(--hati-hati); }
+.gerbang.g-baik   { --aksen: var(--up); }
+.gerbang.g-netral { --aksen: var(--garis-terang); }
+
+.gerbang .kepala {
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.gerbang .nama {
+  font-size: var(--f-xs); font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--teks-redup);
+}
+
+.gerbang .kepala::after {
+  content: "\2192"; margin-left: auto; color: var(--teks-samar);
+  font-size: var(--f-n); transition: transform var(--alih), color var(--alih);
+}
+.gerbang:hover .kepala::after { transform: translateX(3px); color: var(--tautan); }
+
+/* The ANSWER: a sentence, not a bare number ("3 high findings" reads without context, "3" does not). */
+.gerbang .jawab {
+  font-size: var(--f-l); font-weight: 700; line-height: 1.3;
+  margin-top: var(--sp-2);
+}
+.g-kepatuhan .jawab { font-size: var(--f-xl); }
+.gerbang .jawab.buruk { color: var(--down); }
+.gerbang .jawab.hati  { color: var(--hati-hati); }
+.gerbang .jawab.baik  { color: var(--up); }
+/* "Not known yet" is distinguished from "known and zero"; both give a nearly empty card with opposite meanings. */
+.gerbang .jawab.belum { color: var(--teks-redup); font-weight: 400;
+                        font-size: var(--f-n); }
+
+/* Per-device details, capped at four rows by konfig.js; the rest collapse into one "+N more" row. */
+.gerbang .rinci {
+  margin-top: var(--sp-3); font-size: var(--f-s); color: var(--teks-2);
+  line-height: 1.55; display: flex; flex-direction: column; gap: 2px;
+}
+.gerbang .rinci .baris {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+}
+.gerbang .rinci .nama-perangkat {
+  flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The card that CHANGES DEVICES. It is the only non-read card and must look different, in a calm color: it is a different kind of card, not a higher danger level. */
+.gerbang.g-aksi {
+  background: linear-gradient(160deg, var(--permukaan-3), var(--permukaan-2) 65%);
+  --aksen: var(--tautan);
+}
+.gerbang.g-aksi .jawab { font-size: var(--f-n); font-weight: 600;
+                         color: var(--teks-2); }
+.tanda-aksi {
+  font-size: var(--f-xs); text-transform: uppercase; letter-spacing: .5px;
+  color: var(--tautan); border: 1px solid var(--tautan);
+  border-radius: var(--r-bulat); padding: 1px 8px; white-space: nowrap;
+}
+
+/*
+ * Card sizes, written separately from the styling so the layout reads at once:
+ *   Compliance (7 cols, 2 rows) | Compose commands
+ *                               | Snapshot
+ *   Firewall (7 cols)           | Identity
+ */
+.g-kepatuhan { grid-column: span 7; grid-row: span 2; }
+.g-perintah  { grid-column: span 5; }
+.g-potret    { grid-column: span 5; }
+.g-firewall  { grid-column: span 7; }
+.g-identitas { grid-column: span 5; }
+
+/* On medium screens the two-column layout is kept but the large card stops spanning two rows, to avoid empty space in its neighbor. */
+@media (max-width: 1100px) {
+  .g-kepatuhan { grid-column: span 12; grid-row: span 1; }
+  .g-perintah, .g-potret, .g-firewall, .g-identitas { grid-column: span 6; }
+}
+@media (max-width: 720px) {
+  .gerbang { grid-column: span 12 !important; }
+}
+
+/*
+ * Shapes instead of sentences. Small graphics are built from <div> and CSS (no canvas or
+ * images), so they follow the theme and stay sharp. Rule for this whole section: color is never
+ * the only carrier; every bar is accompanied by a number or word (red/green color blindness).
+ */
+
+/*
+ * 1) Severity bar: findings per device. The scale is SHARED across rows (relative to the device
+ * with the most findings), not normalized per bar, so one finding does not look as full as twelve.
+ */
+.batang {
+  flex: 1 1 90px; min-width: 60px; max-width: 220px;
+  display: flex; gap: 2px; height: 8px;
+  background: var(--permukaan-3); border-radius: 2px; overflow: hidden;
+}
+.batang .seg { border-radius: 2px; }
+.batang .s-tinggi { background: var(--down); }
+.batang .s-sedang { background: var(--hati-hati); }
+.batang .s-rendah { background: var(--teks-samar); }
+
+/* NOT ASSESSED is hatched, not another color: it is the absence of an assessment, not a fourth severity. An empty bar (zero findings) and a hatched bar (not checked) must be distinguishable without color. */
+.batang.belum {
+  background: repeating-linear-gradient(135deg,
+    var(--permukaan-3) 0 4px, var(--garis) 4px 8px);
+}
+
+/* Severity bar legend. Needed: stacked bars without one can only be read by someone who already knows the order. */
+.legenda {
+  display: flex; gap: var(--sp-3); flex-wrap: wrap;
+  margin-top: var(--sp-2); font-size: var(--f-xs); color: var(--teks-redup);
+}
+.legenda i {
+  display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+  margin-right: 5px; vertical-align: baseline;
+}
+.legenda .s-tinggi { background: var(--down); }
+.legenda .s-sedang { background: var(--hati-hati); }
+.legenda .s-rendah { background: var(--teks-samar); }
+
+.proporsi {
+  display: flex; gap: 2px; height: 8px; margin-top: var(--sp-2);
+  border-radius: 2px; overflow: hidden; background: var(--permukaan-3);
+}
+.proporsi .seg { border-radius: 2px; }
+.proporsi .p-cocok   { background: var(--up); }
+.proporsi .p-belum   { background: var(--teks-samar); }
+.proporsi .p-bentrok { background: var(--down); }
+
+/*
+ * 3) Configuration change timeline. Bars, not a line: one bar per day with no gradual transition
+ * between days. It does not reuse js/sparkline.js, which draws success percentages and colors
+ * bars by availability thresholds; counting changes there would color "three changes" as an outage rate.
+ */
+.waktu-ubah {
+  display: flex; align-items: flex-end; gap: 2px; height: 26px;
+  margin-top: var(--sp-2);
+}
+.waktu-ubah .hari {
+  flex: 1 1 0; min-width: 2px; background: var(--tautan);
+  border-radius: 2px 2px 0 0; opacity: .85;
+}
+/* Days WITHOUT changes are still drawn, as a faint line at the base, so a gap does not read as time that never existed. */
+.waktu-ubah .hari.nol { background: var(--garis); opacity: 1; height: 2px; }
+
+/* Timeline for the Snapshot page: taller, because it is the main answer at the top of that page, not a card accessory. */
+.panel-waktu {
+  margin-top: var(--sp-4); padding: var(--sp-3) var(--sp-4);
+  background: var(--permukaan-2); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang);
+}
+.panel-waktu .waktu-ubah { height: 46px; margin-top: 0; }
+.kaki-waktu {
+  display: flex; justify-content: space-between; margin-top: var(--sp-2);
+  font-size: var(--f-xs); color: var(--teks-redup);
+}
+
+/*
+ * 4) Safety-net flow: the four steps of every push. The only graphic that explains a MECHANISM
+ * rather than data; the order of steps is what makes a push safe.
+ */
+.alur {
+  display: flex; align-items: center; gap: 0; margin-top: var(--sp-3);
+  font-size: var(--f-xs); color: var(--teks-redup);
+}
+.alur .langkah {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 1 1 0; text-align: center; min-width: 0;
+}
+.alur .titik {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--permukaan-3); border: 2px solid var(--tautan);
+}
+/* The last step is distinguished: it is where the safety net is RELEASED. */
+.alur .langkah:last-child .titik { background: var(--tautan); }
+/*
+ * `flex: 1 1 0` and `min-width`, not `width: 100%`: the latter made each connector demand the
+ * full container width, so the whole page overflowed sideways (found by measuring `scrollWidth > clientWidth`).
+ */
+.alur .garis {
+  flex: 1 1 0; min-width: 8px; height: 2px; background: var(--garis-terang);
+  align-self: flex-start; margin-top: 6px;
+}
+.alur .nama-langkah {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 100%;
+}
+.alur-lebar { font-size: var(--f-s); margin: 0 0 var(--sp-4); max-width: 620px; }
+.alur-lebar .titik { width: 11px; height: 11px; }
+.alur-lebar .garis { margin-top: 7px; }
+
+/* Flow with icons: each step is a circle with its own icon, which reads faster than numbers alone. */
+.alur-ikon .titik { width: 26px; height: 26px; border-width: 1px;
+                    display: flex; align-items: center; justify-content: center; }
+.alur-ikon .titik .ikon { width: 13px; height: 13px; color: var(--tautan); }
+.alur-ikon .langkah:last-child .titik .ikon { color: var(--bg); }
+.alur-ikon .garis { margin-top: 13px; }
+
+/* Status dot on device rows. Always accompanied by the state WORD (see the rule at the top of this section). */
+.titik-keadaan {
+  width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--teks-samar);
+}
+.titik-keadaan.baik  { background: var(--up); }
+.titik-keadaan.hati  { background: var(--hati-hati); }
+.titik-keadaan.buruk { background: var(--down); }
+
+
+/*
+ * Section titles that carry their explanation on hover. Replaces the `.ket` paragraph once
+ * printed under each title. The dotted underline matches `.bantu` and `.beristilah` in nsm.css
+ * ("more information behind this"), and it also shows on keyboard focus (handled by petunjuk.js).
+ */
+.judul-bantu {
+  border-bottom: 1px dashed var(--garis-terang);
+  cursor: help;
+}
+.judul-bantu:hover, .judul-bantu:focus-visible { border-bottom-color: var(--teks-redup); }
+
+/* Short fact line at the top of content pages, replacing the intro paragraph. Each item stands alone and has its full explanation on hover. */
+.hal-singkat {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+  margin: 0 0 var(--sp-4); font-size: var(--f-s); color: var(--teks-2);
+}
+.hal-singkat > * { white-space: nowrap; }
+@media (max-width: 620px) { .hal-singkat > * { white-space: normal; } }
+
+
+/*
+ * 2) Breadcrumb (fragmen/konfig-jalur.html). These pages are NOT added to the top menu, which
+ * was already trimmed from eleven links to six. The breadcrumb is one small line back to the
+ * configuration home and sideways to the sibling pages.
+ */
+.jalur {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  font-size: var(--f-s); margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3); border-bottom: 1px solid var(--garis);
+}
+.jalur a { color: var(--teks-redup); text-decoration: none; }
+.jalur a:hover { color: var(--teks); }
+.jalur .pulang { color: var(--tautan); font-weight: 600; }
+.jalur .pisah { color: var(--garis-terang); }
+/* The current page is plain TEXT, not a link to itself. */
+.jalur .kini { color: var(--teks); font-weight: 600; }
+
+
+/* 3) Snapshot and row comparison */
+
+/* A device's first snapshot has nothing to compare with. Shown neutral, NOT as 0: "0 rows changed" would read as "nothing changed" instead of "nothing to compare yet". */
+.lencana-awal { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+                background: var(--permukaan-3); color: var(--teks-redup);
+                border: 1px solid var(--garis); white-space: nowrap; }
+
+.tambah { color: var(--up); }
+.hapus  { color: var(--down); }
+
+/* Changes not yet in startup-config: they are LOST on reload. Cautionary color, not red: nothing is broken; red in this app means something is failing now. */
+.belum-simpan {
+  color: var(--hati-hati); font-weight: 700;
+  border-bottom: 1px dashed var(--hati-hati-tepi);
+}
+
+/* Diff box. Monospace is required so configuration lines align between rows. */
+#kotak-beda {
+  margin-top: var(--sp-4); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); background: var(--permukaan-2);
+  overflow: hidden;
+}
+#kepala-beda {
+  padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--garis);
+  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+}
+#kepala-beda .judul { font-weight: 700; }
+#isi-beda {
+  margin: 0; padding: var(--sp-3) 0; max-height: 60vh; overflow: auto;
+  font-family: var(--huruf-mono); font-size: var(--f-s); line-height: 1.6;
+}
+#isi-beda .baris { padding: 0 var(--sp-4); white-space: pre-wrap; word-break: break-all; }
+#isi-beda .b-tambah { background: var(--up-latar); color: var(--up); }
+#isi-beda .b-hapus  { background: var(--down-latar); color: var(--down); }
+#isi-beda .b-posisi { color: var(--teks-samar); margin-top: var(--sp-2); }
+#isi-beda .b-sama   { color: var(--teks-redup); }
+
+
+/* ==========================================================================
+   4) PENYUSUN PERINTAH
+   ========================================================================== */
+#alat-perintah { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+                 margin-bottom: var(--sp-3); }
+#alat-perintah label { display: flex; flex-direction: column; gap: 4px;
+                       font-size: var(--f-s); color: var(--teks-redup); }
+#alat-perintah select { min-width: 230px; }
+
+#isian-perintah { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+                  margin-bottom: var(--sp-3); }
+#isian-perintah label { display: flex; flex-direction: column; gap: 4px;
+                        font-size: var(--f-s); color: var(--teks-redup); }
+#isian-perintah input, #isian-perintah select { min-width: 230px; }
+
+/* Validation errors are written under their own field, so the user knows WHICH field is wrong. */
+.galat-isian { color: var(--down); font-size: var(--f-xs); max-width: 46ch;
+               line-height: 1.45; }
+
+#hasil-pratinjau { margin-top: var(--sp-4); }
+.kotak-pratinjau { border: 1px solid var(--garis); border-radius: var(--r-sedang);
+                   background: var(--permukaan-2); overflow: hidden; }
+.kotak-pratinjau .kepala { padding: var(--sp-3) var(--sp-4);
+                           border-bottom: 1px solid var(--garis); font-weight: 700; }
+.kotak-pratinjau pre { margin: 0; padding: var(--sp-3) var(--sp-4);
+                       font-family: var(--huruf-mono); font-size: var(--f-s);
+                       line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+
+/* Warnings use a cautionary color, not red: nothing is failing, but there is a risk to be aware of. */
+.peringatan-perintah { padding: var(--sp-3) var(--sp-4); font-size: var(--f-s);
+                       color: var(--hati-hati); line-height: 1.5;
+                       border-top: 1px solid var(--garis); }
+
+/* Action that CHANGES THE DEVICE, visually separated from the preview box: everything above is reading, below is doing. */
+.aksi-kirim {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--garis); background: var(--permukaan-3);
+}
+.aksi-kirim .catatan-kirim {
+  font-size: var(--f-s); color: var(--teks-2); line-height: 1.5;
+  flex: 1 1 22ch; min-width: 22ch;
+}
+/* Red, only here. Red in this app means something is failing or will change state outside NSM; this button is the second case. */
+.tombol-bahaya {
+  background: var(--down-latar); color: var(--down);
+  border: 1px solid var(--down-tepi); font-weight: 700;
+}
+.tombol-bahaya:hover:not(:disabled) { background: var(--down); color: var(--putih); }
+.hasil-baik {
+  padding: var(--sp-3) var(--sp-4); font-size: var(--f-s);
+  color: var(--up); background: var(--up-latar);
+  border-top: 1px solid var(--up-tepi); line-height: 1.5;
+}
+
+/*
+ * FAILED RESULT, which must not reuse `.peringatan-perintah`: previously warnings (to consider
+ * BEFORE sending) and a result ("Not sent. Failed midway.") looked identical, and the one that
+ * says what already HAPPENED to a real device got lost. Red follows the app's color rule.
+ */
+.hasil-gagal {
+  padding: var(--sp-3) var(--sp-4); font-size: var(--f-s);
+  color: var(--down); background: var(--down-latar);
+  border-top: 1px solid var(--down-tepi); line-height: 1.5;
+  font-weight: 600;
+}
+.tak-terkirim { padding: var(--sp-3) var(--sp-4); font-size: var(--f-s);
+                color: var(--teks-2); border-top: 1px solid var(--garis);
+                background: var(--permukaan-3); }
+
+
+/* 5) Device identity */
+.tabel-identitas { width: 100%; }
+.tabel-identitas td { vertical-align: top; }
+.lencana-vonis {
+  display: inline-block; padding: 2px 9px; border-radius: var(--r-bulat);
+  font-size: var(--f-xs); font-weight: 700; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.lencana-vonis.v-sama    { background: var(--up-latar); color: var(--up);
+                           border-color: var(--up-tepi); }
+.lencana-vonis.v-mungkin { background: var(--hati-hati-latar);
+                           color: var(--hati-hati);
+                           border-color: var(--hati-hati-tepi); }
+.lencana-vonis.v-bentrok { background: var(--down-latar); color: var(--down);
+                           border-color: var(--down-tepi); }
+/* "Not recognized" is NEUTRAL, not red: an empty marker means NSM has not asked yet, a conflicting marker means it asked and got a different answer. Painting both red equates "not yet" with "foreign device". */
+.lencana-vonis.v-belum   { background: var(--garis); color: var(--teks-2);
+                           border-color: var(--garis-terang); }
+.penanda { display: block; font-size: var(--f-xs); line-height: 1.6; }
+.penanda-jenis { color: var(--teks-2); display: inline-block; min-width: 82px; }
+.penanda-nilai { font-family: var(--mono, monospace); }
+.ya-tulis { color: var(--up); font-weight: 700; }
+.ket.peringatan { color: var(--down); font-weight: 600; }
+
+/* Identity card grid, replacing a five-column table: ten devices are too many rows to scan in a table but few enough for compact cards. */
+.grid-identitas { display: grid; gap: var(--sp-3);
+                  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+.kartu-id { background: var(--permukaan-2); border: 1px solid var(--garis);
+            border-radius: var(--r-besar); padding: var(--sp-4); border-top: 3px solid var(--garis-terang); }
+.kartu-id.v-sama    { border-top-color: var(--up); }
+.kartu-id.v-mungkin { border-top-color: var(--hati-hati); }
+.kartu-id.v-bentrok { border-top-color: var(--down); }
+.kartu-id.v-belum   { border-top-color: var(--garis-terang); }
+.id-atas { display: flex; align-items: center; gap: var(--sp-2); }
+.id-ikon { width: 30px; height: 30px; border-radius: 8px; flex: none; display: flex;
+           align-items: center; justify-content: center; background: var(--permukaan-3); color: var(--teks-2); }
+.id-ikon .ikon { width: 16px; height: 16px; }
+.kartu-id.v-bentrok .id-ikon { color: var(--down); background: var(--down-latar); }
+.id-nama { font-weight: 700; font-size: var(--f-s); min-width: 0; }
+.id-alamat { font-size: var(--f-xs); color: var(--teks-samar); font-family: var(--huruf-mono); }
+.id-atas .lencana-vonis { margin-left: auto; }
+.id-penanda { margin-top: var(--sp-3); padding-top: var(--sp-2); border-top: 1px solid var(--garis); }
+.id-kaki { margin-top: var(--sp-3); padding-top: var(--sp-2); border-top: 1px solid var(--garis);
+           font-size: var(--f-xs); }
+.id-kaki .ikon { width: 12px; height: 12px; vertical-align: -1px; margin-right: 3px; }
+.id-kaki .redup { cursor: help; }
+
+
+/* ==========================================================================
+   6) KEPATUHAN KONFIGURASI
+   ========================================================================== */
+.judul-kecil { font-size: var(--f-n); margin: var(--sp-5) 0 var(--sp-1); }
+.kartu-kepatuhan {
+  border: 1px solid var(--garis); border-radius: var(--r-sedang);
+  background: var(--permukaan-2); padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.kepala-kepatuhan { display: flex; align-items: center; gap: var(--sp-3);
+                    flex-wrap: wrap; }
+.kepala-kepatuhan .nama-perangkat { font-weight: 700; font-size: var(--f-n); }
+.cacah-keparahan { display: flex; gap: 6px; }
+/* Badges with value ZERO are dimmed, not hidden: hiding them makes "zero high findings" indistinguishable from "that level was never checked". */
+.cacah-keparahan .lencana.nol { opacity: .35; }
+.lencana-down { background: var(--down-latar); color: var(--down);
+                border-color: var(--down-tepi); }
+.lencana-hati-hati { background: var(--hati-hati-latar); color: var(--hati-hati);
+                     border-color: var(--hati-hati-tepi); }
+.lencana-redup, .lencana-rendah { background: var(--permukaan-3);
+                                  color: var(--teks-redup); }
+.lencana-tinggi { background: var(--down-latar); color: var(--down);
+                  border-color: var(--down-tepi); }
+.lencana-sedang { background: var(--hati-hati-latar); color: var(--hati-hati);
+                  border-color: var(--hati-hati-tepi); }
+
+.temuan { padding: var(--sp-3) 0 var(--sp-3) var(--sp-4);
+          margin-top: var(--sp-3); }
+.temuan.tinggi { --aksen: var(--down); }
+.temuan.sedang { --aksen: var(--hati-hati); }
+.temuan.rendah { --aksen: var(--teks-redup); }
+/* The finding header is a <summary>. `list-style: none` and `::-webkit-details-marker` remove the browser-specific default triangle in favor of our own arrow. */
+.kepala-temuan { display: flex; align-items: center; gap: var(--sp-2);
+                 cursor: pointer; list-style: none; }
+.kepala-temuan::-webkit-details-marker { display: none; }
+.kepala-temuan::after {
+  content: "\25be"; margin-left: auto; padding-left: var(--sp-3);
+  color: var(--teks-redup); font-size: var(--f-s);
+  transition: transform .15s ease;
+}
+details.temuan[open] > .kepala-temuan::after { transform: rotate(180deg); }
+.kepala-temuan:hover .judul-temuan { color: var(--teks); }
+/* Closed findings are compacted; open ones stay roomy for reading. */
+details.temuan:not([open]) { padding-top: var(--sp-2); padding-bottom: var(--sp-2);
+                             margin-top: var(--sp-1); }
+.judul-temuan { font-weight: 600; }
+.temuan .kenapa { color: var(--teks-2); font-size: var(--f-m); line-height: 1.55;
+                  margin-top: var(--sp-2); max-width: 92ch; }
+.temuan .bukti { margin-top: var(--sp-2); font-size: var(--f-s); }
+.temuan .bukti code { font-family: var(--huruf-mono); background: var(--bg);
+                      padding: 2px 6px; border-radius: var(--r-kecil); }
+.temuan .perbaikan { margin-top: var(--sp-2); }
+.temuan .perbaikan summary { cursor: pointer; font-size: var(--f-s);
+                             color: var(--tautan); }
+.aman-kotak { margin-top: var(--sp-3); padding: var(--sp-3);
+              border: 1px solid var(--up); border-radius: var(--r-kecil);
+              color: var(--up); font-size: var(--f-m); }
+
+
+/* 7) Firewall: one card per device. The state must read before the rules table, because an empty table can mean two opposite things. */
+.kartu-fw { border: 1px solid var(--garis);
+            border-radius: var(--r-sedang); background: var(--permukaan-2);
+            padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+/* OFF gets the most prominent color: it is the only state here meaning "this machine is open", and must not look like other states that also give an empty table. */
+.kartu-fw.mati          { --aksen: var(--down); }
+.kartu-fw.tanpa_aturan  { --aksen: var(--hati-hati); }
+.kartu-fw.aktif         { --aksen: var(--up); }
+.kartu-fw.belum_terbaca { --aksen: var(--garis); }
+
+.kepala-fw { display: flex; align-items: center; gap: var(--sp-3);
+             flex-wrap: wrap; }
+/* Device icon with its pulse disabled: on the Dashboard the pulse means "alive and monitored", while here the firewall state is what is marked. */
+.ikon-fw { flex: 0 0 auto; }
+.ikon-fw.hidup, .ikon-fw.mati { animation: none; }
+.kepala-fw .judul { font-weight: 700; }
+.lencana-fw { margin-left: auto; font-size: var(--f-xs); padding: 1px 8px;
+              border-radius: var(--r-bulat); border: 1px solid var(--garis);
+              background: var(--permukaan-3); color: var(--teks-2);
+              white-space: nowrap; }
+.lencana-fw.mati { color: var(--down); border-color: var(--down); }
+
+.pol-fw { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+          margin-top: var(--sp-2); font-size: var(--f-s);
+          color: var(--teks-2); font-family: var(--huruf-mono); }
+.ringkas-fw { margin-top: var(--sp-2); color: var(--teks-2);
+              font-size: var(--f-s); line-height: 1.5; max-width: 78ch; }
+.kaki-fw { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+           margin-top: var(--sp-3); font-size: var(--f-xs);
+           color: var(--teks-redup); }
+.sub-judul-fw { font-size: var(--f-s); text-transform: uppercase;
+                letter-spacing: .04em; color: var(--teks-redup);
+                margin: var(--sp-5) 0 var(--sp-2); font-weight: 700; }
+/* Results that are NOT successes are colored, so a rejected attempt does not read like a change that happened. */
+.hasil-fw.gagal { color: var(--down); }
+
+/*
+ * Remediation queue: the Compliance page layout. The axis is the FINDING, not the device: the
+ * same finding across many devices is merged into one card, since fixing "privilege 15 account" on
+ * four routers is one job.
+ */
+
+.postur-b { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin: var(--sp-3) 0 var(--sp-4); }
+.pt-tile { flex: 1; min-width: 132px; display: flex; align-items: center; gap: var(--sp-3);
+           padding: var(--sp-3) var(--sp-4); border-radius: var(--r-besar);
+           background: var(--permukaan-2); border: 1px solid var(--garis); }
+.pt-tile.t { --aksen: var(--down); }
+.pt-tile.s { --aksen: var(--hati-hati); }
+.pt-tile.r { --aksen: var(--teks-samar); }
+.pt-tile.baik { --aksen: var(--up); }
+.pt-tile .ib { width: 30px; height: 30px; border-radius: 8px; flex: none; display: flex;
+               align-items: center; justify-content: center; }
+.pt-tile.t .ib { background: var(--down-latar); color: var(--down); }
+.pt-tile.s .ib { background: var(--hati-hati-latar); color: var(--hati-hati); }
+.pt-tile.r .ib { background: var(--permukaan-3); color: var(--teks-2); }
+.pt-tile.baik .ib { background: var(--up-latar); color: var(--up); }
+.pt-tile .ib .ikon { width: 17px; height: 17px; }
+.pt-tile .n { font-size: 24px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.pt-tile .k { font-size: var(--f-xs); color: var(--teks-samar); }
+
+.dua-kepatuhan { display: grid; grid-template-columns: minmax(0,1fr) 264px;
+                 gap: var(--sp-5); align-items: start; }
+@media (max-width: 1000px) { .dua-kepatuhan { grid-template-columns: 1fr; } }
+
+.saring-sev { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.saring-sev .pil { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.saring-sev .pil .ikon { width: 12px; height: 12px; }
+
+.grup-sev { margin-bottom: var(--sp-4); }
+.grup-sev.disaring { display: none; }
+.grup-sev > .kepala-grup { display: flex; align-items: center; gap: 7px; font-size: var(--f-s);
+                           text-transform: uppercase; letter-spacing: .05em;
+                           margin-bottom: var(--sp-2); font-weight: 700; }
+.grup-sev > .kepala-grup .ikon { width: 14px; height: 14px; }
+.grup-sev.t > .kepala-grup { color: var(--down); }
+.grup-sev.s > .kepala-grup { color: var(--hati-hati); }
+.grup-sev.r > .kepala-grup { color: var(--teks-2); }
+
+.fix { background: var(--permukaan-2); border: 1px solid var(--garis);
+       border-radius: var(--r-sedang); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-2); }
+.fix.t { --aksen: var(--down); }
+.fix.s { --aksen: var(--hati-hati); }
+.fix.r { --aksen: var(--teks-samar); }
+.fix-atas { display: flex; align-items: center; gap: var(--sp-2); }
+.fix-ikon { width: 30px; height: 30px; border-radius: 8px; flex: none; display: flex;
+            align-items: center; justify-content: center; background: var(--permukaan-3); }
+.fix-ikon .ikon { width: 16px; height: 16px; }
+.fix.t .fix-ikon { color: var(--down); }
+.fix.s .fix-ikon { color: var(--hati-hati); }
+.fix.r .fix-ikon { color: var(--teks-samar); }
+.fix-judul { font-weight: 700; font-size: var(--f-n); min-width: 0; }
+.fix-hitung { margin-left: auto; font-size: var(--f-xs); color: var(--teks-samar);
+              display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.fix-hitung .ikon { width: 13px; height: 13px; }
+.fix-why { color: var(--teks-2); font-size: var(--f-s); line-height: 1.5; margin: var(--sp-2) 0 0; }
+.fix-why code { font-family: var(--huruf-mono); background: var(--bg); padding: 1px 5px;
+                border-radius: var(--r-kecil); font-size: var(--f-xs); }
+.fix-dev { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--sp-2); }
+.dev-chip { display: inline-flex; align-items: center; gap: 5px; font-size: var(--f-xs);
+            padding: 2px 8px; border-radius: var(--r-bulat); background: var(--permukaan-3);
+            border: 1px solid var(--garis); color: var(--teks-2); }
+.dev-chip .ikon { width: 11px; height: 11px; color: var(--teks-samar); }
+.fix-perbaikan { margin-top: var(--sp-2); }
+.fix-perbaikan summary { cursor: pointer; font-size: var(--f-xs); color: var(--tautan);
+                         display: flex; align-items: center; gap: 5px; list-style: none; }
+.fix-perbaikan summary::-webkit-details-marker { display: none; }
+.fix-perbaikan summary .ikon { width: 12px; height: 12px; }
+.fix-perbaikan pre { background: var(--permukaan-0); margin: 6px 0 0; padding: var(--sp-3);
+                     border-radius: var(--r-kecil); font-size: var(--f-xs); color: var(--teks-2);
+                     font-family: var(--huruf-mono); overflow-x: auto; }
+/* Low severity is condensed: title only, without reason and fix. */
+.grup-sev.r .fix { padding: 8px var(--sp-4); }
+.grup-sev.r .fix-why, .grup-sev.r .fix-perbaikan, .grup-sev.r .fix-dev { display: none; }
+
+/* Device rail on the right: context, not the axis. */
+.rel-p { background: var(--permukaan-2); border: 1px solid var(--garis);
+         border-radius: var(--r-besar); padding: var(--sp-4); position: sticky; top: var(--sp-4); }
+.rel-p h4 { display: flex; align-items: center; gap: 7px; font-size: var(--f-s); margin: 0 0 var(--sp-3);
+            text-transform: uppercase; letter-spacing: .05em; color: var(--teks-redup); }
+.rel-p h4 .ikon { width: 14px; height: 14px; }
+.rel-baris { display: flex; align-items: center; gap: var(--sp-2); padding: 7px 0;
+             border-bottom: 1px solid var(--garis); }
+.rel-baris:last-child { border-bottom: 0; }
+.rel-baris .id { width: 26px; height: 26px; border-radius: 7px; flex: none; display: flex;
+                 align-items: center; justify-content: center; background: var(--permukaan-3);
+                 border: 1px solid var(--garis); color: var(--teks-2); }
+.rel-baris .id .ikon { width: 14px; height: 14px; }
+.rel-baris .nm { font-size: var(--f-s); min-width: 0; line-height: 1.2; }
+.rel-baris .nm small { color: var(--teks-samar); font-size: 10px; }
+.rel-baris .mini { margin-left: auto; display: flex; gap: 3px; }
+.rel-baris .dotk { width: 17px; height: 16px; border-radius: 5px; display: flex;
+                   align-items: center; justify-content: center; font-size: 9px; font-weight: 800;
+                   font-variant-numeric: tabular-nums; }
+.rel-baris .dotk.t { background: var(--down-latar); color: var(--down); }
+.rel-baris .dotk.s { background: var(--hati-hati-latar); color: var(--hati-hati); }
+.rel-baris .dotk.nol { background: var(--permukaan-3); color: var(--teks-samar); opacity: .5; }
+.rel-baris .dotk.belum { background: var(--permukaan-3); color: var(--teks-samar); }
+
+/* --- katalog akordion per platform --- */
+details.kat-grp { background: var(--permukaan-2); border: 1px solid var(--garis);
+                  border-radius: var(--r-sedang); margin-bottom: var(--sp-2); padding: 0 var(--sp-4); }
+details.kat-grp summary { cursor: pointer; list-style: none; display: flex; align-items: center;
+                          gap: var(--sp-2); padding: var(--sp-3) 0; font-weight: 600; font-size: var(--f-s); }
+details.kat-grp summary::-webkit-details-marker { display: none; }
+details.kat-grp summary .ikon { width: 15px; height: 15px; color: var(--teks-samar); }
+details.kat-grp summary .cacah { margin-left: auto; font-size: var(--f-xs); color: var(--teks-samar); }
+.kat-list { padding: 0 0 var(--sp-3); display: grid; gap: 3px; }
+.kat-item { display: flex; align-items: center; gap: 8px; font-size: var(--f-s); padding: 4px 0;
+            color: var(--teks-2); cursor: help; }
+.kat-item .dt { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.kat-item .dt.tinggi { background: var(--down); }
+.kat-item .dt.sedang { background: var(--hati-hati); }
+.kat-item .dt.rendah { background: var(--teks-samar); }
+
+
+/* Firewall page: same design language as Compliance (icon cards, not a wide ruled table). */
+
+/* Attacker card: one row per SOURCE ADDRESS. */
+/* --- Penjagaan otomatis (Tahap 1 auto-ban): otak keputusan --- */
+#penjagaan { --oranye: var(--oranye); --oranye-latar: var(--waspada-latar); }
+.jaga-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3);
+              margin-bottom: var(--sp-4); }
+.jaga-ubin { display: flex; align-items: center; gap: var(--sp-3);
+             padding: var(--sp-3) var(--sp-4); border-radius: var(--r-sedang);
+             background: var(--permukaan-2); border: 1px solid var(--garis); }
+.jaga-ubin.bahaya { --aksen: var(--down); }
+.jaga-ubin.hati   { --aksen: var(--oranye); }
+.jaga-ubin.baik   { --aksen: var(--up); }
+.ju-ikon { width: 30px; height: 30px; border-radius: 8px; flex: none; display: flex;
+           align-items: center; justify-content: center; background: var(--permukaan-3); }
+.ju-ikon .ikon { width: 16px; height: 16px; }
+.jaga-ubin.bahaya .ju-ikon { background: var(--down-latar); color: var(--down); }
+.jaga-ubin.hati   .ju-ikon { background: var(--oranye-latar); color: var(--oranye); }
+.jaga-ubin.baik   .ju-ikon { background: var(--up-latar); color: var(--up); }
+.ju-n { font-size: 22px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ju-k { font-size: var(--f-xs); color: var(--teks-samar); margin-top: 3px; }
+
+.jaga-judul { display: flex; align-items: center; gap: var(--sp-2); margin: var(--sp-4) 0 var(--sp-2);
+              font-size: var(--f-s); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.jaga-judul .ikon { width: 14px; height: 14px; }
+.jaga-judul.auto { color: var(--down); }
+.jaga-judul.tinjau { color: var(--oranye); }
+
+.kartu-jaga { background: var(--permukaan-2); border: 1px solid var(--garis); border-radius: var(--r-sedang);
+              padding: var(--sp-4); margin-bottom: var(--sp-2); }
+.kartu-jaga.auto   { --aksen: var(--down); }
+.kartu-jaga.tinjau { --aksen: var(--oranye); }
+.kj-atas { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.kj-ikon { width: 32px; height: 32px; border-radius: 8px; flex: none; display: flex;
+           align-items: center; justify-content: center; background: var(--permukaan-3); }
+.kj-ikon .ikon { width: 17px; height: 17px; }
+.kartu-jaga.auto   .kj-ikon { background: var(--down-latar); color: var(--down); }
+.kartu-jaga.tinjau .kj-ikon { background: var(--oranye-latar); color: var(--oranye); }
+.kj-idn { min-width: 0; flex: 1; }
+.kj-asal { font-family: var(--huruf-mono); font-weight: 700; font-size: var(--f-n); }
+.kj-alasan { font-size: var(--f-xs); color: var(--teks-samar); margin-top: 2px; }
+.kj-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--f-xs);
+          font-weight: 700; padding: 3px 10px; border-radius: var(--r-bulat); white-space: nowrap; }
+.kj-tag .ikon { width: 11px; height: 11px; }
+.kj-tag.auto   { color: var(--down); background: var(--down-latar); border: 1px solid var(--down-tepi); }
+.kj-tag.tinjau { color: var(--oranye); background: var(--oranye-latar); border: 1px solid var(--oranye); }
+.kj-target { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: var(--sp-3); }
+.kj-target-lab { font-size: var(--f-xs); color: var(--teks-samar); }
+.kj-chip { font-family: var(--huruf-mono); font-size: var(--f-xs); padding: 2px 8px;
+           border-radius: var(--r-bulat); background: var(--permukaan-3);
+           border: 1px solid var(--garis); color: var(--teks-2); }
+.kj-aksi { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+           margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--garis); }
+.kj-aksi-lab { display: inline-flex; align-items: center; gap: 5px; font-size: var(--f-xs); font-weight: 700; }
+.kj-aksi-lab .ikon { width: 13px; height: 13px; }
+.kj-aksi-lab.auto { color: var(--down); }
+.kj-aksi-lab.tinjau { color: var(--oranye); }
+.kj-perintah { flex: 1; min-width: 140px; font-family: var(--huruf-mono); font-size: 11px;
+               color: var(--teks-2); background: var(--permukaan-0); padding: 5px 9px; border-radius: var(--r-kecil);
+               overflow-x: auto; white-space: nowrap; }
+.kj-blokir { flex: none; font-size: var(--f-xs); font-weight: 700; padding: 5px 14px;
+             border-radius: var(--r-kecil); background: var(--down); color: var(--down-latar);
+             border: 0; cursor: pointer; }
+.kj-blokir:hover { filter: brightness(1.1); }
+.kj-blokir:disabled { opacity: .5; cursor: default; }
+
+/* Router ACL block button (second layer): OUTLINE style, unlike the filled `.kj-blokir`, so it reads as a separate extra action rather than a replacement for the adjacent ufw button. */
+.kj-blokir-acl { flex: none; font-size: var(--f-xs); font-weight: 700; padding: 5px 14px;
+                 border-radius: var(--r-kecil); background: transparent; color: var(--down);
+                 border: 1px solid var(--down); cursor: pointer; }
+.kj-blokir-acl:hover { background: var(--down-latar); }
+.kj-blokir-acl:disabled { opacity: .5; cursor: default; }
+
+/* "Block all" button in the auto-candidate group header: same style as `.kj-blokir`. Normal text case, because `.jaga-judul` forces uppercase and letter-spacing that do not suit a button label. */
+.jaga-judul-semua { margin-left: auto; text-transform: none; letter-spacing: normal;
+                    font-size: var(--f-xs); font-weight: 700; padding: 5px 14px;
+                    border-radius: var(--r-kecil); background: var(--down); color: var(--down-latar);
+                    border: 0; cursor: pointer; }
+.jaga-judul-semua:hover { filter: brightness(1.1); }
+.jaga-judul-semua:disabled { opacity: .5; cursor: default; }
+
+/* Kartu ban aktif + tombol buka */
+.kartu-ban { display: flex; align-items: center; gap: var(--sp-3);
+             background: var(--permukaan-2); border: 1px solid var(--garis); border-radius: var(--r-sedang);
+             padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-2); }
+.kartu-ban .kj-idn { flex: 1; }
+.kj-buka { flex: none; font-size: var(--f-xs); padding: 5px 12px; border-radius: var(--r-kecil);
+           background: var(--permukaan-3); color: var(--teks-2); border: 1px solid var(--garis);
+           cursor: pointer; }
+.kj-buka:hover { color: var(--teks); }
+
+.jaga-kosong { display: flex; align-items: center; gap: var(--sp-3);
+               padding: var(--sp-3) var(--sp-4); border-radius: var(--r-sedang);
+               background: var(--up-latar); border: 1px solid var(--up-tepi);
+               font-size: var(--f-s); color: var(--teks-2); }
+.jaga-kosong .ikon { width: 20px; height: 20px; color: var(--up); flex: none; }
+
+.jaga-lindungi { margin-top: var(--sp-4); }
+.jaga-lindungi summary { cursor: pointer; font-size: var(--f-s); color: var(--up);
+                         display: flex; align-items: center; gap: 6px; list-style: none; font-weight: 600; }
+.jaga-lindungi summary::-webkit-details-marker { display: none; }
+.jaga-lindungi summary .ikon { width: 14px; height: 14px; }
+.jl-kisi { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+           gap: var(--sp-2); margin-top: var(--sp-3); }
+.jl-host { display: flex; align-items: baseline; gap: var(--sp-2); padding: 6px 10px;
+           border-radius: var(--r-kecil); background: var(--permukaan-2); border: 1px solid var(--garis); }
+.jl-baris1 { display: flex; align-items: baseline; gap: var(--sp-2); }
+.jl-ip { font-family: var(--huruf-mono); font-size: var(--f-xs); color: var(--up); font-weight: 700; }
+.jl-nama { font-size: var(--f-xs); color: var(--teks-samar); min-width: 0; overflow: hidden;
+           text-overflow: ellipsis; white-space: nowrap; }
+.jl-mac { font-family: var(--huruf-mono); font-size: 10px; color: var(--teks-samar); margin-top: 3px; }
+
+/* Spoofing warning: registered IP with a changed MAC. */
+.kartu-spoof { background: var(--down-latar); border: 1px solid var(--down-tepi); border-radius: var(--r-sedang);
+               padding: var(--sp-4); margin-bottom: var(--sp-3); }
+.ks-atas { display: flex; align-items: flex-start; gap: var(--sp-3); }
+.ks-ikon { width: 32px; height: 32px; border-radius: 8px; flex: none; display: flex;
+           align-items: center; justify-content: center; background: rgba(248,113,113,.15); color: var(--down); }
+.ks-ikon .ikon { width: 18px; height: 18px; }
+.ks-judul { font-weight: 700; color: var(--teks); }
+.ks-mac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 4px;
+          font-family: var(--huruf-mono); font-size: var(--f-xs); }
+.ks-mac-lab { color: var(--teks-samar); font-family: var(--huruf-utama); }
+.ks-mac-bad { color: var(--down); font-weight: 700; }
+.ks-mac-ok { color: var(--up); }
+
+/* --- Deteksi pembobolan --- */
+.bobol-aman { display: flex; align-items: center; gap: var(--sp-3);
+              padding: var(--sp-3) var(--sp-4); border-radius: var(--r-sedang);
+              background: var(--up-latar); border: 1px solid var(--up-tepi); }
+.bobol-aman .ikon { width: 22px; height: 22px; color: var(--up); flex: none; }
+.ba-judul { font-weight: 700; color: var(--up); }
+.ba-ket { font-size: var(--f-xs); color: var(--teks-2); margin-top: 2px; line-height: 1.5; }
+.bobol-kepala { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3);
+                font-weight: 800; color: var(--down); font-size: var(--f-l); }
+.bobol-kepala .ikon { width: 20px; height: 20px; }
+.kartu-bobol { background: var(--down-latar); border: 1px solid var(--down-tepi); border-radius: var(--r-sedang);
+               padding: var(--sp-4); margin-bottom: var(--sp-3); }
+.kb-atas { display: flex; align-items: flex-start; gap: var(--sp-3); }
+.kb-ikon { width: 32px; height: 32px; border-radius: 8px; flex: none; display: flex;
+           align-items: center; justify-content: center; background: rgba(248,113,113,.15);
+           color: var(--down); }
+.kb-ikon .ikon { width: 18px; height: 18px; }
+.kb-judul { font-weight: 700; color: var(--teks); }
+.kb-meta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: 4px;
+           font-size: var(--f-xs); color: var(--teks-2); font-family: var(--huruf-mono); }
+.kb-asal { color: var(--down); font-weight: 700; }
+.kb-kenapa { font-size: var(--f-s); color: var(--teks-2); line-height: 1.55; margin-top: var(--sp-3); }
+.kb-saran { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--down-tepi); }
+.kb-saran-judul { font-size: var(--f-xs); text-transform: uppercase; letter-spacing: .05em;
+                  color: var(--down); font-weight: 700; margin-bottom: var(--sp-2); }
+.kb-saran ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.kb-saran li { font-size: var(--f-s); color: var(--teks-2); line-height: 1.5; }
+.kb-saran code { font-family: var(--huruf-mono); font-size: 11px; color: var(--teks-2);
+                 background: var(--permukaan-0); padding: 1px 6px; border-radius: 4px; }
+
+/* Orange for the "blocked" category, distinct from yellow `--hati-hati` and from red "got through". */
+.kotak-penyerang { --oranye: var(--oranye); --oranye-latar: var(--waspada-latar); }
+.kotak-penyerang { display: grid; gap: var(--sp-2); }
+.kartu-penyerang { background: var(--permukaan-2); border: 1px solid var(--garis); border-radius: var(--r-sedang);
+                   padding: var(--sp-3) var(--sp-4); }
+.kartu-penyerang.tembus     { --aksen: var(--down); }
+.kartu-penyerang.diblokir   { --aksen: var(--oranye); }
+.kartu-penyerang.pengecekan { --aksen: var(--teks-samar); }
+.pnyr-atas { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.pnyr-ikon { width: 32px; height: 32px; border-radius: 8px; flex: none; display: flex;
+             align-items: center; justify-content: center; background: var(--permukaan-3); }
+.pnyr-ikon .ikon { width: 17px; height: 17px; }
+.kartu-penyerang.tembus   .pnyr-ikon { background: var(--down-latar); color: var(--down); }
+.kartu-penyerang.diblokir .pnyr-ikon { background: var(--oranye-latar); color: var(--oranye); }
+.kartu-penyerang.pengecekan .pnyr-ikon { color: var(--teks-samar); }
+
+/* Tombol filter kategori */
+.filter-penyerang { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.pil-filter { --oranye: var(--oranye); font-size: var(--f-s); padding: 5px 12px; border-radius: 999px;
+              border: 1px solid var(--garis); background: var(--permukaan-2); color: var(--teks-2);
+              cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.pil-filter:hover { border-color: var(--garis-terang); color: var(--teks); }
+.pil-filter.aktif { border-color: var(--teks-2); color: var(--teks); background: var(--permukaan-3); }
+.pil-filter.tembus.aktif   { border-color: var(--down); color: var(--down); }
+.pil-filter.diblokir.aktif { border-color: var(--oranye); color: var(--oranye); }
+.pil-filter.pengecekan.aktif { border-color: var(--teks-samar); }
+.pil-cacah { font-variant-numeric: tabular-nums; font-size: var(--f-xs);
+             background: var(--permukaan-3); border-radius: 999px; padding: 0 7px; min-width: 18px;
+             text-align: center; }
+.pnyr-asal { font-family: var(--huruf-mono); font-weight: 700; font-size: var(--f-n); }
+.pnyr-lokal { font-size: var(--f-xs); color: var(--teks-samar); }
+.pnyr-angka { margin-left: auto; text-align: right; }
+.pnyr-angka .n { font-size: 20px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.pnyr-angka .k { font-size: 9px; color: var(--teks-samar); text-transform: uppercase; letter-spacing: .05em; }
+.pnyr-tujuan { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--sp-2); }
+.tujuan-chip { font-family: var(--huruf-mono); font-size: var(--f-xs); padding: 2px 8px;
+               border-radius: var(--r-bulat); background: var(--permukaan-3);
+               border: 1px solid var(--garis); color: var(--teks-2); }
+.pnyr-kaki { font-size: var(--f-xs); color: var(--teks-samar); margin-top: var(--sp-2); }
+.pnyr-mentah { margin-top: var(--sp-3); }
+.pnyr-mentah summary { cursor: pointer; font-size: var(--f-xs); color: var(--tautan);
+                       display: flex; align-items: center; gap: 5px; list-style: none; }
+.pnyr-mentah summary::-webkit-details-marker { display: none; }
+.pnyr-mentah summary .ikon { width: 12px; height: 12px; }
+.pnyr-mentah pre { background: var(--permukaan-0); margin: 6px 0 0; padding: var(--sp-3);
+                   border-radius: var(--r-kecil); font-size: 11px; color: var(--teks-2);
+                   font-family: var(--huruf-mono); overflow-x: auto; line-height: 1.6; }
+
+.legenda-penyerang { --oranye: var(--oranye); --oranye-latar: var(--waspada-latar);
+                     display: grid; gap: 6px; margin-top: var(--sp-3);
+                     padding: var(--sp-3) var(--sp-4); background: var(--permukaan-2);
+                     border: 1px solid var(--garis); border-radius: var(--r-sedang); }
+.leg-item { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--f-xs);
+            color: var(--teks-2); }
+.leg-ikon { width: 26px; height: 26px; border-radius: 7px; flex: none; display: flex;
+            align-items: center; justify-content: center; background: var(--permukaan-3); }
+.leg-ikon .ikon { width: 15px; height: 15px; }
+.leg-item.tembus .leg-ikon   { background: var(--down-latar); color: var(--down); }
+.leg-item.diblokir .leg-ikon { background: var(--oranye-latar); color: var(--oranye); }
+.leg-item.pengecekan .leg-ikon { color: var(--teks-samar); }
+.leg-warna { font-size: var(--f-xs); color: var(--teks-samar); margin-top: 2px;
+             padding-top: var(--sp-2); border-top: 1px dashed var(--garis); }
+
+/* --- Dropdown rincian per kartu penyerang --- */
+.pnyr-detail { margin-top: var(--sp-2); }
+.pnyr-detail summary { cursor: pointer; font-size: var(--f-xs); color: var(--tautan);
+                       display: flex; align-items: center; gap: 5px; list-style: none; }
+.pnyr-detail summary::-webkit-details-marker { display: none; }
+.pnyr-detail summary .ikon { width: 12px; height: 12px; }
+.tabel-rincian { width: 100%; margin-top: var(--sp-2); border-collapse: collapse;
+                 font-size: 11px; }
+.tabel-rincian th { text-align: left; color: var(--teks-2); font-weight: 600;
+                    padding: 3px 8px; border-bottom: 1px solid var(--garis);
+                    text-transform: uppercase; letter-spacing: .03em; font-size: 9px; }
+.tabel-rincian td { padding: 3px 8px; border-bottom: 1px solid var(--permukaan-3);
+                    vertical-align: top; }
+.tabel-rincian td.mono { font-family: var(--huruf-mono); }
+.tabel-rincian td.angka { text-align: right; font-variant-numeric: tabular-nums; }
+.tabel-rincian tr.baris-balasan td { color: var(--teks-samar); }
+.tabel-rincian tr.baris-balasan td.mono { color: var(--teks-2); }
+
+.grid-fw { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.kartu-fw2 { background: var(--permukaan-2); border: 1px solid var(--garis);
+             border-radius: var(--r-besar); padding: var(--sp-4); border-top: 3px solid var(--garis-terang); }
+.kartu-fw2.aktif { border-top-color: var(--up); }
+.kartu-fw2.mati { border-top-color: var(--down); }
+.kartu-fw2.tanpa_aturan { border-top-color: var(--hati-hati); }
+.kartu-fw2.belum_terbaca { border-top-color: var(--teks-samar); }
+.fw2-atas { display: flex; align-items: center; gap: var(--sp-2); }
+.fw2-ikon { width: 32px; height: 32px; border-radius: 8px; flex: none; display: flex;
+            align-items: center; justify-content: center; background: var(--permukaan-3); color: var(--teks-2); }
+.fw2-ikon .ikon { width: 17px; height: 17px; }
+.fw2-nama { font-weight: 700; font-size: var(--f-n); min-width: 0; }
+.fw2-ip { font-size: var(--f-xs); color: var(--teks-samar); font-family: var(--huruf-mono); }
+.fw2-status { margin-left: auto; font-size: var(--f-xs); padding: 2px 9px; border-radius: var(--r-bulat);
+              border: 1px solid var(--garis); white-space: nowrap; }
+.fw2-status.aktif { color: var(--up); border-color: var(--up-tepi); background: var(--up-latar); }
+.fw2-status.mati { color: var(--down); border-color: var(--down-tepi); background: var(--down-latar); }
+.fw2-status.tanpa_aturan { color: var(--hati-hati); border-color: var(--hati-hati-tepi); background: var(--hati-hati-latar); }
+.fw2-status.belum_terbaca { color: var(--teks-samar); }
+.fw2-pol { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-3);
+           font-size: var(--f-xs); color: var(--teks-samar); }
+.fw2-pol b { color: var(--teks-2); }
+.fw2-aturan { margin-top: var(--sp-3); display: grid; gap: 5px; }
+.baris-aturan { display: flex; align-items: center; gap: 8px; font-size: var(--f-s);
+                padding: 5px 8px; border-radius: var(--r-kecil); background: var(--permukaan); }
+.baris-aturan .no { color: var(--teks-samar); font-size: var(--f-xs); width: 16px; flex: none; }
+.baris-aturan .ke { font-family: var(--huruf-mono); font-weight: 600; }
+.baris-aturan .dari { color: var(--teks-samar); font-family: var(--huruf-mono); font-size: var(--f-xs);
+                       margin-left: auto; text-align: right; }
+.baris-aturan .luas { color: var(--hati-hati); }
+
+/* Rules table (Windows Firewall has hundreds of rules): 6 columns, 10 rows per page. */
+.fw2-tabel-bungkus { margin-top: var(--sp-3); overflow-x: auto; }
+.tabel-aturan-fw { width: 100%; border-collapse: collapse; font-size: var(--f-xs); }
+.tabel-aturan-fw th { text-align: left; color: var(--teks-2); font-weight: 600;
+                      padding: 4px 8px; border-bottom: 1px solid var(--garis);
+                      text-transform: uppercase; letter-spacing: .03em; font-size: 9px;
+                      white-space: nowrap; }
+.tabel-aturan-fw td { padding: 4px 8px; border-bottom: 1px solid var(--permukaan-3);
+                      white-space: nowrap; }
+.tabel-aturan-fw td.mono { font-family: var(--huruf-mono); }
+.tabel-aturan-fw td.angka { text-align: right; font-variant-numeric: tabular-nums; }
+.tabel-aturan-fw td.aksi-blok { color: var(--down); font-weight: 600; }
+.tabel-aturan-fw td.aksi-izin { color: var(--teks-2); }
+.tabel-aturan-fw .luas { color: var(--hati-hati); }
+.tabel-aturan-fw td.nama-aturan-fw { color: var(--teks-samar); max-width: 220px;
+                      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fw2-kaki { display: flex; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3);
+            padding-top: var(--sp-2); border-top: 1px solid var(--garis);
+            font-size: var(--f-xs); color: var(--teks-samar); }
+
+/*
+ * Three-layer firewall map: one card per firewall NSM uses (ufw on Linux servers, router ACL
+ * on R2 as the only door to Location B, Windows Firewall on the laptop). Placed above the posture strip.
+ */
+.peta-lapis { display: grid; grid-template-columns: repeat(3, 1fr);
+              gap: var(--sp-3); margin: var(--sp-3) 0 var(--sp-4); }
+@media (max-width: 900px) { .peta-lapis { grid-template-columns: 1fr; } }
+
+.kartu-lapis { background: var(--permukaan-2); border: 1px solid var(--garis);
+               border-top-width: 3px; border-radius: var(--r-besar);
+               padding: var(--sp-4); }
+.kartu-lapis.ufw { border-top-color: var(--tautan); }
+.kartu-lapis.acl_router { border-top-color: var(--up); }
+.kartu-lapis.winfw { border-top-color: var(--ungu); }
+
+.kl-atas { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.kl-ikon { width: 34px; height: 34px; border-radius: var(--r-sedang); flex: none;
+           display: flex; align-items: center; justify-content: center;
+           background: var(--permukaan-3); border: 1px solid var(--garis); }
+.kl-ikon .ikon { width: 18px; height: 18px; }
+.kartu-lapis.ufw .kl-ikon { color: var(--tautan); }
+.kartu-lapis.acl_router .kl-ikon { color: var(--up); }
+.kartu-lapis.winfw .kl-ikon { color: var(--ungu); }
+.kl-nama { font-weight: 700; font-size: var(--f-n); min-width: 0; }
+
+.kl-baris { display: flex; align-items: baseline; gap: var(--sp-2);
+            padding: 5px 0; border-bottom: 1px solid var(--garis);
+            font-size: var(--f-s); }
+.kl-baris:last-child { border-bottom: 0; }
+.kl-baris .lab { color: var(--teks-samar); flex: none; width: 90px; }
+.kl-baris .val { color: var(--teks-2); text-align: right; flex: 1; }
+.kl-angka { font-size: 26px; font-weight: 800; line-height: 1;
+            font-variant-numeric: tabular-nums; margin: 4px 0; }
+.kl-angka-lab { font-size: var(--f-xs); color: var(--teks-samar); margin-bottom: var(--sp-2); }
+
+.kl-lencana { display: inline-flex; align-items: center; gap: 5px;
+              font-size: var(--f-xs); padding: 2px 9px; border-radius: var(--r-bulat);
+              margin-top: var(--sp-2); }
+.kl-lencana .ikon { width: 11px; height: 11px; }
+.kl-lencana.ok { background: var(--up-latar); color: var(--up); border: 1px solid var(--up-tepi); }
+.kl-lencana.warn { background: var(--hati-hati-latar); color: var(--hati-hati);
+                   border: 1px solid var(--hati-hati-tepi); }
+.kl-lencana.bahaya { background: var(--down-latar); color: var(--down);
+                     border: 1px solid var(--down-tepi); }
+
+/* winfw recovery box: cause plus a copyable command. */
+.kl-pemulihan { margin-top: var(--sp-3); padding: var(--sp-3); border-radius: var(--r-kecil);
+                background: var(--permukaan); border: 1px solid var(--down-tepi); }
+.klp-sebab { font-size: var(--f-xs); color: var(--teks-2); line-height: 1.5; }
+.klp-judul { font-size: var(--f-xs); color: var(--teks-samar); margin-top: var(--sp-2);
+             margin-bottom: 4px; }
+.klp-kode { display: flex; align-items: center; gap: var(--sp-2); }
+.klp-kode code { flex: 1; font-family: var(--huruf-mono); font-size: 11px; color: var(--teks-2);
+                 background: var(--permukaan-0); padding: 6px 8px; border-radius: var(--r-kecil);
+                 overflow-x: auto; white-space: nowrap; }
+.klp-salin { flex: none; font-size: var(--f-xs); padding: 5px 12px; border-radius: var(--r-kecil);
+             background: var(--permukaan-2); color: var(--teks-2); border: 1px solid var(--garis);
+             cursor: pointer; }
+.klp-salin:hover { background: var(--permukaan-3); color: var(--teks); }
+.klp-catatan { font-size: var(--f-xs); color: var(--teks-samar); margin-top: var(--sp-2);
+               line-height: 1.5; }
+
+/* Subheading grouping the per-device cards below the map, per layer. */
+.sub-lapis { display: flex; align-items: center; gap: var(--sp-2);
+             font-size: var(--f-s); text-transform: uppercase; letter-spacing: .05em;
+             color: var(--teks-redup); margin: var(--sp-5) 0 var(--sp-2); font-weight: 700; }
+.sub-lapis .ikon { width: 14px; height: 14px; }
+
+/* ===========================================================================
+ * SUMBER KEBENARAN (Tahap 1, 21 Agustus 2026) -- konfig_sot.html,
+ * konfig_sot_device.html, sot.js.
+ * =========================================================================== */
+
+/* One intent form field: label, input/select, and a "why" sentence. Two-column grid on wide screens so the 13-key form is not one long column. */
+#medan-nilai {
+  display: grid; grid-template-columns: 1fr; gap: var(--sp-4);
+}
+@media (min-width: 760px) {
+  #medan-nilai { grid-template-columns: 1fr 1fr; }
+}
+.medan-intent label { margin-top: 0; }
+.medan-kenapa {
+  font-size: var(--f-xs); color: var(--teks-samar); line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* Dynamic interface/VLAN/route rows: inputs fill the cell width so the table does not change width while typing. */
+#tabel-interface input, #tabel-vlan input, #tabel-rute input {
+  padding: 5px 8px; font-size: var(--f-s);
+}
+#tabel-interface td, #tabel-vlan td, #tabel-rute td { vertical-align: middle; }
+
+
+/* Device discovery: mirrors `#alat-perintah` exactly, including minimum column widths, since both pages are "fill something, press a button" and should look the same. */
+.alat-penemuan { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+                 align-items: flex-end; margin-bottom: var(--sp-3); }
+.alat-penemuan label { display: flex; flex-direction: column; gap: 4px;
+                       font-size: var(--f-s); color: var(--teks-redup); }
+.alat-penemuan input, .alat-penemuan select { min-width: 230px; }
+
+/* Per-row decision buttons: compact so the table does not widen, still large enough to touch. */
+.aksi-temuan { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.aksi-temuan .tombol { padding: 4px 10px; font-size: var(--f-xs); }
+
+/* Platform evidence level has no class of its own: it reuses `.lencana-up`, `.lencana-netral` and `.lencana-menunggu` from nsm.css (yellow `menunggu` already means "not certain"). */

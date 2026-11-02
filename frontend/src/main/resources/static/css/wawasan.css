@@ -1,0 +1,132 @@
+/* Insights, SOC Agent, and Tenant pages share this stylesheet. Only tokens from nsm.css are used (no raw colors). All classes are prefixed `wsn-` to avoid collisions with nsm.css classes such as `.panel`. */
+
+.jalur {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--f-s); margin: var(--sp-3) 0 var(--sp-4);
+}
+.jalur a { color: var(--teks-redup); text-decoration: none; }
+.jalur a:hover { color: var(--teks); }
+.jalur .kini { color: var(--teks); font-weight: 600; }
+.jalur .pisah { color: var(--garis-terang); }
+
+#alat {
+  display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+/* `width: auto`: nsm.css gives every `<select>` `width: 100%`, which fills a flex toolbar and pushes its neighbors to the next row. */
+#alat select {
+  width: auto; min-width: 190px;
+  font-size: var(--f-m); padding: 7px 9px;
+}
+#alat #meta { margin-left: auto; }
+
+.wsn-subjudul {
+  font-size: var(--f-m); font-weight: 700; color: var(--teks-2);
+  text-transform: uppercase; letter-spacing: .4px;
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+.wsn-dua {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5);
+}
+@media (max-width: 1000px) { .wsn-dua { grid-template-columns: 1fr; } }
+
+/* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+
+.wsn-baris {
+  background: var(--permukaan-2); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); padding: 12px 16px;
+  margin-bottom: var(--sp-2);
+}
+.wsn-baris.parah   { --aksen: var(--down); }
+.wsn-baris.waspada { --aksen: var(--hati-hati); }
+.wsn-baris.aman    { --aksen: var(--up); }
+.wsn-baris.netral  { --aksen: var(--teks-redup); }
+
+.wsn-baris .atas {
+  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+}
+.wsn-baris .nama { font-weight: 700; font-size: var(--f-n); }
+.wsn-baris .ket {
+  margin-top: 5px; font-size: var(--f-m); line-height: 1.55;
+  color: var(--teks-2); max-width: 96ch;
+}
+.wsn-baris .angka-baris {
+  display: flex; gap: var(--sp-5); flex-wrap: wrap;
+  margin-top: 8px; font-size: var(--f-s); color: var(--teks-redup);
+}
+.wsn-baris .angka-baris b { color: var(--teks-2); font-weight: 600; }
+
+.wsn-sigma {
+  font-variant-numeric: tabular-nums; font-weight: 700;
+  font-size: var(--f-l); min-width: 5.5ch; display: inline-block;
+}
+.wsn-sigma.parah   { color: var(--down); }
+.wsn-sigma.waspada { color: var(--hati-hati); }
+.wsn-sigma.aman    { color: var(--up); }
+
+/* Log templates use a monospace font so similar patterns line up; `<*>` marks the variable parts. */
+.wsn-templat {
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  font-size: var(--f-s); color: var(--teks-2);
+  word-break: break-word; line-height: 1.5;
+}
+.wsn-templat .ganti { color: var(--tautan); }
+
+.wsn-kosong {
+  border: 1px dashed var(--garis-terang); border-radius: var(--r-sedang);
+  padding: 16px; color: var(--teks-redup); font-size: var(--f-m);
+}
+
+.wsn-peringatan {
+  background: var(--hati-hati-latar); border: 1px solid var(--hati-hati-tepi);
+  color: var(--hati-hati); border-radius: var(--r-sedang);
+  padding: 11px 15px; font-size: var(--f-m); line-height: 1.55;
+  margin-bottom: var(--sp-3);
+}
+
+.kisi-4 { margin-bottom: var(--sp-4); }
+.kisi-4 .angka-mini {
+  font-size: 24px; font-weight: 700; letter-spacing: -.5px;
+}
+.kisi-4 .angka-mini.buruk { color: var(--down); }
+.kisi-4 .angka-mini.aman  { color: var(--up); }
+.kisi-4 .angka-mini.kecil-teks { font-size: var(--f-n); font-weight: 600; }
+
+/* --------------------------------------------------------------------- */
+/* Saklar agen SOC                                                         */
+/* --------------------------------------------------------------------- */
+
+.wsn-saklar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--sp-3); margin-bottom: var(--sp-4);
+}
+.wsn-saklar .item {
+  background: var(--permukaan); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); padding: 12px 15px;
+}
+.wsn-saklar .item .kunci {
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  font-size: var(--f-xs); color: var(--teks-samar);
+}
+.wsn-saklar .item .nilai {
+  font-size: var(--f-l); font-weight: 700; margin-top: 3px;
+}
+.wsn-saklar .item .nilai.mati  { color: var(--teks-redup); }
+.wsn-saklar .item .nilai.nyala { color: var(--up); }
+.wsn-saklar .item .nilai.awas  { color: var(--hati-hati); }
+.wsn-saklar .item .arti {
+  font-size: var(--f-s); color: var(--teks-2); margin-top: 5px;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+
+.wsn-bar {
+  height: 6px; border-radius: var(--r-bulat); background: var(--permukaan-3);
+  overflow: hidden; margin-top: 6px; max-width: 260px;
+}
+.wsn-bar > span { display: block; height: 100%; background: var(--up); }
+.wsn-bar > span.penuh { background: var(--down); }

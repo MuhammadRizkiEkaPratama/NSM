@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Potret Konfigurasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Potret Konfigurasi', 'apa yang berubah di perangkat, dan kapan', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('potret')}"></div>
+
+<div id="alat">
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<!-- These four cards count the rows of the table below, so they live on this page; elsewhere the figures could not be traced to rows. -->
+<div id="kartu" class="kisi-4"></div>
+
+<!-- Drawn by konfig.js from the same snapshots as the table. One bar per day; days without changes still draw a baseline so quiet days do not disappear. -->
+<div id="garis-waktu-potret" class="panel-waktu"></div>
+
+<div class="bagian">
+  <div class="hal-singkat">
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Potret hanya disimpan ketika isinya BERUBAH, jadi satu baris di tabel ini sama dengan satu perubahan yang benar-benar terjadi. Potret pertama sebuah perangkat ditandai 'potret awal': ia titik awal, bukan perubahan.">
+      Satu baris = satu perubahan
+    </span>
+    <span class="judul-bantu" tabindex="0"
+          data-petunjuk="Klik baris untuk melihat baris konfigurasi mana persisnya yang berubah dibanding potret sebelumnya. Klik penanda di kolom Tersimpan untuk pertanyaan yang berbeda: baris mana yang akan HILANG kalau perangkat dinyalakan ulang sekarang.">
+      Klik baris untuk melihat bedanya
+    </span>
+  </div>
+  <div class="gulir-tabel"><table data-hal="5">
+    <thead>
+      <tr>
+        <th data-urut="waktu">Waktu</th>
+        <th data-urut="teks">Perangkat</th>
+        <th data-urut="angka">Perubahan</th>
+        <th data-urut="angka">Pelaku</th>
+        <th data-urut="angka">Tersimpan</th>
+        <th data-urut="angka">Baris</th>
+        <th>Sidik</th>
+      </tr>
+    </thead>
+    <tbody id="baris-potret"></tbody>
+  </table></div>
+</div>
+
+<div id="kotak-beda" hidden>
+  <div id="kepala-beda"></div>
+  <div id="isi-beda"></div>
+</div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Konfigurasi diambil lewat SSH dengan perintah yang hanya membaca (`show running-config`), tiap 15 menit. Nilai password, community SNMP, dan kunci pra-berbagi DISAMARKAN sebelum disimpan, jadi basis data tidak pernah memuat rahasia perangkat; nama perintahnya tetap utuh supaya hilangnya sebuah baris tetap terlihat sebagai perubahan. Baris yang berubah sendiri seperti `ntp clock-period` dan cap waktu dibuang, kalau tidak setiap pengambilan akan terbaca sebagai perubahan. Pengambilan konfigurasi hanya membaca; yang bisa menulis cuma halaman Susun Perintah, dan tiap pengirimannya tercatat di Audit Log.">
+    Dari mana angka ini, dan apa batasnya?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/js/urut.js"></script>
+<script src="/konfig.js"></script>
+<script src="/js/halaman-tabel.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

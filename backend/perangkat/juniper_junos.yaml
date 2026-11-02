@@ -1,0 +1,80 @@
+nama: juniper_junos
+keterangan: Juniper Junos OS
+teruji: dokumentasi
+# No Juniper device in the lab. None of the commands in this file has been run on real Junos.
+
+deteksi:
+  # Juniper Networks PEN in the IANA registry.
+  sysobjectid:
+    - ".1.3.6.1.4.1.2636."
+
+akses:
+  netmiko_device_type: juniper_junos
+  jenis: jaringan
+
+  # Junos has no separate `enable` mode; privileges are set by the login class.
+  butuh_enable: false
+
+  # Taken from netmiko/juniper/juniper.py, which runs this on every Junos session
+  # (along with `set cli screen-width 511` and `set cli complete-on-space off`).
+  paging_mati: set cli screen-length 0
+
+baca:
+  # `| display set` (flat, one change per line) is used instead of the nested
+  # brace form. NSM diffs configs line by line and looks for access-control changes
+  # in the diff; with braces a small change shifts indentation of surrounding lines
+  # and loses which filter a rule belongs to. Flat lines carry their full path.
+  konfigurasi: show configuration | display set
+
+  # `konfigurasi_startup` is deliberately absent: Junos has no running/startup
+  # split. Committed config is active and persists across reboot; uncommitted
+  # candidate config is not in effect. `show configuration` returns the active one,
+  # so a startup command would always compare identical.
+
+  nama_host: show configuration system host-name
+  identitas: show version
+  uptime: show system uptime
+  interface_ringkas: show interfaces terse
+  interface_rinci: show interfaces extensive
+  tabel_rute: show route
+  cpu: show chassis routing-engine
+  memori: show system memory
+  disk: show system storage
+
+tulis:
+  didukung: true
+  mode_konfig: configure
+  simpan: commit
+
+  # Safety net: `commit confirmed`. Same shape as Cisco `reload in N` (do nothing:
+  # the device rolls back; confirm: the change stays) without a reboot, which is
+  # why the field is no longer called `reload_aman`. The marker is taken from
+  # netmiko/juniper/juniper.py. `kukuhkan: commit` is a second commit that confirms the first.
+  jaring_pengaman:
+    jenis: commit_confirmed
+    pasang: "commit confirmed {menit}"
+    # No separate verification command: the evidence is the reply to `pasang`, so an
+    # empty `bukti` means the caller checks that output.
+    bukti: ""
+    penanda_terpasang:
+      - commit confirmed will be automatically rolled back in
+    kukuhkan: commit
+    penanda_lepas:
+      - commit complete
+
+rahasia:
+  # Written for the flat `| display set` form used above (value at end of line).
+  - pola: '(?im)^(\s*set .*\b(?:encrypted-password|plain-text-password)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*set .*\bcommunity\s+)\S+'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*set .*\b(?:pre-shared-key|shared-secret|secret)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  # The brace form is covered too, in case the command above is changed to plain
+  # `show configuration`; masking must not silently stop.
+  - pola: '(?im)^(\s*(?:encrypted-password|authentication-key|pre-shared-key|secret)\s+).+;$'
+    ganti: '\1<DISAMARKAN>;'
+
+kemampuan: {}
+# Deliberately empty: no capability here has been tried on a real Juniper
+# device, and `dialek_perangkat` treats unlisted capabilities as unsupported.

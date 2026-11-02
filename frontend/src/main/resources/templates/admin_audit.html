@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Audit Log - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+form.saring {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: end;
+  background: var(--permukaan-2); border: 1px solid var(--garis-terang);
+  border-radius: var(--r-sedang); padding: 14px 16px; margin-bottom: var(--sp-4);
+}
+form.saring label { margin: 0 0 var(--sp-1); text-transform: uppercase;
+                    font-size: var(--f-xs); color: var(--teks-redup); letter-spacing: .4px; }
+form.saring select, form.saring input[type=text] { width: auto; font-size: var(--f-m); padding: 7px 9px; }
+
+table { font-size: var(--f-m); }
+th, td { padding: var(--sp-2) 10px; vertical-align: top; }
+th { position: sticky; top: 0; z-index: 1; }
+th a { color: var(--teks-2); white-space: nowrap; }
+th a:hover { color: var(--teks); text-decoration: none; }
+
+tr.gagal td { background: #2a1414; }
+
+.kode-aksi {
+  font-family: var(--huruf-mono); font-size: var(--f-s);
+  padding: 2px 7px; border-radius: var(--r-kecil);
+  background: #1e3a5f; color: #93c5fd; white-space: nowrap;
+}
+tr.gagal .kode-aksi { background: #4a1d1d; color: var(--down); }
+
+.waktu { font-family: var(--huruf-mono); color: var(--teks-redup); white-space: nowrap; }
+.asal  { font-family: var(--huruf-mono); color: var(--teks-2); white-space: nowrap; cursor: help; }
+
+.halaman { margin-top: var(--sp-4); display: flex; gap: var(--sp-3);
+           align-items: center; font-size: var(--f-m); color: var(--teks-redup); }
+
+/* Quick-filter toggles are links, not checkboxes, so the state lives in the URL and a filtered view can be shared. */
+.saklar-audit { display: flex; flex-wrap: wrap; gap: var(--sp-2);
+                align-items: center; margin-bottom: var(--sp-4); }
+.saklar-audit .pil {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--f-s); padding: 5px 11px; border-radius: 999px;
+  border: 1px solid #3d3d3d; background: var(--permukaan-2);
+  color: var(--teks-2); text-decoration: none; cursor: pointer;
+}
+.saklar-audit .pil:hover { border-color: var(--up); color: var(--teks); }
+.saklar-audit .pil.aktif { border-color: var(--up); color: var(--up); }
+
+.hasil-dilewati { color: #94a3b8; font-weight: 700; }
+
+.nama-target { color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Audit Log', 'rekam jejak aktivitas akun dan sistem', 'audit')}"></div>
+
+<form class="saring" method="get" th:action="@{/admin/audit}">
+  <div>
+    <label for="f-aksi">Aksi</label>
+    <select name="action" id="f-aksi">
+      <option value="">Semua aksi</option>
+      <option th:each="a : ${allActions}" th:value="${a}" th:text="${a}"
+              th:selected="${a == fAction}"></option>
+    </select>
+  </div>
+  <div>
+    <label for="f-aktor">Aktor</label>
+    <select name="actor" id="f-aktor">
+      <option value="">Semua aktor</option>
+      <option th:each="ac : ${allActors}" th:value="${ac}" th:text="${ac}"
+              th:selected="${ac == fActor}"></option>
+    </select>
+  </div>
+  <div>
+    <label for="f-cari">Cari</label>
+    <input type="text" name="q" id="f-cari" th:value="${fQ}"
+           placeholder="aktor, target, detail, atau IP" style="min-width:280px;">
+  </div>
+  <input type="hidden" name="sort" th:value="${sort}">
+  <input type="hidden" name="dir" th:value="${dir}">
+  <button type="submit" class="utama">Terapkan</button>
+  <a class="tombol" th:href="@{/admin/audit}">Bersihkan</a>
+  <span class="redup dorong-kanan kecil">
+    <span th:text="${totalItems}">0</span> entri
+  </span>
+</form>
+
+<!-- The two toggles below keep security events from being buried under page-view trace rows; nothing is dropped, only the default view changes. -->
+<div class="saklar-audit">
+  <a th:href="@{/admin/audit(action=${fAction}, actor=${fActor}, q=${fQ},
+                             sort=${sort}, dir=${dir},
+                             hanyaKeamanan=${hanyaKeamanan},
+                             lihatPenelusuran=${!lihatPenelusuran})}"
+     th:classappend="${lihatPenelusuran} ? 'pil aktif' : 'pil'" class="pil"
+     data-petunjuk="Baris VIEW_* hanya mencatat siapa membuka halaman apa. Itu access log, bukan audit: ia tidak menyebut sesuatu yang berubah. Disembunyikan secara bawaan supaya peristiwa yang mengubah keadaan tidak tenggelam di antaranya.">
+    <span th:text="${lihatPenelusuran} ? '&#10003;' : '&#9633;'">□</span>
+    Tampilkan aktivitas penelusuran
+    <span class="redup" th:text="'(' + ${jumlahView} + ' baris)'">(0 baris)</span>
+  </a>
+
+  <a th:href="@{/admin/audit(action=${fAction}, actor=${fActor}, q=${fQ},
+                             sort=${sort}, dir=${dir},
+                             lihatPenelusuran=${lihatPenelusuran},
+                             hanyaKeamanan=${!hanyaKeamanan})}"
+     th:classappend="${hanyaKeamanan} ? 'pil aktif' : 'pil'" class="pil"
+     data-petunjuk="Gagal login, akun terkunci, IP diblokir, ganti password, reset kunci, persetujuan dan penolakan akun. Inilah yang dicari orang saat ia membuka halaman ini karena curiga.">
+    <span th:text="${hanyaKeamanan} ? '&#10003;' : '&#9633;'">□</span>
+    Hanya peristiwa keamanan
+  </a>
+
+  <span class="redup kecil" th:if="${tanpaView}">
+    Aktivitas penelusuran sedang disembunyikan.
+  </span>
+</div>
+
+<div class="kosong" th:if="${#lists.isEmpty(logs)}">Tidak ada entri audit yang cocok dengan saringan ini.</div>
+
+<div class="gulir-tabel"><table th:unless="${#lists.isEmpty(logs)}">
+  <thead>
+    <tr>
+      <th><a th:href="@{/admin/audit(action=${fAction},actor=${fActor},q=${fQ},sort='timestamp',dir=${sort=='timestamp' and dir=='asc' ? 'desc' : 'asc'})}">Waktu <span th:if="${sort=='timestamp'}" th:text="${dir=='asc' ? '&#9650;' : '&#9660;'}"></span></a></th>
+      <th><a th:href="@{/admin/audit(action=${fAction},actor=${fActor},q=${fQ},sort='actor',dir=${sort=='actor' and dir=='asc' ? 'desc' : 'asc'})}">Aktor <span th:if="${sort=='actor'}" th:text="${dir=='asc' ? '&#9650;' : '&#9660;'}"></span></a></th>
+      <th><a th:href="@{/admin/audit(action=${fAction},actor=${fActor},q=${fQ},sort='action',dir=${sort=='action' and dir=='asc' ? 'desc' : 'asc'})}">Aksi <span th:if="${sort=='action'}" th:text="${dir=='asc' ? '&#9650;' : '&#9660;'}"></span></a></th>
+      <th><a th:href="@{/admin/audit(action=${fAction},actor=${fActor},q=${fQ},sort='target',dir=${sort=='target' and dir=='asc' ? 'desc' : 'asc'})}">Target <span th:if="${sort=='target'}" th:text="${dir=='asc' ? '&#9650;' : '&#9660;'}"></span></a></th>
+      <th>Detail</th>
+      <th><a th:href="@{/admin/audit(action=${fAction},actor=${fActor},q=${fQ},sort='ip',dir=${sort=='ip' and dir=='asc' ? 'desc' : 'asc'})}">Asal <span th:if="${sort=='ip'}" th:text="${dir=='asc' ? '&#9650;' : '&#9660;'}"></span></a></th>
+      <th>Hasil</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="log : ${logs}" th:classappend="${log.success} ? '' : 'gagal'">
+      <td class="waktu" th:text="${#temporals.format(log.timestamp, 'dd/MM HH:mm:ss')}"
+          th:title="${#temporals.format(log.timestamp, 'EEEE, dd MMMM yyyy HH:mm:ss')}"></td>
+      <td th:text="${log.actor}"></td>
+      <td><span class="kode-aksi" th:text="${log.action}"></span></td>
+      <!-- The Target column stores the device ID for device actions; the device name is added here at display time so readers do not see bare numbers. -->
+      <td class="redup">
+        <span th:text="${log.target}"></span>
+        <span class="nama-target"
+              th:if="${log.target != null and aksiTargetDevice.contains(log.action)
+                       and namaDevice.containsKey(log.target)}"
+              th:text="'(' + ${namaDevice.get(log.target)} + ')'"></span>
+      </td>
+      <td th:text="${log.detail}"></td>
+      <!-- User-Agent column removed from the table; its value is kept as a tooltip on the source address. -->
+      <td class="asal" th:title="${log.userAgent}"
+          th:text="${log.ip == '0:0:0:0:0:0:0:1' or log.ip == '127.0.0.1' or log.ip == '::1'
+                    ? 'localhost' : log.ip}"></td>
+      <!-- Three outcomes, not two: "sent to 0 of 0 subscribers" used to show as OK, which reads as if someone received the email. -->
+      <td th:switch="${log.hasilTeks}">
+        <span th:case="'OK'" class="hijau" style="font-weight:700">OK</span>
+        <span th:case="'DILEWATI'" class="hasil-dilewati"
+              data-petunjuk="Tidak ada yang dikerjakan, dan itu bukan kegagalan. Contohnya peringatan device yang tidak dikirim ke siapa pun karena belum ada yang berlangganan device itu.">DILEWATI</span>
+        <span th:case="*" class="merah" style="font-weight:700">GAGAL</span>
+      </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<div class="halaman" th:unless="${#lists.isEmpty(logs)}">
+  <a class="tombol" th:if="${page > 0}"
+     th:href="@{/admin/audit(action=${fAction}, actor=${fActor}, q=${fQ}, sort=${sort}, dir=${dir}, page=${page - 1})}">Sebelumnya</a>
+  <span>Halaman <b th:text="${page + 1}">1</b> dari <span th:text="${totalPages}">1</span></span>
+  <a class="tombol" th:if="${page + 1 < totalPages}"
+     th:href="@{/admin/audit(action=${fAction}, actor=${fActor}, q=${fQ}, sort=${sort}, dir=${dir}, page=${page + 1})}">Berikutnya</a>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

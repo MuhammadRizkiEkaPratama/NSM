@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Insiden - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<link rel="stylesheet" href="/css/insiden.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Insiden', 'satu gangguan, bukan satu gejala', 'insiden')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-terbuka">Paket B dari rencana
+  peningkatan. Kalau Router Lokasi A mati, perangkat di hilirnya ikut gelap --
+  dan NSM dulu melaporkannya sebagai empat gangguan terpisah. Halaman ini
+  menyatukannya jadi SATU insiden dengan satu akar, memakai graf ketergantungan
+  yang sama yang dipakai panel diagnosis. Yang menyatukan bukan kedekatan
+  waktu melainkan AKAR: dua gangguan tak berhubungan yang kebetulan terjadi di
+  menit yang sama tetap dua baris, karena menggabungkannya akan menghasilkan
+  satu baris yang menceritakan dua cerita sekaligus.</div>
+
+<div id="alat">
+  <label for="jendela" class="kecil redup">Jendela</label>
+  <select id="jendela">
+    <option value="24" selected>24 jam terakhir</option>
+    <option value="72">3 hari terakhir</option>
+    <option value="168">7 hari terakhir</option>
+    <option value="720">30 hari terakhir</option>
+  </select>
+  <span id="meta" class="kecil redup"></span>
+</div>
+
+<div id="ringkas-insiden" class="kisi-4"></div>
+
+<h4 id="judul-terbuka" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-siren"/></svg>
+  Sedang berlangsung</h4>
+<div id="terbuka"><p class="redup">Memuat&hellip;</p></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-circle-check"/></svg>
+  Sudah pulih</h4>
+<div id="pulih"><p class="redup">Memuat&hellip;</p></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="MTTR = Mean Time To Recovery, lama dari gangguan mulai sampai gejala terakhir pulih. Dihitung dari waktu PULIH yang benar-benar dicatat, bukan dari kapan gejalanya terakhir terlihat rusak -- perbedaan itu penting: sampai 23 Agustus 2026 NSM memakai cara yang kedua, dan setiap insiden yang pulih dalam waktu kurang dari satu putaran korelasi tercatat MTTR 0 detik.">
+    Bagaimana MTTR di halaman ini dihitung?
+  </span>
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Insiden tidak ditutup seketika saat gejala terakhir pulih; ia menunggu 300 detik dulu. Perangkat yang berkedip (pulih lalu mati lagi) seharusnya tetap SATU insiden -- menutupnya seketika akan membuat korelasi MEMPERBANYAK baris, kebalikan dari gunanya.">
+    Kenapa insiden yang sudah pulih masih terbuka beberapa menit?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/insiden.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

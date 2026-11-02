@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Back-navigation strip for the pages under Configuration. These pages are deliberately not in the top menu (it overflows 1366px), so this gives a link back to the Configuration home and sideways to the sibling pages.
+  Usage: <div th:replace="~{fragmen/konfig-jalur :: jalur('firewall')}"></div>
+  Known values: perintah, kepatuhan, identitas, firewall, potret, sot, drift, pagar, penemuan. The current page is plain text, not a link.
+-->
+<body>
+
+<div th:fragment="jalur(kini)" class="jalur" aria-label="Jalur halaman konfigurasi">
+  <a class="pulang" th:href="@{/admin/konfig}">&larr; Konfigurasi</a>
+  <span class="pisah">|</span>
+
+  <span th:if="${kini == 'perintah'}" class="kini">Susun perintah</span>
+  <a th:unless="${kini == 'perintah'}" th:href="@{/admin/konfig/perintah}">Susun perintah</a>
+
+  <span th:if="${kini == 'kepatuhan'}" class="kini">Kepatuhan</span>
+  <a th:unless="${kini == 'kepatuhan'}" th:href="@{/admin/konfig/kepatuhan}">Kepatuhan</a>
+
+  <span th:if="${kini == 'identitas'}" class="kini">Identitas</span>
+  <a th:unless="${kini == 'identitas'}" th:href="@{/admin/konfig/identitas}">Identitas</a>
+
+  <span th:if="${kini == 'firewall'}" class="kini">Firewall</span>
+  <a th:unless="${kini == 'firewall'}" th:href="@{/admin/konfig/firewall}">Firewall</a>
+
+  <span th:if="${kini == 'potret'}" class="kini">Potret</span>
+  <a th:unless="${kini == 'potret'}" th:href="@{/admin/konfig/potret}">Potret</a>
+
+  <span th:if="${kini == 'sot'}" class="kini">Sumber Kebenaran</span>
+  <a th:unless="${kini == 'sot'}" th:href="@{/admin/konfig/sot}">Sumber Kebenaran</a>
+
+  <span th:if="${kini == 'drift'}" class="kini">Penyimpangan</span>
+  <a th:unless="${kini == 'drift'}" th:href="@{/admin/konfig/drift}">Penyimpangan</a>
+
+  <span th:if="${kini == 'pagar'}" class="kini">Pagar Otomasi</span>
+  <a th:unless="${kini == 'pagar'}" th:href="@{/admin/konfig/pagar}">Pagar Otomasi</a>
+
+  <span th:if="${kini == 'penemuan'}" class="kini">Penemuan</span>
+  <a th:unless="${kini == 'penemuan'}" th:href="@{/admin/konfig/penemuan}">Penemuan</a>
+</div>
+
+</body>
+</html>

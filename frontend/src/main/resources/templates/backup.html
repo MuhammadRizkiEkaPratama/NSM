@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Pemantau Backup - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+/* Report origin note. A STALE report gets a warning color instead of being hidden: a days-old report saying "running normally" is the most misleading thing this page could show. */
+/* Prefixed with `#vonis` so it beats the `#vonis .ket-lain` rule below on specificity; otherwise a stale note would look like a fresh one. */
+#vonis .ket-lain.basi {
+  color: var(--hati-hati); font-weight: 600;
+}
+/* Page-specific styles only; the rest comes from nsm.css. */
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+.bagian { margin-top: var(--sp-6); }
+.bagian > h3 { font-size: var(--f-bagian); margin: 0 0 var(--sp-3); }
+
+/* Status banner: verdict, one sentence, and a row of short facts. */
+#vonis {
+  display: flex; gap: var(--sp-4); align-items: flex-start;
+  border-radius: var(--r-sedang); padding: var(--sp-5); margin-bottom: var(--sp-5);
+  border: 1px solid var(--garis); background: var(--permukaan-2);
+}
+#vonis.aman  { border-color: var(--up-tepi);   background: linear-gradient(160deg, var(--up-latar) 0%, var(--permukaan-2) 55%); }
+#vonis.bahaya{ border-color: var(--down-tepi); background: linear-gradient(160deg, var(--down-latar) 0%, var(--permukaan-2) 55%); }
+/* Third state: backups run from the Windows laptop, not from the machine serving this page, so neither red nor green would be truthful. Gray means "not this machine's concern". */
+#vonis.lain  { border-color: #44444e; background: linear-gradient(160deg, #2b2b33 0%, var(--permukaan-2) 55%); }
+#vonis .lambang {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid currentColor;
+}
+#vonis.aman .lambang   { color: var(--up); }
+#vonis.bahaya .lambang { color: var(--down); }
+#vonis.lain .lambang   { color: #9a9aa6; }
+#vonis.lain h2         { color: #c9c9d4; }
+/* Uses `#vonis .ket-lain`, not `#vonis.lain .ket-lain`: the note also appears in the `aman` and `bahaya` states once a report from the other machine exists, and the narrower selector would leave it unstyled there. */
+#vonis .ket-lain { color: var(--teks-redup); font-size: var(--f-m); line-height: 1.7; margin-top: 6px; }
+#vonis .isi { flex: 1 1 auto; min-width: 0; }
+#vonis h2 { margin: 0; font-size: var(--f-l); }
+.baris-fakta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.fakta {
+  font-size: var(--f-s); color: var(--teks-2);
+  background: var(--permukaan-3); border: 1px solid var(--garis);
+  border-radius: var(--r-bulat); padding: 3px 11px; white-space: nowrap;
+}
+.fakta b { color: var(--teks); font-weight: 700; }
+#vonis ul { margin: var(--sp-3) 0 0; padding-left: 20px; }
+#vonis li { margin-bottom: 6px; line-height: 1.5; color: var(--teks-2); }
+
+/* Automatic summary: schedule (left) and latest backup contents (right), side by side. */
+#ringkasan-otomatis {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5);
+  align-items: start;
+}
+@media (max-width: 900px) { #ringkasan-otomatis { grid-template-columns: 1fr; } }
+
+.kelompok-judul {
+  font-size: var(--f-s); text-transform: uppercase; letter-spacing: .04em;
+  color: var(--teks-redup); font-weight: 700; margin: 0 0 var(--sp-3);
+}
+
+.kisi-jadwal { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+               gap: var(--sp-3); }
+.kisi-jadwal .sel { border: 1px solid var(--garis); border-radius: var(--r-sedang);
+                    padding: var(--sp-3); background: var(--permukaan-2); }
+.kisi-jadwal .label { color: var(--teks-redup); font-size: var(--f-s); }
+.kisi-jadwal .nilai { margin-top: 4px; font-weight: 600; word-break: break-word; }
+.kisi-jadwal .nilai.baik { color: var(--up); }
+.kisi-jadwal .nilai.buruk { color: var(--down); }
+/* Long explanations show on hover as a dashed underline on the value itself. Values without an explanation get no underline, so the cue stays meaningful. */
+.kisi-jadwal .nilai.beristilah {
+  cursor: help; border-bottom: 1px dashed var(--garis-terang);
+  display: inline-block;
+}
+
+.isi-kotak { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.isi-item { flex: 1 1 200px; border: 1px solid var(--garis); border-radius: var(--r-sedang);
+            padding: var(--sp-3); background: var(--permukaan-2); }
+.isi-item .nama { font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.isi-item .guna { color: var(--teks-redup); font-size: var(--f-s); margin-top: 4px;
+                  line-height: 1.45; }
+.isi-item .ukuran { margin-top: 6px; font-variant-numeric: tabular-nums; font-size: var(--f-s); }
+.isi-item.ada .nama { color: var(--up); }
+.isi-item.ada .lambang-kecil { color: var(--up); }
+.isi-item.hilang { border-color: var(--down-tepi); }
+.isi-item.hilang .nama { color: var(--down); }
+.isi-item.hilang .lambang-kecil { color: var(--down); }
+.lambang-kecil { display: inline-flex; flex: 0 0 auto; }
+
+table { margin-top: var(--sp-3); }
+td.waktu, td.ukuran, td.lama { font-variant-numeric: tabular-nums; }
+tr.gagal td { color: var(--down); }
+tr.sebagian td { color: var(--hati-hati); }
+tr.mentah td { color: var(--teks-redup); font-family: ui-monospace, monospace;
+               font-size: var(--f-s); }
+
+tr.berkas { cursor: pointer; }
+tr.berkas:hover td { background: rgba(255,255,255,.04); }
+tr.rincian td { background: var(--tint-halus); }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Pemantau Backup', 'apakah pencadangan benar-benar berjalan', 'backup')}"></div>
+
+<div id="alat">
+  <button id="segarkan" class="tombol" type="button">Periksa Ulang</button>
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<div id="vonis"><div class="isi"><h2>Memeriksa&hellip;</h2></div></div>
+
+<!-- Incremental backup is the primary method and is listed first; the `nsm-backup-*.zip` full backups below are the legacy approach, kept until deleted deliberately. -->
+<div class="bagian">
+  <h3 id="judul-inc" class="kepala">Backup incremental &mdash; metode utama</h3>
+  <div class="jelas-isi" data-untuk="#judul-inc">Satu berkas induk yang
+    DITIMPA tiap putaran, bukan zip baru tiap hari. Tabel deret-waktu
+    (status_logs, bandwidth_samples, dan seterusnya) cuma di-dump barisnya
+    yang BARU lalu digabungkan ke berkas akumulasi di dalamnya; tabel yang
+    bisa berubah &mdash; device, layanan, akun &mdash; tetap di-dump penuh
+    tiap kali, karena incremental berbasis id akan melewatkan perubahannya
+    diam-diam. Salinan mingguan dan bulanan memberi beberapa titik pulih,
+    sebab induk sendiri hanya memuat keadaan TERAKHIR.
+    Pemulihannya sudah dibuktikan sungguhan, bukan diasumsikan: `induk.zip`
+    dipulihkan ke basis data pembuangan lewat mysql asli, lalu jumlah
+    barisnya dicocokkan per tabel &mdash; lihat `uji_pulih_incremental.py`.</div>
+
+  <div id="inc-ringkas" class="redup kecil">Memuat&hellip;</div>
+  <div id="inc-isi" class="isi-kotak"></div>
+  <div id="inc-salinan" class="kisi-jadwal"></div>
+</div>
+
+<div class="bagian">
+  <h3 id="judul-ringkasan" class="kepala">Jadwal & isi backup terbaru</h3>
+  <div class="jelas-isi" data-untuk="#judul-ringkasan">Dua sumber berdampingan. Jadwal dibaca dari Task Scheduler Windows: apakah tugasnya terdaftar, kapan terakhir jalan, dan kode hasilnya. Isi dibaca dengan membuka zip backup terbaru sungguhan: status SUKSES di manifest cuma berarti prosesnya selesai, bukan berarti ketiga bagian di dalamnya ada — backup SEBAGIAN itu sah dan sengaja, dan di sinilah bagian mana yang hilang terlihat.</div>
+
+  <div id="ringkasan-otomatis">
+    <div>
+      <div class="kelompok-judul">Jadwal otomatis</div>
+      <div id="jadwal" class="kisi-jadwal"></div>
+    </div>
+    <div>
+      <div class="kelompok-judul">Isi backup terbaru</div>
+      <div id="isi-terbaru" class="isi-kotak"></div>
+    </div>
+  </div>
+</div>
+
+<!-- One table instead of two: it also surfaces files that exist without a creation record, and records whose file no longer exists. -->
+<div class="bagian">
+  <!-- Open by default: this section is the answer, the next layer is the evidence. -->
+  <h3 data-lipat="berkas" data-lipat-buka>Backup tersimpan &amp; hasilnya</h3>
+  <div id="ringkas-berkas" class="redup kecil"></div>
+  <div class="gulir-tabel"><table data-hal="6">
+    <thead>
+      <tr>
+        <th>Berkas</th>
+        <th>Dibuat</th>
+        <th>Ukuran</th>
+        <th>Salinan kedua</th>
+        <th>Hasil</th>
+        <th>Lama</th>
+        <th>Kendala</th>
+      </tr>
+    </thead>
+    <tbody id="baris-berkas"></tbody>
+  </table></div>
+</div>
+
+<div class="bagian">
+  <h3 data-lipat="manifest-mentah">Baris manifest.log yang tidak dikenali</h3>
+  <div class="redup kecil">
+    Baris yang polanya tidak cocok tetap ditampilkan apa adanya.
+    Menyembunyikannya berarti menyembunyikan justru bentuk kegagalan yang
+    belum pernah terjadi, dan itu yang paling perlu terlihat.
+  </div>
+  <div class="gulir-tabel"><table data-hal="5">
+    <thead>
+      <tr><th>Baris mentah</th></tr>
+    </thead>
+    <tbody id="baris-riwayat"></tbody>
+  </table></div>
+</div>
+
+<div class="catatan">
+  Halaman ini hanya <b>membaca</b>. Ia tidak menjalankan backup, tidak mengubah
+  jadwal, dan tidak menghapus berkas apa pun.
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Halaman ini menggabungkan tiga sumber yang sebelumnya harus diperiksa satu per satu di luar aplikasi: berkas manifest.log di folder backup, keadaan tugas di Windows Task Scheduler, dan isi folder salinan kedua. Backup NSM pernah berhenti selama dua hari tanpa terlihat justru karena ketiganya tidak pernah dibuka.">
+    Dari mana angka di halaman ini?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/backup.js"></script>
+<script src="/js/lipatan.js"></script>
+<script src="/js/jelas.js"></script>
+<!-- History table pagination (5-6 rows per page). Called again by each renderer after its tbody is filled, since the tables are empty at load. -->
+<script src="/js/halaman-tabel.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

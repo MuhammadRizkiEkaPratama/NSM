@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Tenant - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<link rel="stylesheet" href="/css/wawasan.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Tenant', 'siapa memiliki perangkat mana', 'wawasan')}"></div>
+
+<div th:replace="~{fragmen/wawasan-jalur :: jalur('tenant')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-tenant">Paket D. Penyaringan
+  antar-tenant TIDAK diserahkan pada disiplin tiap pemanggil &mdash; ia
+  dipasang di lapisan ORM, sehingga setiap kueri tersaring otomatis tanpa satu
+  baris pun perubahan di pemanggilnya. NSM punya ratusan kueri tersebar di
+  belasan modul, dan meminta semuanya ingat menyaring berarti bertaruh bahwa
+  tidak satu pun akan lupa, hari ini maupun tahun depan.</div>
+
+<h4 id="judul-tenant" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-users"/></svg>
+  Penyewa</h4>
+
+<div id="tenant-daftar"><p class="redup">Memuat&hellip;</p></div>
+
+<h4 id="judul-yatim" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-circle-alert"/></svg>
+  Perangkat yang belum punya pemilik</h4>
+
+<div class="jelas-isi" data-untuk="#judul-yatim">Ini keadaan yang SAH, bukan
+  kesalahan: perangkat tanpa <code>tenant_id</code> tidak terlihat oleh tenant
+  mana pun, hanya oleh pemanggil tanpa konteks tenant &mdash; poller, CLI, dan
+  admin platform. Ia disebut di sini justru supaya tidak ada perangkat yang
+  diam-diam tidak terlihat siapa pun.</div>
+
+<div id="tenant-yatim"><p class="redup">Memuat&hellip;</p></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Halaman ini BACA-SAJA dengan sengaja. Menambahkan penyewa atau memindahkan perangkat antar penyewa berarti memutuskan siapa yang boleh melihat apa; kebocoran antar-tenant gagal DIAM-DIAM dan paling merusak kepercayaan. Keputusan sebesar itu diambil lewat migrate_tenant.py yang sadar, bukan lewat satu klik yang bisa salah sasaran.">
+    Kenapa tidak ada tombol tambah/hapus di sini?
+  </span>
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Peran ADMIN yang sudah dipakai akun-akun lama tetap berarti admin TENANT, bukan platform. Kalau ia diartikan lintas-tenant, seluruh akun lama mendadak bisa melihat semua penyewa lewat migrasi -- perluasan hak yang terjadi tanpa ada yang memutuskannya. Hak lintas-tenant harus diberikan sadar lewat peran ADMIN_PLATFORM.">
+    Siapa yang bisa melihat lintas tenant?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/wawasan.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

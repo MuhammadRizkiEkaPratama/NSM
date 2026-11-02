@@ -1,0 +1,69 @@
+nama: huawei_vrp
+keterangan: Huawei VRP (Versatile Routing Platform)
+teruji: dokumentasi
+# No Huawei device in the lab. None of the commands in this file has been run on real VRP.
+
+deteksi:
+  # Huawei Technologies PEN in the IANA registry.
+  sysobjectid:
+    - ".1.3.6.1.4.1.2011."
+
+akses:
+  # netmiko has seven Huawei drivers. `huawei_vrp` maps to the same class as `huawei`
+  # (HuaweiSSH). `huawei_vrpv8` is a different class with a candidate/`commit` model
+  # like Junos, so VRP V8 needs its own `huawei_vrpv8.yaml`.
+  netmiko_device_type: huawei_vrp
+  jenis: jaringan
+  butuh_enable: false
+
+  # Quoted from netmiko/huawei/huawei.py. `temporary` applies to this session only,
+  # so reading a device does not change its settings.
+  paging_mati: screen-length 0 temporary
+
+baca:
+  # VRP uses `display` instead of `show` for most commands.
+  konfigurasi: display current-configuration
+  konfigurasi_startup: display saved-configuration
+
+  nama_host: display current-configuration | include sysname
+  identitas: display version
+  interface_ringkas: display ip interface brief
+  interface_rinci: display interface
+  tabel_rute: display ip routing-table
+  cpu: display cpu-usage
+  memori: display memory-usage
+  disk: dir
+
+tulis:
+  didukung: true
+
+  mode_konfig: system-view
+
+  # `save` asks a Y/N question. A command waiting for an answer hangs an automated
+  # session until timeout and looks like a failed save. netmiko's `save_config()`
+  # answers it (pattern `[Cc]ontinue\?`, then "y"); there is no non-interactive form of `save`.
+  simpan: save
+
+  # Safety net: VRP has a scheduled reboot similar to Cisco `reload in N`, but
+  # `pasang` is left empty because the exact command could not be confirmed, and an
+  # unverified reboot command is worse than none.
+  jaring_pengaman:
+    jenis: reload
+    pasang: ""
+
+rahasia:
+  # VRP usually prints secrets already hashed (`irreversible-cipher`, `cipher`), but
+  # they are still masked: snapshots are stored in nsm.db and copied to cloud backup,
+  # and hashes can be cracked offline.
+  - pola: '(?im)^(\s*snmp-agent\s+community\s+(?:read|write)\s+)\S+'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*local-user\s+\S+\s+password\s+(?:irreversible-cipher|cipher|simple)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*(?:pre-shared-key|authentication-key|password)\s+(?:cipher|simple)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  # No pattern for `set authentication password cipher ...`: its line format on VRP
+  # could not be confirmed, and an unverified pattern gives false assurance.
+
+kemampuan: {}
+# Deliberately empty: no capability here has been tried on a real Huawei
+# device, and `dialek_perangkat` treats unlisted capabilities as unsupported.

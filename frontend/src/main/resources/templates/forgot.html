@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Lupa Password - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+</head>
+<body class="terpusat">
+
+<div class="panel" style="width:340px">
+  <h2>Lupa Password</h2>
+  <div class="pengantar">
+    Masukkan email akunmu, lalu tautan untuk mengatur ulang password dikirim
+    ke alamat itu. Tautannya berlaku 30 menit.
+  </div>
+
+  <div class="pesan-galat" th:if="${error}" th:text="${error}"></div>
+  <div class="pesan-sukses" th:if="${success}" th:text="${success}"></div>
+
+  <form th:action="@{/forgot}" method="post">
+    <label class="label-atas" for="em">Email</label>
+    <input type="email" name="email" id="em" required autofocus autocomplete="email">
+    <button type="submit" class="tombol-utama tombol-lebar" style="margin-top:var(--sp-5)">
+      Kirim Tautan Reset
+    </button>
+  </form>
+
+  <div class="tautan-bawah"><a th:href="@{/login}">Kembali ke halaman masuk</a></div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

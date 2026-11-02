@@ -1,0 +1,40 @@
+### sshd
+AcceptEnv LANG LC_*
+Include /etc/ssh/sshd_config.d/*.conf
+KbdInteractiveAuthentication no
+PrintMotd no
+Subsystem	sftp	/usr/lib/openssh/sftp-server
+UsePAM yes
+X11Forwarding yes
+
+### port-mendengarkan
+0.0.0.0:22
+0.0.0.0:389
+127.0.0.53%lo:53
+127.0.0.54:53
+192.168.20.101:3306
+[::]:22
+[::]:389
+
+### firewall
+active
+
+### akun-uid0
+root
+
+### akun-bershell
+nsm:/bin/bash
+nsmro:/bin/bash
+root:/bin/bash
+sync:/bin/sync
+
+### grup-istimewa
+adm:syslog,nsm
+lxd:
+sudo:nsm
+
+### akun-pemantau-grup
+!! kosong
+
+### pembaruan-keamanan-tertunda
+13

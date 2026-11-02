@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Report Availability - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#alat .pemisah { width: 1px; height: 22px; background: var(--garis); margin: 0 6px; }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+#cards { margin-top: var(--sp-3); }
+/* Three boxes, not four: the latest incident has its own panel below, since it carries an evidence chain and suggested actions that do not fit a box. */
+#sekunder { margin-top: var(--sp-3); grid-template-columns: repeat(3, 1fr); }
+#sekunder .kartu-mini .isi { font-size: var(--f-n); }
+@media (max-width: 1100px) { #sekunder { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px)  { #sekunder { grid-template-columns: 1fr; } }
+
+#insiden { margin-top: var(--sp-4); }
+.panel-insiden {
+  display: block; background: var(--permukaan-2); border: 1px solid var(--garis);
+  border-left: 3px solid var(--down); border-radius: var(--r-sedang);
+  padding: 15px 18px; color: inherit;
+  transition: border-color var(--alih), background var(--alih);
+}
+a.panel-insiden:hover { background: var(--permukaan-3); border-color: var(--garis-terang);
+                        border-left-color: var(--down); text-decoration: none; }
+.panel-insiden.pulih { border-left-color: var(--hati-hati); }
+.panel-insiden.aman  { border-left-color: var(--up); }
+.panel-insiden .judul-panel { color: var(--teks-samar); font-size: 10px; text-transform: uppercase;
+                              letter-spacing: .4px; }
+.panel-insiden .baris-utama { display: flex; align-items: baseline; gap: 10px;
+                              flex-wrap: wrap; margin-top: 5px; }
+.panel-insiden .sasaran { font-size: var(--f-l); font-weight: 700; }
+.panel-insiden .kapan { color: var(--teks-redup); font-size: var(--f-s); }
+.panel-insiden .sebab { margin-top: 7px; font-size: var(--f-m); line-height: 1.55;
+                        color: var(--teks-2); max-width: 92ch; }
+.panel-insiden ul.bukti { list-style: none; padding: 0; margin: 10px 0 0;
+                          font-size: var(--f-s); }
+.panel-insiden ul.bukti li { margin: 3px 0; padding-left: 20px; position: relative; }
+.panel-insiden ul.bukti li.ok { color: var(--up); }
+.panel-insiden ul.bukti li.gagal { color: var(--down); }
+.panel-insiden ul.bukti li.netral { color: var(--teks-redup); }
+.panel-insiden ul.bukti li.ok::before { content: "\2713"; position: absolute; left: 2px; }
+.panel-insiden ul.bukti li.gagal::before { content: "\2717"; position: absolute; left: 2px; }
+.panel-insiden ul.bukti li.netral::before { content: "\00b7"; position: absolute; left: 4px; }
+.panel-insiden .saran { margin-top: 10px; font-size: var(--f-s); line-height: 1.55;
+                        color: var(--hati-hati); max-width: 92ch; }
+.panel-insiden .ke-tkp { margin-top: 10px; font-size: var(--f-s); color: var(--tautan); }
+
+table { margin-top: var(--sp-5); }
+td .nama-device { font-weight: 600; }
+td .jenis-device { color: var(--teks-redup); font-size: var(--f-s); }
+.sel-device { display: flex; align-items: center; gap: 10px; }
+
+canvas.sparkline { width: 110px; height: 24px; display: block; cursor: help; }
+
+/* Rows for devices with paused monitoring are dimmed: their numbers no longer grow. */
+tr.baris-dijeda td { opacity: .55; }
+tr.baris-dijeda:hover td { opacity: .8; }
+
+/* SLO and error budget: one row per device, not a table, since each row asks one question (still within budget, or over?) that a horizontal bar answers at a glance. */
+.slo-baris {
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: 10px 14px; border: 1px solid var(--garis);
+  border-left-width: 3px; border-radius: var(--r-sedang);
+  background: var(--alas-tabel); margin-bottom: 8px;
+}
+.slo-baris.aman    { border-left-color: var(--up); }
+.slo-baris.menipis { border-left-color: var(--hati-hati); }
+.slo-baris.habis   { border-left-color: var(--down); }
+.slo-kiri   { flex: 0 0 210px; min-width: 0; }
+.slo-nama   { font-weight: 600; font-size: var(--f-m);
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slo-target { color: var(--teks-redup); font-size: var(--f-s); margin-top: 2px; }
+.slo-tengah { flex: 1 1 auto; min-width: 0; }
+.slo-batang { height: 8px; border-radius: var(--r-bulat);
+              background: rgba(255,255,255,.07); overflow: hidden; }
+.slo-isi    { height: 100%; background: var(--up); border-radius: var(--r-bulat); }
+.slo-baris.menipis .slo-isi { background: var(--hati-hati); }
+/* An exhausted budget shows an empty bar rather than a full red one, which would read as "a lot". */
+.slo-baris.habis .slo-isi   { background: var(--down); }
+.slo-ket    { color: var(--teks-redup); font-size: var(--f-s); margin-top: 5px; }
+.slo-kanan  { flex: 0 0 118px; text-align: right; }
+.slo-sisa   { font-weight: 600; font-size: var(--f-m); }
+.slo-baris.habis .slo-sisa   { color: var(--down); }
+.slo-baris.menipis .slo-sisa { color: var(--hati-hati); }
+.slo-persen { color: var(--teks-redup); font-size: var(--f-s); margin-top: 2px; }
+.slo-catatan { margin-top: 10px; font-size: var(--f-s); line-height: 1.7;
+               max-width: 78ch; }
+@media (max-width: 700px) {
+  .slo-baris { flex-wrap: wrap; }
+  .slo-kiri, .slo-kanan { flex-basis: 100%; text-align: left; }
+}
+</style>
+</head>
+<body th:attr="data-periode=${period}">
+
+<div th:replace="~{fragmen/nav :: bilah('Report Availability', 'ringkasan ketersediaan device', 'report')}"></div>
+
+<div id="alat">
+  <span class="redup kecil">Periode</span>
+  <span class="pil" data-p="1h" role="button" tabindex="0">1 Jam</span>
+  <span class="pil" data-p="24h" role="button" tabindex="0">24 Jam</span>
+  <span class="pil" data-p="7d" role="button" tabindex="0">7 Hari</span>
+  <span class="pil" data-p="30d" role="button" tabindex="0">30 Hari</span>
+
+  <span class="pemisah"></span>
+
+  <a id="ke-cetak" href="#" class="pil" title="Halaman siap cetak, hitam putih, ukuran A4">PDF</a>
+  <a id="unduh-word" href="#" class="pil" title="Laporan ringkas berformat Word (.docx)">Word</a>
+  <a id="unduh-excel" href="#" class="pil" title="Data lengkap 6 lembar, bisa diolah ulang">Excel</a>
+
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<div id="cards" class="kisi-4"></div>
+
+<!-- The supporting figures are collapsed by default and the latest incident is open, so the main table is not pushed below the fold. Panel heads state the answer even when closed. -->
+<h2 data-lipat="sekunder">Angka pendukung</h2>
+<div id="sekunder" class="kisi-4"></div>
+
+<h2 data-lipat="insiden" data-lipat-buka>Insiden Terakhir</h2>
+<div id="insiden"></div>
+
+<!-- SLO and error budget goes before "Semua Device": the table says what the numbers are, this section says whether they are enough. Open by default. -->
+<h2 data-lipat="slo" data-lipat-buka>SLO &amp; Anggaran Galat
+  <span class="beristilah" data-petunjuk="Anggaran galat adalah sisa waktu mati yang MASIH BOLEH dipakai sebelum janji ketersediaan dilanggar: (100% - target) dikali lama pengamatan. Gagasan aslinya dari Google SRE, dan bagian yang paling sering hilang saat disalin adalah ini: sejumlah waktu mati memang DIPERBOLEHKAN. Layanan yang tidak pernah boleh mati melahirkan ketakutan mengubah apa pun, dan sistem yang tidak pernah diubah membusuk dengan caranya sendiri. Anggaran masih longgar berarti aman mengambil risiko terkendali (deploy, injeksi gangguan, menyalakan otomasi baru); anggaran menipis berarti berhenti mengambil risiko dan urus keandalan; anggaran habis berarti janjinya sudah dilanggar dan itu menuntut keputusan, bukan grafik. Penyebutnya adalah waktu yang BENAR-BENAR dipantau -- saat NSM tidak sedang melihat (laptop tertutup, poller mati) dikeluarkan, supaya semalam laptop tertutup tidak terbaca sebagai semalam pelanggaran janji.">?</span>
+</h2>
+<div id="slo"></div>
+
+<h2 data-lipat="daftar" data-lipat-buka>Semua Device</h2>
+<div class="gulir-tabel"><table>
+  <thead>
+    <tr>
+      <!-- The pattern and IP columns are intentionally not sortable: sparklines have no meaningful order, and sorting IPs as text puts .101 before .60 (a correct sort needs per-octet comparison). -->
+      <th>Status</th>
+      <th data-urut="teks">Device</th>
+      <th>IP</th>
+      <th data-istilah="availability" data-urut="angka">Availability</th>
+      <th data-istilah="pola-sparkline">Pola</th>
+      <th data-istilah="insiden" data-urut="angka">Insiden</th>
+      <th data-istilah="total-down" data-urut="angka">Total Down</th>
+      <th data-istilah="latency" data-urut="angka">Latency</th>
+      <th data-istilah="kualitas-sambungan" data-urut="angka">Kualitas</th>
+      <th data-urut="waktu">Terakhir Cek</th>
+      <th><span class="khusus-pembaca-layar">Aksi</span></th>
+    </tr>
+  </thead>
+  <tbody id="rows"></tbody>
+</table></div>
+
+<div class="catatan">
+  Halaman ini memuat data <b>device</b>. Untuk aktivitas <b>akun</b> seperti masuk,
+  persetujuan, dan penggantian password, lihat Audit Log.
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Kategori sebab berasal dari pemeriksaan otomatis saat ping gagal. Tidak ada respons berarti ping gagal dan tidak ada port TCP yang menjawab, jadi device kemungkinan mati atau terputus. Ping diblokir berarti ping gagal tetapi port TCP menjawab, jadi device kemungkinan masih hidup. Sebab fisik seperti listrik padam atau kabel lepas tidak bisa dideteksi dari jaringan.">
+    Bagaimana kategori sebab ditentukan?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/ikon.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/sparkline.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/report.js"></script>
+<script src="/js/urut.js"></script>
+<script src="/js/lipatan.js"></script>
+<!-- History table pagination (5 rows per page). Called again by each renderer after its tbody is filled, since the tables are empty at load. -->
+<script src="/js/halaman-tabel.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

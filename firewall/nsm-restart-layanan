@@ -1,0 +1,65 @@
+#!/bin/bash
+# Restricted path for NSM to restart services. Installed in /usr/local/sbin/ by `pasang-restart-layanan.sh`; `nsmro` gets sudo for THIS FILE only, not `systemctl`, because policy such as "which units may be restarted" cannot be expressed in sudoers.
+# Allowed:
+#     restart <unit>   only units in the allowlist below
+#     status  <unit>   only units in the allowlist below
+# Not possible through this file: stop / disable / mask, restarting unlisted units, daemon-reload or editing units.
+# Deliberately NOT in the allowlist:
+#   ssh / sshd   NSM's own path to this machine; a failed restart would lock it out until someone reaches the console.
+#   slapd        LDAP directory; stopping it breaks both NSM and E-Canteen logins.
+#   mysql        NSM's own database; restarting it interrupts monitoring data while NSM is handling an incident.
+# Adding a unit means editing this file on that machine: a visible, recorded decision.
+
+set -e
+
+SYSTEMCTL=/usr/bin/systemctl
+[ -x "$SYSTEMCTL" ] || SYSTEMCTL=/bin/systemctl
+
+DIIZINKAN="apache2 ecanteen smbd nmbd auditd"
+
+pakai() {
+    echo "Pakai: $(basename "$0") restart|status <unit>"
+    echo "Unit yang diizinkan: $DIIZINKAN"
+    exit 2
+}
+
+boleh() {
+    for u in $DIIZINKAN; do
+        [ "$1" = "$u" ] && return 0
+    done
+    return 1
+}
+
+AKSI="$1"
+UNIT="$2"
+
+[ -n "$AKSI" ] && [ -n "$UNIT" ] || pakai
+
+# The unit name's shape is validated before matching the allowlist, so arguments like `apache2 ; rm -rf /` cannot reach the command line (see `connectors/perintah.py`).
+case "$UNIT" in
+    *[!a-zA-Z0-9_-]*)
+        echo "TOLAK: nama unit '$UNIT' memuat aksara yang tidak diizinkan."
+        exit 1
+        ;;
+esac
+
+if ! boleh "$UNIT"; then
+    echo "TOLAK: '$UNIT' tidak ada di daftar unit yang boleh disentuh NSM."
+    echo "Yang diizinkan: $DIIZINKAN"
+    exit 1
+fi
+
+case "$AKSI" in
+    restart)
+        # `--no-block` is not used: the exit code must be meaningful so `pemulih/layanan.py` can tell "accepted" from "failed".
+        "$SYSTEMCTL" restart "$UNIT"
+        echo "restart $UNIT: diterima"
+        ;;
+    status)
+        # `is-active` only, not full `status`: status prints log excerpts that may contain anything and would be stored as evidence in the NSM database.
+        "$SYSTEMCTL" is-active "$UNIT"
+        ;;
+    *)
+        pakai
+        ;;
+esac

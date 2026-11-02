@@ -1,0 +1,34 @@
+# Libraries actually used by NSM, derived from the `import` statements across the backend.
+# Versions are not pinned (except pysnmp) so security updates are not blocked; pysnmp is
+# pinned because version 7 moved its whole API to asyncio and connectors/snmp.py targets it.
+#
+# Reinstall from scratch:
+#     cd C:\Users\<user>\NSM\backend
+#     python -m venv venv
+#     venv\Scripts\activate
+#     pip install -r requirements.txt
+
+# --- Web and database ---
+fastapi  # REST API in main.py
+uvicorn  # runs FastAPI
+sqlalchemy  # database access (SQLite or MySQL)
+pymysql  # MySQL driver (mysql+pymysql://), used by database.py when NSM_DB_HOST is set
+
+# --- Device monitoring ---
+apscheduler  # scheduler for ping, bandwidth and notifications in poller.py
+icmplib  # ping (ICMP) without administrator rights
+netmiko  # CLI sessions to Cisco IOS
+paramiko  # SSH exec on Linux (used directly, not via netmiko)
+ldap3  # reads the LDAP directory (person name and title), anonymous bind
+pysnmp>=7.0,<8.0  # SNMP v3; version 7 only has the asyncio API
+psutil  # connectors/lokal.py ("this machine" device); imported inside a function
+
+# --- Security ---
+cryptography  # sandi_backup.py (AES-256-GCM); listed explicitly rather than relying on paramiko
+
+# --- Source of truth ---
+jinja2  # sot/render.py (SandboxedEnvironment); imports jinja2.sandbox directly, so list it explicitly
+
+# --- Reports ---
+openpyxl  # builds .xlsx files in laporan_excel.py
+python-docx  # builds .docx files in laporan_word.py

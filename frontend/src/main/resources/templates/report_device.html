@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Riwayat Device - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+/* --- identitas device --- */
+
+/* --- alat: periode + unduhan --- */
+#periode { margin: var(--sp-3) 0 0; display: flex; gap: var(--sp-2);
+           align-items: center; flex-wrap: wrap; }
+#periode .pemisah { width: 1px; height: 22px; background: var(--garis); margin: 0 6px; }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+/* Identity and figures stay stacked: a two-column layout measured taller, because the text wraps in the narrower column. */
+.baris-atas, .lajur-identitas { display: block; }
+
+/* Interface icons from `/ikon-tabler.svg` via <use>. Sized `1em` and `stroke: currentColor` so they follow the surrounding text size and color. */
+.ikon { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none;
+        stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        vertical-align: -.14em; }
+
+/* Bento grid: tile size reflects importance. Availability, incidents, total downtime, and recovery time are one tile because they answer one question. Row spans must add up to 12 so no empty lane is left. */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr);
+         gap: var(--sp-3); margin-top: var(--sp-3); align-items: start; }
+.ubin { background: var(--permukaan-2); border: 1px solid var(--garis);
+        border-radius: var(--r-besar); padding: var(--sp-4); min-width: 0; }
+.ubin > header { display: flex; align-items: center; gap: var(--sp-2);
+                 margin-bottom: var(--sp-3); }
+.ubin > header .ikon { width: 15px; height: 15px; color: var(--teks-samar); }
+.ubin > header h3 { font-size: var(--f-s); font-weight: 700; margin: 0;
+                    text-transform: uppercase; letter-spacing: .05em;
+                    color: var(--teks-redup); }
+.ubin > header .kanan { margin-left: auto; font-size: var(--f-xs);
+                        color: var(--teks-samar); }
+.u-4 { grid-column: span 4; }
+@media (max-width: 1100px) { .u-4 { grid-column: span 12; } }
+
+#ringkas { display: flex; gap: var(--sp-4); align-items: center; }
+.cincin { position: relative; flex: none; }
+.cincin svg { display: block; transform: rotate(-90deg); }
+.cincin .tengah { position: absolute; inset: 0; display: flex;
+                  flex-direction: column; align-items: center; justify-content: center; }
+.cincin .nilai { font-size: 25px; font-weight: 700; line-height: 1;
+                 font-variant-numeric: tabular-nums; }
+.cincin .kata { font-size: 9px; color: var(--teks-samar); text-transform: uppercase;
+                letter-spacing: .06em; margin-top: 3px; }
+.mini-daftar { display: grid; gap: var(--sp-2); min-width: 0; flex: 1; }
+.mini { display: flex; align-items: baseline; gap: var(--sp-2); }
+.mini .lab { font-size: var(--f-xs); color: var(--teks-samar); flex: 1;
+             display: flex; align-items: center; gap: 5px; cursor: help; }
+.mini .lab .ikon { width: 12px; height: 12px; }
+.mini .val { font-size: var(--f-n); font-weight: 700;
+             font-variant-numeric: tabular-nums; }
+.catatan-ubin { margin-top: var(--sp-3); padding-top: var(--sp-2);
+                border-top: 1px solid var(--garis); font-size: var(--f-xs);
+                color: var(--teks-samar); line-height: 1.45; }
+
+/* 24-hour band. Time ranges where NSM saw nothing are drawn hatched, not colored: "unknown" is a hole in observation, not a device state. Data from /api/report/sparkline: 40 buckets for the chosen period, `null` means no samples in that bucket. */
+.pita-kotak { background: var(--permukaan-2); border: 1px solid var(--garis);
+              border-radius: var(--r-besar); padding: var(--sp-4);
+              margin-top: var(--sp-3); }
+.pita { position: relative; height: 24px; border-radius: var(--r-kecil);
+        overflow: hidden; display: flex; background: var(--permukaan-3); }
+.pita > span { display: block; height: 100%; }
+.pita .s-up { background: var(--up); opacity: .78; }
+.pita .s-down { background: var(--down); }
+.pita .s-sebagian { background: var(--hati-hati); }
+.pita .s-buta { background: repeating-linear-gradient(45deg,
+                var(--permukaan-3) 0 5px, #2c2c2c 5px 10px); }
+.pita-jam { display: flex; margin-top: 5px; font-size: 9px;
+            color: var(--teks-samar); font-variant-numeric: tabular-nums; }
+.pita-jam > span { flex: 1; }
+.pita-jam > span:last-child { flex: none; }
+.pita-kunci { display: flex; gap: var(--sp-4); flex-wrap: wrap;
+              margin-top: var(--sp-3); font-size: var(--f-xs);
+              color: var(--teks-samar); }
+.pita-kunci span { display: flex; align-items: center; gap: 5px; }
+.kotak-kunci { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.ubin-kepala-pita { display: flex; align-items: center; gap: var(--sp-2);
+                    margin-bottom: var(--sp-3); }
+.ubin-kepala-pita h3 { font-size: var(--f-s); font-weight: 700; margin: 0;
+                       text-transform: uppercase; letter-spacing: .05em;
+                       color: var(--teks-redup); }
+.ubin-kepala-pita .kanan { margin-left: auto; font-size: var(--f-xs);
+                           color: var(--teks-samar); }
+.ubin-kepala-pita + .jelas-isi, .ubin > header + .jelas-isi {
+  margin: 0 0 var(--sp-3); padding: 9px 12px; border-top: 0;
+  border-left: 2px solid var(--garis-terang);
+  background: var(--permukaan-3); border-radius: 0 6px 6px 0;
+}
+.ubin > header h3.kepala, .ubin-kepala-pita h3.kepala { display: flex; align-items: center; }
+.ubin > header .jelas-tombol, .ubin-kepala-pita .jelas-tombol {
+  margin-left: var(--sp-2); opacity: .45; }
+.ubin > header:hover .jelas-tombol,
+.ubin-kepala-pita:hover .jelas-tombol { opacity: 1; }
+
+h2.kepala .ikon { width: 15px; height: 15px; color: var(--teks-samar);
+                  margin-right: var(--sp-2); }
+
+h2 { font-size: var(--f-bagian); margin: 26px 0 0; }
+
+/* Explanations live behind the "?" icon on section titles. The icon is faint until hover or keyboard focus, and always visible on touch screens. nsm.css only covered <h3>/<h4>; this adds <h2>. */
+h2.kepala { display: flex; align-items: center; }
+h2.kepala .jelas-tombol { margin-left: var(--sp-2); opacity: .45; }
+h2.kepala:hover .jelas-tombol { opacity: 1; }
+h2.kepala + .jelas-isi {
+  margin: 8px 0 0; padding: 9px 12px; border-top: 0;
+  border-left: 2px solid var(--garis-terang);
+  background: var(--permukaan-2); border-radius: 0 6px 6px 0;
+}
+
+/* News lines (current state such as "no services registered") must not be hidden behind the icon; they are results, not explanations. */
+.kabar-data {
+  font-size: var(--f-xs); color: var(--teks-samar); margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Identity chips: one wrapping row, each chip carrying its own label. Long explanations are in hover text (`data-petunjuk`). */
+.keping-identitas {
+  display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px;
+}
+.keping {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 4px 10px; border-radius: 6px;
+  background: var(--permukaan-3); border: 1px solid var(--garis);
+  cursor: help;
+}
+.keping-label {
+  font-size: 9px; color: var(--teks-samar);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.keping-nilai {
+  font-size: var(--f-s); color: var(--teks-2);
+  font-family: var(--huruf-mono);
+}
+#hitungan, #grafik-ket, #bw-ket { color: var(--teks-samar); font-size: var(--f-s); margin-top: var(--sp-1); }
+table { margin-top: var(--sp-3); }
+th, td { vertical-align: top; }
+td.no { color: var(--teks-samar); width: 34px; }
+td.waktu { white-space: nowrap; }
+td.lama { white-space: nowrap; font-weight: 700; }
+td.sebab { color: var(--tak-diketahui); font-size: var(--f-s); line-height: 1.5; }
+tr.dead td.lama { color: var(--down); }
+tr.ping_blocked td.lama { color: var(--hati-hati); }
+tr.berlangsung td.lama { color: var(--oranye); }
+.lencana.dead { background: #7f1d1d; color: #fecaca; border-color: #9b2c2c; }
+.lencana.ping_blocked { background: #78350f; color: #fde68a; border-color: #92400e; }
+.lencana.berlangsung { background: #7c2d12; color: #fed7aa; border-color: #9a3412; }
+#lagi { margin-top: 14px; }
+
+/* Live charts. Since the charts moved into bento tiles, `#grafik-kotak` no longer lays anything out; the rule stays for the print layout. */
+#grafik-kotak { display: contents; }
+/* Each chart title includes its own time range: two side-by-side charts with different time axes invite misreading, so the range is in the title. */
+.judul-grafik {
+  font-size: var(--f-s); font-weight: 600; color: var(--teks-2);
+  padding-bottom: var(--sp-2); margin-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--garis);
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.judul-grafik .ikon { width: 14px; height: 14px; color: var(--teks-samar); }
+/* Different left border colors keep the two charts from reading as a comparable pair; the color follows each chart's main series. Applied to the tile, which is the visible box. */
+.ubin.grafik-a { border-left: 3px solid var(--tautan); }
+.ubin.grafik-b { border-left: 3px solid var(--up); }
+
+
+/* `.kotak-grafik` and `.ubin` are the same element, not nested: `report_device.js` finds the chart box via `canvas.parentNode` to place the title, apply the border class, and hide the traffic chart when the device has no readable path. */
+.kotak-grafik canvas { width: 100%; height: 190px; display: block; }
+
+td.iface { font-weight: 700; white-space: nowrap; }
+td.laju { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.masuk { color: var(--up); }    
+.keluar { color: var(--tautan); } 
+
+.sel-status { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+td .nama-layanan { font-weight: 600; }
+td .alamat-layanan { color: var(--teks-redup); font-size: var(--f-s);
+                     font-family: var(--huruf-mono); }
+tr.baris-sebab td { border-top: none; padding-top: 0; color: var(--down);
+                    font-size: var(--f-s); line-height: 1.5; }
+tr.baris-riwayat > td { background: var(--permukaan); padding: 0; }
+.panel-riwayat { padding: 14px 16px; }
+.kejadian { border: 1px solid var(--garis); border-radius: var(--r-sedang);
+            padding: 12px 14px; margin-bottom: var(--sp-3);
+            background: var(--permukaan-2); }
+.kejadian .waktu-kejadian { font-size: var(--f-s); color: var(--teks-redup); }
+.kejadian .sebab-kejadian { margin-top: 6px; line-height: 1.55; font-size: var(--f-m); }
+ul.bukti { list-style: none; padding: 0; margin: var(--sp-3) 0 0; font-size: var(--f-s); }
+ul.bukti li { margin: 3px 0; padding-left: 20px; position: relative; line-height: 1.5; }
+ul.bukti li.ok { color: var(--up); }
+ul.bukti li.gagal { color: var(--down); }
+ul.bukti li.netral { color: var(--teks-redup); }
+ul.bukti li.ok::before { content: "\2713"; position: absolute; left: 2px; }
+ul.bukti li.gagal::before { content: "\2717"; position: absolute; left: 2px; }
+ul.bukti li.netral::before { content: "\00b7"; position: absolute; left: 4px; }
+.saran { margin-top: var(--sp-3); padding: 10px 12px; border-radius: var(--r-kecil);
+         background: var(--hati-hati-latar); border: 1px solid var(--hati-hati-tepi);
+         color: var(--hati-hati); font-size: var(--f-s); line-height: 1.55; }
+details.diagnosa { margin-top: var(--sp-3); }
+details.diagnosa summary { cursor: pointer; font-size: var(--f-s); color: var(--tautan); }
+details.diagnosa pre { background: var(--permukaan-0); padding: var(--sp-3); margin: var(--sp-2) 0 0;
+                       border-radius: var(--r-kecil); overflow-x: auto;
+                       font-size: var(--f-s); color: var(--teks-2);
+                       font-family: var(--huruf-mono); max-height: 340px; }
+
+/* Link target from the incident card on the Report page; briefly highlighted so the reader sees which row the page scrolled to. */
+.disorot { animation: nsm-sorot 2.4s ease-out 1; }
+@keyframes nsm-sorot {
+  0%, 55% { background: color-mix(in srgb, var(--hati-hati) 22%, transparent); }
+  100%    { background: transparent; }
+}
+
+#traffic-ket { color: var(--teks-samar); font-size: var(--f-s); margin-top: var(--sp-1);
+               line-height: 1.55; max-width: 92ch; }
+td.path { font-family: var(--huruf-mono); font-size: var(--f-s); word-break: break-all; }
+td.byte { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lencana-nsm { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+               background: var(--permukaan-3); color: var(--teks-redup);
+               border: 1px solid var(--garis); margin-left: 6px; }
+.sub-bagian { margin-top: var(--sp-5); }
+.sub-bagian > h3 { font-size: var(--f-n); margin: 0 0 4px; }
+.sub-bagian > .ket { color: var(--teks-redup); font-size: var(--f-s);
+                     line-height: 1.5; max-width: 92ch; }
+
+/* Traffic reading source (snmp / ssh / local). Small and dim; the ones that fell back are colored to stand out. */
+.sumber { font-size: var(--f-xs); padding: 1px 7px; border-radius: var(--r-bulat);
+          border: 1px solid var(--garis); background: var(--permukaan-3);
+          color: var(--teks-redup); text-transform: uppercase; letter-spacing: .3px; }
+.sumber.cadangan { background: var(--hati-hati-latar); color: var(--hati-hati);
+                   border-color: var(--hati-hati-tepi); }
+
+/* --- panel detail SSH --- */
+#panel { margin-top: var(--sp-6); }
+.kartu-ssh { background: var(--permukaan-2); border: 1px solid var(--garis-terang);
+             border-radius: 6px; padding: var(--sp-4) var(--sp-5); }
+.kartu-ssh h3 { font-size: var(--f-n); margin: 0 0 var(--sp-3); }
+.kartu-ssh pre {
+  background: var(--permukaan-0); padding: var(--sp-3); border-radius: var(--r-kecil);
+  overflow-x: auto; font-size: var(--f-s); margin: var(--sp-1) 0 14px;
+  color: var(--teks-2); font-family: var(--huruf-mono);
+}
+.kartu-ssh .label { color: var(--teks-redup); font-size: var(--f-xs);
+                    text-transform: uppercase; letter-spacing: .4px; }
+
+/* Fetch time of the SSH block. It does not refresh itself while the rest of the page refreshes every 10 seconds, so without this the two parts would show different moments. */
+.kartu-ssh .waktu-ssh { color: var(--teks-redup); font-size: var(--f-xs);
+                        margin: calc(var(--sp-2) * -1) 0 var(--sp-3); }
+.kartu-ssh.basi pre, .kartu-ssh.basi .label { opacity: .55; }
+.kartu-ssh.basi .waktu-ssh { color: var(--hati-hati); opacity: 1; }
+
+.galat { color: var(--down); }
+
+#kepala-cetak, #kaki-cetak { display: none; }
+
+/* Print layout. Colors are inverted to light to save ink. */
+@media print {
+  @page { margin: 14mm; }
+  body { background: var(--teks) !important; color: var(--permukaan-0) !important; padding: 0; font-size: 11pt; }
+
+  .bilah, .pita-merek, #jejak, #periode, #meta, #aksi, #panel,
+  #lagi, #grafik-ket { display: none !important; }
+
+  /* Two columns on screen, one column on paper (A4 is too narrow for identity plus five figure cards). The "?" icon is dropped on paper since it cannot be clicked. */
+  .baris-atas, .lajur-identitas { display: block !important; }
+  .jelas-tombol { display: none !important; }
+  #ringkas { margin-top: 10px !important; }
+
+  /* Buttons inside tables are hidden when printing (the Layanan "Riwayat" column would show as dead boxes). The cell is left empty because removing the column would need markers on both th and td. */
+  table button, table .tombol, table .pil { display: none !important; }
+
+  /* Letterhead and identity block. BSP green accent `var(--brand)`, shared with `report_cetak.html` so the two reports look like one document family. */
+  #kepala-cetak { display: block; }
+  .kop-cetak { border-bottom: 3px double var(--brand); padding-bottom: 10px; }
+  .lembaga-cetak { font-size: 10.5pt; color: var(--brand) !important; font-weight: 700;
+                   letter-spacing: .4px; }
+  .judul-cetak { font-size: 16pt; font-weight: bold; margin: 5px 0 3px 0;
+                 color: var(--brand) !important; text-transform: uppercase;
+                 letter-spacing: .3px; }
+  .anak-cetak { font-size: 10pt; color: var(--permukaan-0) !important; }
+
+  .identitas-cetak { display: table; width: 100%; margin: 12px 0 4px 0;
+                     font-size: 9.5pt; }
+  .identitas-cetak .baris { display: table-row; }
+  .identitas-cetak .baris > div { display: table-cell; padding: 2.5px 0;
+                                  color: var(--permukaan-0) !important; }
+  .identitas-cetak .label { width: 42mm; }
+  .identitas-cetak .titik { width: 5mm; }
+
+  #kaki-cetak { display: block; margin-top: 16px; border-top: 1px solid var(--brand);
+                padding-top: 8px; font-size: 8pt; color: var(--permukaan-0) !important;
+                line-height: 1.6; break-inside: avoid; }
+  /* Named `catatan-sumber`, not `sumber`: `.sumber` is already the SNMP/SSH badge class on this page (uppercase, boxed), which would turn the footnote into an uppercase badge. */
+  #kaki-cetak .catatan-sumber { margin-bottom: 6px; }
+  #kaki-cetak .tanda { display: table; width: 100%; }
+  #kaki-cetak .tanda > div { display: table-cell; }
+  #kaki-cetak .tanda .kanan { text-align: right; }
+
+  #kepala { background: var(--teks) !important; border: 1px solid var(--teks-redup) !important;
+            padding: 10px 12px !important; }
+  #kepala .nama { font-size: 15pt !important; }
+  #kepala .rinci { color: var(--garis) !important; }
+
+  /* Bento grid on paper: the health tile and the two charts stay side by side on A4. Only colors change (light background saves ink). */
+  .bento { display: grid !important; grid-template-columns: repeat(12, 1fr) !important;
+           gap: 8px !important; break-inside: avoid; }
+  .ubin { background: var(--teks) !important; border: 1px solid var(--teks-redup) !important;
+          border-radius: 4px !important; padding: 8px 10px !important;
+          break-inside: avoid; }
+  .ubin.grafik-a { border-left: 3px solid var(--garis-terang) !important; }
+  .ubin.grafik-b { border-left: 3px solid var(--teks-redup) !important; }
+  .ubin > header h3, .ubin-kepala-pita h3 { color: var(--garis) !important; }
+  .ubin > header .kanan, .ubin-kepala-pita .kanan { color: var(--garis-terang) !important; }
+  #ringkas { gap: 10px !important; }
+  .cincin .nilai { color: var(--permukaan-0) !important; }
+  .cincin .kata { color: var(--garis-terang) !important; }
+  .mini .lab { color: var(--garis) !important; }
+  .mini .val { color: var(--permukaan-0) !important; }
+  .catatan-ubin { color: var(--garis) !important; border-top-color: var(--teks-2) !important; }
+
+  /* The whole-period band is printed on purpose: it is the only place that shows when NSM saw nothing, and a report without it would look more complete than it is. Hatching is dark on white so it reads on black-and-white printers. */
+  .pita-kotak { background: var(--teks) !important; border: 1px solid var(--teks-redup) !important;
+                break-inside: avoid; margin-top: 8px !important; }
+  .pita { border: 1px solid var(--teks-2); }
+  .pita .s-up { background: #86efac !important; opacity: 1 !important; }
+  .pita .s-sebagian { background: #fde047 !important; }
+  .pita .s-down { background: var(--down) !important; }
+  .pita .s-buta { background: repeating-linear-gradient(45deg,
+                  var(--teks) 0 4px, var(--teks-redup) 4px 8px) !important; }
+  .pita-jam, .pita-kunci { color: var(--garis) !important; }
+
+  /* Old `.kartu` rules are kept because the Report page and the SSH block still use them; dropping them would print dark boxes. */
+  .kartu { background: var(--teks) !important; border: 1px solid var(--teks-redup) !important;
+           padding: 8px 10px !important; break-inside: avoid; }
+  .kartu .judul { color: var(--garis-terang) !important; }
+  .kartu .angka { font-size: 14pt !important; color: var(--permukaan-0) !important; }
+  .kartu .sub { color: var(--garis) !important; }
+
+  /* Charts are printed as plain images; the background stays so the lines remain visible. */
+  .kotak-grafik { background: #f4f4f4 !important; }
+  /* Chart titles matter most on paper: a printed report cannot be hovered to find the time range. */
+  .judul-grafik { color: var(--permukaan-0) !important; border-bottom-color: var(--teks-2) !important; }
+  .judul-grafik .ikon, .ubin > header .ikon,
+  h2.kepala .ikon { color: var(--teks-samar) !important; }
+
+  /* Shared notes are printed too: a cell saying "see note below" is meaningless without the note. */
+  .keterangan-bersama { background: #f7f7f7 !important; border: 1px solid var(--teks-2) !important;
+                        break-inside: avoid; }
+  .keterangan-bersama .judul-ket { color: var(--garis) !important; }
+  .keterangan-bersama .isi-ket { color: var(--permukaan-0) !important; }
+  .keterangan-bersama .cap-jumlah { background: #e4e4e4 !important; color: var(--permukaan-0) !important; }
+
+  h2 { color: var(--permukaan-0) !important; margin-top: 14px !important; }
+  table { page-break-inside: auto; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  th { background: var(--teks) !important; color: var(--permukaan-0) !important; border-bottom: 1px solid var(--teks-samar); }
+  td { border-bottom: 1px solid var(--teks-2); color: var(--permukaan-0) !important; }
+  td.sebab { color: var(--garis) !important; }
+  tbody tr:hover { background: none !important; }
+  .lencana { border: 1px solid var(--teks-samar); color: var(--permukaan-0) !important; background: #f0f0f0 !important; }
+  tr.dead td.lama { color: var(--down) !important; }
+  tr.ping_blocked td.lama { color: #a16207 !important; }
+  tr.berlangsung td.lama { color: #b45309 !important; }
+  .hijau { color: #15803d !important; } .merah { color: var(--down) !important; }
+  .kuning { color: #a16207 !important; } .abu { color: var(--teks-samar) !important; }
+  .catatan { color: var(--garis-terang) !important; font-size: 8.5pt; border-top: 1px solid var(--teks-redup); }
+}
+</style>
+</head>
+<body th:attr="data-device-id=${deviceId},data-periode=${period}">
+
+<div th:replace="~{fragmen/nav :: bilah('Riwayat Device', 'gangguan, grafik, dan detail SSH', 'report')}"></div>
+
+<!-- Print header goes first, before the screen furniture: print order follows HTML order, and a status card ahead of the letterhead reads like a cleaned-up screenshot. Guarded by `CetakTemplateTest.kopDokumenDicetakSEBELUMPerabotLayar`. -->
+<!-- Print-only report header: the printed sheet must stand alone, with letterhead and identity block (which device, which period, how long actually observed, who requested it), consistent with `report_cetak.html`. -->
+<div id="kepala-cetak">
+  <div class="kop-cetak">
+    <div class="lembaga-cetak">DIVISI NETWORK SECURITY</div>
+    <div class="judul-cetak">Laporan Riwayat Gangguan Perangkat</div>
+    <div class="anak-cetak">NSM (Network Status Monitor)</div>
+  </div>
+  <div class="identitas-cetak">
+    <div class="baris">
+      <div class="label">Perangkat</div><div class="titik">:</div>
+      <div id="ic-perangkat">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Alamat IP</div><div class="titik">:</div>
+      <div id="ic-alamat">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Lokasi</div><div class="titik">:</div>
+      <div id="ic-lokasi">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Periode laporan</div><div class="titik">:</div>
+      <div id="ic-periode">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Rentang waktu</div><div class="titik">:</div>
+      <div id="ic-rentang">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Lama pemantauan</div><div class="titik">:</div>
+      <div id="ic-diamati">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Disusun oleh</div><div class="titik">:</div>
+      <div th:text="${username}">-</div>
+    </div>
+    <div class="baris">
+      <div class="label">Tanggal cetak</div><div class="titik">:</div>
+      <div id="ic-tanggal">-</div>
+    </div>
+  </div>
+</div>
+
+<div id="jejak" style="margin-bottom:var(--sp-2);font-size:var(--f-s)">
+  <a th:href="@{/report}">Kembali ke Report</a>
+</div>
+
+<!-- Identity and figures sit side by side: stacked they take 310 px before any content shows, and they answer one question (which device, how healthy). -->
+<div class="baris-atas">
+ <div class="lajur-identitas">
+  <div id="kepala">
+    <div>
+      <div class="nama" id="nama">Memuat&hellip;</div>
+      <div class="rinci" id="rinci"></div>
+    </div>
+    <div id="aksi"></div>
+  </div>
+
+  <div id="periode">
+  <span class="redup kecil">Periode</span>
+  <span class="pil" data-p="1h" role="button" tabindex="0">1 Jam</span>
+  <span class="pil" data-p="24h" role="button" tabindex="0">24 Jam</span>
+  <span class="pil" data-p="7d" role="button" tabindex="0">7 Hari</span>
+  <span class="pil" data-p="30d" role="button" tabindex="0">30 Hari</span>
+  <span class="pemisah"></span>
+  <a id="unduh-excel" href="#" class="pil" title="Riwayat device ini dalam berkas Excel">Excel</a>
+  <!-- Labeled "PDF", not "Cetak", to match the Report page; the title still says it uses the browser print dialog. -->
+  <button id="cetak" class="pil" title="Buka dialog cetak peramban: simpan sebagai PDF atau kirim ke printer. Untuk nomor halaman, centang &quot;Headers and footers&quot; di dialog itu; CSS tidak bisa menomori halaman di peramban mana pun">PDF</button>
+  <span id="meta">Memuat&hellip;</span>
+  </div>
+ </div>
+
+</div>
+
+<!-- 24-hour band: the only view of the whole period at a glance, including hours when NSM saw nothing (the incident table cannot show those). Drawn by `gambarPita()` from /api/report/sparkline; no new endpoint. -->
+<div class="pita-kotak">
+  <div class="ubin-kepala-pita">
+    <h3 id="judul-pita" class="kepala">Seluruh periode dalam satu baris</h3>
+    <span class="kanan" id="pita-kabar"></span>
+  </div>
+  <div class="jelas-isi" data-untuk="#judul-pita">Tiap kotak mewakili sepotong waktu yang sama panjang, dan warnanya menyatakan berapa bagian dari sampel pada potongan itu yang berhasil. Yang bergaris miring BUKAN keadaan perangkat melainkan lubang pada pengamatan: tidak ada satu pun sampel di sana, entah karena poller sedang mati, perangkat sengaja dijeda, atau NSM memang belum berjalan sejauh itu ke belakang. Rentang itu tidak ikut dihitung ke Availability, dan itulah sebabnya ia harus terlihat — angka 100% yang diambil dari tiga jam pengamatan tidak berarti sama dengan 100% dari 24 jam.</div>
+  <div class="pita" id="pita"></div>
+  <div class="pita-jam" id="pita-jam"></div>
+  <div class="pita-kunci">
+    <span><i class="kotak-kunci" style="background:var(--up);opacity:.78"></i> semua sampel berhasil</span>
+    <span><i class="kotak-kunci" style="background:var(--hati-hati)"></i> sebagian gagal</span>
+    <span><i class="kotak-kunci" style="background:var(--down)"></i> semua gagal</span>
+    <span><i class="kotak-kunci" style="background:repeating-linear-gradient(45deg,var(--permukaan-3) 0 4px,#2c2c2c 4px 8px)"></i> tidak terpantau, bukan berarti sehat</span>
+  </div>
+</div>
+
+<!-- Bento grid: one health tile plus two charts. Details are in the `.bento` comment in <style>. The charts are not collapsible: they are the live part of the page. -->
+<div class="bento">
+
+  <section class="ubin u-4">
+    <header>
+      <svg class="ikon"><use href="/ikon-tabler.svg#i-activity"/></svg>
+      <h3 id="judul-kesehatan" class="kepala">Kesehatan periode ini</h3>
+      <span class="kanan" id="kesehatan-periode"></span>
+    </header>
+    <div class="jelas-isi" data-untuk="#judul-kesehatan">Empat angka yang dulunya empat kartu terpisah, disatukan karena keempatnya menjawab satu pertanyaan yang sama. Availability adalah bagian sampel yang berhasil, DIHITUNG HANYA DARI WAKTU YANG BENAR-BENAR DIAMATI — waktu ketika NSM sendiri berhenti memantau tidak dihitung sebagai waktu mati, sebab kalau dihitung, mematikan alat pemantaunya akan terlihat seperti jaringan yang rusak. Insiden adalah banyaknya kali perangkat berpindah keadaan, bukan banyaknya ping yang gagal. Rata-rata pulih adalah selang khas antara mulai mati dan kembali menjawab.</div>
+    <div id="ringkas"></div>
+  </section>
+
+  <section class="ubin u-4 kotak-grafik">
+    <canvas id="grafik-ping"></canvas>
+  </section>
+
+  <section class="ubin u-4 kotak-grafik">
+    <canvas id="grafik-bw"></canvas>
+  </section>
+
+</div>
+<div id="grafik-ket"></div>
+<div id="grafik-kotak"></div>
+
+<!-- The icon is a sibling of the `data-istilah` span, not a child: `istilah.js` underlines the span's content, and an icon inside would look like part of the term. -->
+<h2 data-lipat="lalulintas"><svg class="ikon"><use href="/ikon-tabler.svg#i-network"/></svg><span data-istilah="lalu-lintas">Lalu Lintas per Interface</span></h2>
+<div id="bw-ket"></div>
+<div id="bw"></div>
+
+<!-- Services running on this device, placed before the outage history: when a healthy-looking device is reported as a problem, the answer is usually here. -->
+<h2 data-lipat="layanan" data-lipat-buka><svg class="ikon"><use href="/ikon-tabler.svg#i-layers"/></svg><span data-istilah="layanan-vs-device">Layanan di Device Ini</span></h2>
+<div id="layanan-ket"></div>
+<div id="layanan"></div>
+
+<h2 data-lipat="traffic"><svg class="ikon"><use href="/ikon-tabler.svg#i-download"/></svg><span data-istilah="akses-web">Siapa Mengambil Apa</span></h2>
+<div id="traffic-ket"></div>
+<div id="traffic"></div>
+
+<h2 data-lipat="riwayat" data-lipat-buka><svg class="ikon"><use href="/ikon-tabler.svg#i-history"/></svg><span data-istilah="riwayat-gangguan">Riwayat Gangguan</span></h2>
+<div id="hitungan"></div>
+<div id="daftar"></div>
+<div id="lagi"></div>
+
+<div id="panel"></div>
+
+<div class="catatan">
+  <b>Kategori sebab</b> berasal dari pemeriksaan otomatis saat ping gagal.
+  <span class="merah">Tidak ada respons</span> berarti ping gagal dan tidak ada port TCP
+  yang menjawab, jadi device kemungkinan mati atau terputus.
+  <span class="kuning">Ping diblokir</span> berarti ping gagal tetapi port TCP menjawab,
+  jadi device kemungkinan masih hidup. Sebab fisik seperti listrik padam, kabel lepas,
+  atau perangkat yang hang tidak bisa dideteksi dari jaringan.
+</div>
+
+<!-- Print-only footer. Data limits are repeated here because paper cannot be hovered for the notes that sit beside the figures on screen. -->
+<div id="kaki-cetak">
+  <div class="catatan-sumber" id="kaki-sumber"></div>
+  <div class="tanda">
+    <div>NSM (Network Status Monitor), Divisi Network Security</div>
+    <div class="kanan" id="kaki-kanan"></div>
+  </div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/ikon.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/grafik.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/lipatan.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/js/halaman-tabel.js"></script>
+<!-- Must load before report_device.js, which calls `jelas.pasang()` to place the "?" icons. -->
+<script src="/js/jelas.js"></script>
+<script src="/report_device.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

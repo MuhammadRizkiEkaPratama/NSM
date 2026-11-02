@@ -1,0 +1,57 @@
+rekaman:
+- berkas: cisco_ios/show-running-config.router-lokasi-a.txt
+  platform: cisco_ios
+  perintah: show running-config
+  perangkat: Router Lokasi A
+  direkam: '2026-08-23 09:13:35'
+  baris: 80
+  disamarkan: true
+- berkas: cisco_ios/show-running-config.router-lokasi-b.txt
+  platform: cisco_ios
+  perintah: show running-config
+  perangkat: Router Lokasi B
+  direkam: '2026-08-24 06:48:19'
+  baris: 95
+  disamarkan: true
+- berkas: cisco_ios/show-running-config.switch-lokasi-a.txt
+  platform: cisco_ios
+  perintah: show running-config
+  perangkat: Switch Lokasi A
+  direkam: '2026-08-23 09:13:43'
+  baris: 112
+  disamarkan: true
+- berkas: cisco_ios/show-running-config.switch-lokasi-b.txt
+  platform: cisco_ios
+  perintah: show running-config
+  perangkat: Switch Lokasi B
+  direkam: '2026-08-23 09:13:54'
+  baris: 112
+  disamarkan: true
+- berkas: linux/konfig-layanan.direktori-ldap-lokasi-b.txt
+  platform: linux
+  perintah: connectors/konfig_linux.ambil()
+  perangkat: Direktori LDAP (Lokasi B)
+  direkam: '2026-08-30 17:02:45'
+  baris: 40
+  disamarkan: false
+- berkas: linux/konfig-layanan.server-berkas-smb-lokasi-a.txt
+  platform: linux
+  perintah: connectors/konfig_linux.ambil()
+  perangkat: Server Berkas SMB (Lokasi A)
+  direkam: '2026-08-31 15:32:44'
+  baris: 41
+  disamarkan: false
+- berkas: linux/konfig-layanan.server-data-lokasi-a.txt
+  platform: linux
+  perintah: connectors/konfig_linux.ambil()
+  perangkat: Server Data (Lokasi A)
+  direkam: '2026-09-01 10:32:42'
+  baris: 46
+  disamarkan: false
+- berkas: linux/konfig-layanan.server-web-lokasi-a.txt
+  platform: linux
+  perintah: connectors/konfig_linux.ambil()
+  perangkat: Server Web (Lokasi A)
+  direkam: '2026-09-01 08:32:38'
+  baris: 47
+  disamarkan: false

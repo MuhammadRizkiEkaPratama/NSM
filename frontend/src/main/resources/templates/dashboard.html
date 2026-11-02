@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Dashboard - NSM</title>
+<!-- CSRF token, read by app.js for POST requests (pause/resume). -->
+<meta name="_csrf" th:content="${_csrf.token}" content="">
+<meta name="_csrf_header" th:content="${_csrf.headerName}" content="">
+<meta name="admin" th:content="${isAdmin}" content="false">
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+#kartu-kotak {
+  display: grid; gap: 18px; margin-top: var(--sp-6);
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+}
+
+/* Each card stores its status color as a variable; all effects (border, cursor glow, icon circle) read from it. */
+.kartu-device {
+  --warna: var(--tak-diketahui);
+  --x: 50%; --y: 50%;            
+  position: relative; isolation: isolate; overflow: hidden;
+  background: var(--permukaan);
+  border: 1px solid color-mix(in srgb, var(--warna) 26%, transparent);
+  border-radius: var(--r-besar);
+  padding: var(--sp-5) 18px 17px 18px;
+  display: flex; flex-direction: column;
+  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--warna) 10%, transparent),
+    0 0 20px -6px color-mix(in srgb, var(--warna) 34%, transparent);
+}
+.kartu-device.hidup { --warna: var(--up); }
+.kartu-device.mati  { --warna: var(--down); }
+.kartu-device.tanya { --warna: var(--tak-diketahui); }
+
+.kartu-device:hover {
+  border-color: color-mix(in srgb, var(--warna) 62%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--warna) 26%, transparent),
+    0 0 30px -4px color-mix(in srgb, var(--warna) 62%, transparent);
+  transform: translateY(-3px);
+}
+
+.kartu-device::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(340px circle at var(--x) var(--y),
+              color-mix(in srgb, var(--warna) 22%, transparent) 0%,
+              color-mix(in srgb, var(--warna) 7%, transparent) 38%,
+              transparent 72%);
+  opacity: .62; transition: opacity .3s ease;
+}
+.kartu-device:hover::before { opacity: 1; }
+
+/* Neon ring around each card. The traveling light's speed follows the device's ping latency (latency exists for every device, bandwidth only for those with SSH/SNMP credentials). Dead devices do not rotate, so they stand out. A rotating conic-gradient is masked down to a 2px ring; only the angle is animated. */
+@property --sudut-neon {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.kartu-device.berputar::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit; padding: 2px; pointer-events: none;
+  background: conic-gradient(
+    from var(--sudut-neon),
+    transparent 0deg,
+    transparent 232deg,
+    color-mix(in srgb, var(--warna) 45%, transparent) 296deg,
+    var(--warna) 336deg,
+    var(--teks) 350deg,
+    color-mix(in srgb, var(--warna) 60%, transparent) 356deg,
+    transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  animation: nsm-keliling var(--durasi-neon, 6s) linear infinite;
+  opacity: .85; transition: opacity .25s ease;
+}
+.kartu-device.berputar:hover::after { opacity: 1; }
+
+@keyframes nsm-keliling { to { --sudut-neon: 360deg; } }
+
+/* Honor reduced-motion: the ring stays as a static line. */
+@media (prefers-reduced-motion: reduce) {
+  .kartu-device.berputar::after { animation: none; opacity: .35; }
+}
+
+/* --- Ikon jadi tokoh utama kartu --- */
+.kartu-device .kepala { display: flex; align-items: center; gap: 15px; min-height: 74px; }
+.kartu-device .sorot-ikon {
+  position: relative; flex: none; display: grid; place-items: center;
+  width: 74px; height: 74px; border-radius: 18px;
+  background: color-mix(in srgb, var(--warna) 9%, var(--permukaan-2));
+  border: 1px solid color-mix(in srgb, var(--warna) 22%, transparent);
+  transition: background .25s ease, border-color .25s ease, transform .25s ease;
+}
+.kartu-device:hover .sorot-ikon {
+  background: color-mix(in srgb, var(--warna) 16%, var(--permukaan-2));
+  border-color: color-mix(in srgb, var(--warna) 45%, transparent);
+  transform: scale(1.04);
+}
+.kartu-device .teks-kepala { min-width: 0; }
+.kartu-device .baris-nama { display: flex; align-items: center; gap: 7px; }
+.kartu-device .nama { font-size: var(--f-l); font-weight: 700; line-height: 1.25;
+                      overflow-wrap: anywhere; }
+.kartu-device .jenis { color: #8f8f8f; font-size: 11.5px; margin-top: 3px; }
+
+.kartu-device .status-baris {
+  display: flex; align-items: center; gap: 9px; margin-top: var(--sp-4);
+  font-size: var(--f-m); padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--warna) 13%, transparent);
+}
+
+.kartu-device .baris-bw {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 9px; font-size: var(--f-s);
+  font-variant-numeric: tabular-nums; cursor: help;
+}
+.kartu-device .baris-bw .iface-bw {
+  color: var(--teks-redup); font-family: var(--huruf-mono); font-size: var(--f-xs);
+  max-width: 11ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.kartu-device .baris-bw .arah-bw { display: inline-flex; align-items: center; gap: 3px; }
+.kartu-device .baris-bw .panah { font-size: var(--f-xs); opacity: .85; }
+/* Inbound green, outbound blue, same as the device history table. */
+.kartu-device .baris-bw .masuk { color: var(--up); }
+.kartu-device .baris-bw .keluar { color: var(--tautan); }
+.kartu-device .baris-bw.basi { opacity: .45; }
+
+/* margin-top: auto pins the button row to the card bottom; do not override. */
+.kartu-device .aksi-kartu { margin-top: auto; padding-top: 15px; display: flex; gap: var(--sp-2); }
+.kartu-device .aksi-kartu a {
+  flex: 1; text-align: center; padding: var(--sp-2) 6px; border-radius: 7px;
+  font-size: var(--f-s); border: 1px solid var(--garis-terang); background: #2b2b2b;
+  color: var(--teks-2); transition: background var(--alih), border-color var(--alih);
+}
+.kartu-device .aksi-kartu a:hover { background: var(--garis-terang); border-color: var(--teks-samar); text-decoration: none; }
+.kartu-device .aksi-kartu a.utama { background: var(--aksi-gelap); border-color: var(--aksi-tepi); color: var(--teks); }
+.kartu-device .aksi-kartu a.utama:hover { background: var(--aksi); }
+.kartu-device .aksi-kartu a.mati-tombol {
+  opacity: .35; pointer-events: none; background: #232323; border-color: var(--garis);
+}
+.kartu-device .aksi-kartu button.jeda {
+  flex: none; width: 40px; padding: var(--sp-2) 0; border-radius: 7px;
+  border: 1px solid var(--garis-terang); background: #2b2b2b; color: var(--teks-2);
+  display: grid; place-items: center;
+}
+.kartu-device .aksi-kartu button.jeda:hover { background: var(--garis-terang); border-color: var(--teks-samar); }
+.kartu-device .aksi-kartu button.jeda svg { display: block; }
+
+.kartu-device.dijeda { --warna: var(--tak-diketahui); opacity: .62; }
+.kartu-device.dijeda::before { opacity: .25; }
+.kartu-device.dijeda .lencana-jeda {
+  display: inline-block; margin-top: var(--sp-3); padding: 3px 10px;
+  border-radius: var(--r-bulat); background: var(--garis); color: var(--teks-2);
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* Pause reason: free text typed by a person, so no forced uppercase and no badge. */
+.kartu-device.dijeda .ket-jeda {
+  margin-top: var(--sp-2); padding-left: 9px;
+  border-left: 2px solid #4a4a55;
+}
+.kartu-device.dijeda .ket-jeda-teks {
+  color: #d2d2dc; font-size: var(--f-xs); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.kartu-device.dijeda .ket-jeda-sub {
+  color: var(--redup); font-size: 10.5px; margin-top: 2px;
+}
+/* Pause with no recorded reason: italic and dimmer, not red, since older pauses had nowhere to record one. */
+.kartu-device.dijeda .ket-jeda.tanpa-alasan { border-left-color: #3a3a42; }
+.kartu-device.dijeda .ket-jeda.tanpa-alasan .ket-jeda-teks {
+  font-style: italic; color: #8b8b96;
+}
+
+/* Badge for "a service is down here". Small and red, without recoloring the card: the machine is up, only a service is not. */
+.kartu-device .lencana-layanan {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: var(--sp-2); padding: 3px 10px;
+  border-radius: var(--r-bulat);
+  background: rgba(248, 113, 113, .13);
+  border: 1px solid rgba(248, 113, 113, .45);
+  color: var(--down); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  cursor: help;
+}
+.kartu-device .lencana-layanan::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--down); animation: denyut-layanan 2.2s ease-in-out infinite;
+}
+@keyframes denyut-layanan {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kartu-device .lencana-layanan::before { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kartu-device:hover { transform: none; }
+  .kartu-device::before { --x: 50%; --y: 50%; }
+}
+
+/* Compact summary strip, at the very top above the diagnosis and the map, so "is anything down?" needs no scrolling. */
+#ringkas-bagian { margin-bottom: var(--sp-4); }
+
+#ringkas-kotak {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+}
+
+.ringkas-kotak {
+  --nada: var(--tak-diketahui);
+  position: relative; overflow: hidden;
+  background: var(--permukaan-2);
+  border: 1px solid var(--garis);
+  border-radius: var(--r-sedang);
+  padding: 11px 13px 10px;
+  display: block; color: inherit; text-decoration: none;
+  transition: border-color var(--alih), background var(--alih), transform var(--alih);
+}
+/* Tone stripe on the left edge instead of coloring whole cards, so one card stands out when something is wrong. */
+.ringkas-kotak::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--nada);
+}
+a.ringkas-kotak:hover {
+  border-color: color-mix(in srgb, var(--nada) 55%, var(--garis));
+  background: var(--permukaan-3); text-decoration: none; transform: translateY(-2px);
+}
+.ringkas-kotak.nada-baik  { --nada: var(--up); }
+.ringkas-kotak.nada-buruk { --nada: var(--down); }
+.ringkas-kotak.nada-hati  { --nada: var(--hati-hati); }
+.ringkas-kotak.nada-info  { --nada: var(--tautan); }
+.ringkas-kotak.nada-diam  { --nada: var(--garis-terang); }
+
+.ringkas-label {
+  font-size: 10.5px; color: var(--teks-redup); text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: 3px;
+}
+.ringkas-baris-angka { display: flex; align-items: baseline; gap: 5px; }
+.ringkas-angka {
+  font-size: 25px; font-weight: 700; line-height: 1.1;
+  font-variant-numeric: tabular-nums; color: var(--teks);
+}
+/* Main figures take the tone color only when the tone is bad. */
+.ringkas-kotak.nada-buruk .ringkas-angka { color: var(--down); }
+.ringkas-satuan { font-size: var(--f-s); color: var(--teks-redup);
+                  font-variant-numeric: tabular-nums; }
+.ringkas-ket {
+  font-size: 11px; color: var(--teks-redup); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Board: titled frame for the map and charts. Deliberately not named `.panel`, which nsm.css already defines as a 380px form panel (it would shrink the map). The map is the full-width featured element, with the summary strip above it. */
+.papan {
+  background: var(--permukaan-2); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); overflow: hidden;
+  margin-bottom: 14px;
+}
+
+/* Two columns: map (left, flexible) and network rate (right, fixed 300px). The right column is fixed because charts gain nothing from extra width, while the map always does. */
+.baris-peta {
+  display: grid; gap: 14px; margin-bottom: 14px;
+  /* margin-bottom lives here because both boards inside this row have their margins zeroed; otherwise nothing separates the row from `#meta` below. */
+  /* align-items: stretch so the map card grows to the height of the right column. #topologi-bingkai and #topologi-svg then fill the card (flex 1, height 100%); see the ResizeObserver in topologi.js, which keeps the viewBox in sync when the column grows without a window resize. */
+  align-items: stretch;
+  /* Right column is 330px: it holds four charts, and the horizontal capacity bars need room for server name plus percentage. */
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+
+/* Right column: network rate plus three extra charts, as one grid cell of .baris-peta. align-content: start keeps panels from stretching to the map's height. */
+.kolom-kanan {
+  display: grid; gap: 14px; align-content: start; min-width: 0;
+}
+/* .papan has a default margin-bottom of 14px; inside this grid `gap` already spaces items, so the margin would double the spacing. */
+.kolom-kanan .papan { margin-bottom: 0; }
+.dg-grafik { height: 132px; margin: 4px 4px 0; }
+.dg-grafik.dg-tinggi { height: 118px; }
+.dg-kaki {
+  padding: 6px 12px 11px; font-size: var(--f-xs);
+  color: var(--teks-redup); line-height: 1.45;
+}
+@media (max-width: 1180px) {
+  .baris-peta { grid-template-columns: minmax(0, 1fr); }
+}
+.papan-kepala {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding: 9px 12px; border-bottom: 1px solid var(--garis);
+  background: var(--permukaan);
+}
+.papan-kepala h3 { font-size: var(--f-bagian); margin: 0; }
+.papan-alat { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* Connection status is shown: a map frozen by a dropped WebSocket looks identical to one frozen because the network is quiet. */
+.topologi-status { font-size: var(--f-xs); color: var(--teks-redup);
+                   padding: 2px 9px; border-radius: var(--r-bulat);
+                   border: 1px solid var(--garis); background: var(--permukaan-3); }
+.topologi-status.hidup    { color: var(--up); border-color: var(--up-tepi); }
+.topologi-status.terputus { color: var(--hati-hati); border-color: var(--hati-hati-tepi); }
+.topologi-status.cadangan { color: var(--teks-2); }
+
+.tombol-kecil {
+  font-size: var(--f-xs); padding: 3px 8px; border-radius: 6px;
+  border: 1px solid var(--garis-terang); background: var(--permukaan-3);
+  color: var(--teks-2); cursor: pointer; line-height: 1.5;
+}
+.tombol-kecil:hover { background: var(--garis); color: var(--teks); }
+.saklar-kecil {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--f-xs); color: var(--teks-2); cursor: pointer;
+}
+.saklar-kecil input { accent-color: var(--aksi-tepi); }
+
+/* Network topology map, two layers with different drawing languages. Cables: straight lines from the `device_link` table (physical paths). Conversations: dashed curved arcs from `flow_koneksi`. Nodes are cards so name and address read together. */
+/* margin-bottom: 0 because a stretched grid item fills its margin box, so the default `.papan` margin would be subtracted from the stretched height. */
+#topologi-bagian { display: flex; flex-direction: column; min-height: 0; margin-bottom: 0; }
+#topologi-bingkai {
+  position: relative; background: var(--permukaan-2);
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size: 26px 26px;
+  overflow: hidden;
+  /* Fills the card height after the panel header. min-height: 0 is required on the flex item, otherwise its minimum is locked to its content height. */
+  flex: 1 1 auto; min-height: 0;
+}
+/* Fixed height; JavaScript sets the `viewBox` to the frame's pixel size so one drawing unit is one screen pixel. A scaled-to-content viewBox would shrink every label as the network grows; larger content is panned instead. */
+#topologi-svg {
+  display: block; width: 100%; height: 100%; touch-action: none;
+  cursor: grab; user-select: none;
+}
+/* Below 1180px `.baris-peta` is a single column, so nothing stretches the map; restore a fixed height to keep it from collapsing to 0px. */
+@media (max-width: 1180px) { #topologi-svg { height: 620px; } }
+@media (max-width: 760px) { #topologi-svg { height: 380px; } }
+#topologi-svg.sedang-digeser { cursor: grabbing; }
+.topologi-kosong { padding: var(--sp-6) var(--sp-4); text-align: center;
+                   color: var(--teks-redup); font-size: var(--f-s); }
+
+.topo-lajur { fill: rgba(255,255,255,.018); stroke: rgba(255,255,255,.05); }
+.topo-label-lokasi { fill: var(--teks-redup); font-size: 10px;
+                     text-transform: uppercase; letter-spacing: .06em; }
+
+/* Cables: one shape per link type, not just one color, so color-blind viewers can tell them apart. */
+.topo-kabel { fill: none; stroke-linecap: round; cursor: help;
+              transition: stroke-opacity .15s ease, stroke-width .15s ease; }
+.topo-kabel.j-kabel    { stroke: var(--teks-redup); stroke-width: 2.6; }
+.topo-kabel.j-segmen   { stroke: #6b7f95; stroke-width: 2; stroke-dasharray: 7 4; }
+.topo-kabel.j-wan      { stroke: #c084fc; stroke-width: 3.2; stroke-dasharray: 12 5; }
+.topo-kabel.j-nirkabel { stroke: var(--teks-redup); stroke-width: 1.8; stroke-dasharray: 2 4; }
+.topo-kabel:hover, .topo-kabel:focus-visible {
+  stroke: var(--teks); stroke-width: 4; outline: none;
+}
+/* Dead ends are dimmed, not red: all that is known is that the device at the end does not answer ping. */
+.topo-kabel.ujung-mati { stroke-opacity: .3; }
+
+/* Conversations flow slowly on purpose; the map is watched for hours. */
+.topo-trafik {
+  fill: none; stroke: var(--tautan); stroke-opacity: .45;
+  stroke-linecap: round; stroke-dasharray: 5 7; cursor: help;
+  animation: topo-alir 2.4s linear infinite;
+}
+.topo-trafik:hover, .topo-trafik:focus-visible { stroke-opacity: 1; outline: none; }
+/* Conversations whose physical path is unknown (addresses outside the lab, via the internet) are fainter and sparser, so they do not claim a route NSM never saw. */
+.topo-trafik.tak-terjejak { stroke-opacity: .28; stroke-dasharray: 2 8; }
+@keyframes topo-alir { to { stroke-dashoffset: -24; } }
+@media (prefers-reduced-motion: reduce) {
+  .topo-trafik { animation: none; stroke-dasharray: 4 4; }
+}
+
+/* --- Kartu node --- */
+.topo-simpul { cursor: grab; }
+.topo-simpul.sedang-ditarik { cursor: grabbing; }
+.topo-kartu {
+  fill: #232323; stroke: var(--garis-terang); stroke-width: 1;
+  transition: stroke var(--alih), fill var(--alih);
+}
+.topo-pita { fill: var(--tak-diketahui); }
+.topo-simpul.st-up    .topo-pita { fill: var(--up); }
+.topo-simpul.st-down  .topo-pita { fill: var(--down); }
+.topo-simpul.st-tanya .topo-pita { fill: var(--tak-diketahui); }
+.topo-simpul.st-down  .topo-kartu { stroke: var(--down-tepi); fill: #2a1f1f; }
+.topo-simpul.luar .topo-kartu { stroke-dasharray: 4 3; fill: #1e1e1e; }
+.topo-simpul:hover .topo-kartu,
+.topo-simpul:focus-visible .topo-kartu { stroke: var(--teks-2); }
+.topo-simpul:focus-visible { outline: none; }
+.topo-simpul.sedang-ditarik .topo-kartu { stroke: var(--aksi-tepi); }
+/* Map icons use `currentColor`, set by the card's status class, so an icon can never disagree with its card. */
+.topo-ikon {
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  color: var(--tak-diketahui);
+}
+.topo-simpul.st-up    .topo-ikon { color: var(--up); }
+.topo-simpul.st-down  .topo-ikon { color: var(--down); }
+.topo-simpul.st-tanya .topo-ikon { color: var(--tak-diketahui); }
+.topo-titik-luar { fill: var(--teks-samar); }
+.topo-nama { fill: var(--teks); font-size: 11.5px; font-weight: 600; }
+.topo-sub  { fill: var(--teks-redup); font-size: 9.5px;
+             font-family: var(--huruf-mono); }
+
+/* Legend, bottom-left inside the map frame. It is HTML rather than SVG so it does not pan or zoom with the map. */
+/* Two columns to keep the legend short. The space below the map is reserved by `RUANG_LEGENDA` in topologi.js; keep the two in step or the legend will cover cards. */
+.topo-legenda {
+  position: absolute; left: 10px; bottom: 10px; z-index: 2;
+  background: var(--alas-tabel); border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); padding: 7px 11px;
+  font-size: 10.5px; color: var(--teks-2); line-height: 1.45;
+  backdrop-filter: blur(3px); pointer-events: none;
+  display: grid; grid-template-columns: repeat(3, auto); gap: 2px 20px;
+  align-items: start;
+}
+.topo-legenda .lajur { display: flex; flex-direction: column; gap: 1px; }
+
+/* Narrow screens: the legend moves below the map instead of floating over it (at 375px it would cover most of the map). */
+@media (max-width: 760px) {
+  .topo-legenda {
+    position: static; grid-template-columns: auto auto;
+    border: 0; border-top: 1px solid var(--garis);
+    border-radius: 0; backdrop-filter: none; background: var(--permukaan);
+  }
+}
+.topo-legenda b { color: var(--teks); font-size: 10px; text-transform: uppercase;
+                  letter-spacing: .05em; grid-column: 1 / -1; margin-bottom: 2px; }
+.topo-legenda .baris { display: flex; align-items: center; gap: 7px;
+                       white-space: nowrap; }
+.topo-legenda .kaki { grid-column: 1 / -1; }
+.topo-legenda i {
+  flex: none; width: 22px; height: 0; border-top-width: 2.6px; font-style: normal;
+}
+.topo-legenda .l-kabel    { border-top: 2.6px solid var(--teks-redup); }
+.topo-legenda .l-segmen   { border-top: 2px dashed #6b7f95; }
+.topo-legenda .l-wan      { border-top: 3px dashed #c084fc; }
+.topo-legenda .l-nirkabel { border-top: 2px dotted var(--teks-redup); }
+.topo-legenda .l-trafik   { border-top: 2px dashed var(--tautan); }
+.topo-legenda .titik {
+  flex: none; width: 9px; height: 9px; border-radius: 2px;
+}
+.topo-legenda .t-up { background: var(--up); }
+.topo-legenda .t-down { background: var(--down); }
+.topo-legenda .t-tanya { background: var(--tak-diketahui); }
+.topo-legenda .kaki { color: var(--teks-samar); font-size: 9.5px; margin-top: 6px; }
+
+/* ===========================================================================
+   GRAFIK LAJU JARINGAN
+   ========================================================================== */
+#ringkas-grafik { padding: var(--sp-3) var(--sp-3) 0; }
+.grafik-laju { display: block; width: 100%; height: 150px; }
+.grafik-bantu { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+.grafik-nol   { stroke: rgba(255,255,255,.22); stroke-width: 1; }
+/* Inbound green, outbound blue, consistent with the device history table and card arrows. */
+.grafik-masuk        { fill: rgba(74,222,128,.16); }
+.grafik-masuk-garis  { fill: none; stroke: var(--up); stroke-width: 1.6; }
+.grafik-keluar       { fill: rgba(96,165,250,.16); }
+.grafik-keluar-garis { fill: none; stroke: var(--tautan); stroke-width: 1.6; }
+.grafik-kosong { padding: var(--sp-5) var(--sp-3); color: var(--teks-redup);
+                 font-size: var(--f-s); line-height: 1.5; }
+#ringkas-grafik-kaki {
+  display: flex; justify-content: space-between; gap: var(--sp-2);
+  padding: 4px 12px 9px; font-size: 10.5px; color: var(--teks-samar);
+}
+.grafik-arah {
+  display: flex; gap: 14px; padding: 0 12px 10px; font-size: 11px;
+  color: var(--teks-2);
+}
+.grafik-arah span { display: inline-flex; align-items: center; gap: 5px; }
+.grafik-arah i { width: 10px; height: 3px; border-radius: 2px; font-style: normal; }
+.grafik-arah .i-masuk  { background: var(--up); }
+.grafik-arah .i-keluar { background: var(--tautan); }
+
+/* Diagnosis panel: depth increases downward, with font size shrinking from plain sentences to raw evidence. */
+#diagnosis { margin: 0 0 14px; }
+.diag-sehat, .diag-ringkas {
+  font-size: var(--f-l); padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--garis); background: var(--permukaan-2); margin-bottom: 8px;
+  display: flex; align-items: baseline; gap: var(--sp-2);
+}
+.diag-petunjuk-klik {
+  margin-left: auto; font-size: var(--f-xs); color: var(--teks-samar);
+}
+
+/* Compact grid, up to five cards per row. An opened card spans the full row so shell commands stay readable and copyable. */
+.diag-kisi {
+  display: grid; gap: 8px; margin-bottom: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+}
+.diag-kartu.terbuka { grid-column: 1 / -1; }
+
+.diag-kepala {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  background: none; border: 0; padding: 0; margin: 0;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.diag-kepala-teks { min-width: 0; display: flex; flex-direction: column; }
+.diag-kepala:focus-visible { outline: 2px solid var(--aksi-tepi); outline-offset: 3px; }
+.diag-panah-buka {
+  margin-left: auto; color: var(--teks-samar); font-size: 10px;
+  transition: transform var(--alih);
+}
+.diag-kartu.terbuka .diag-panah-buka { transform: rotate(180deg); }
+.diag-isi { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--garis); }
+
+.diag-aksi { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.diag-tombol {
+  font-size: var(--f-xs); padding: 4px 10px; border-radius: 6px;
+  border: 1px solid var(--garis-terang); background: var(--permukaan-3);
+  color: var(--teks-2);
+}
+.diag-tombol:hover { background: var(--garis); color: var(--teks); text-decoration: none; }
+/* Color is always paired with a shape and a word, for color-blind readers. */
+.diag-titik-hijau { color: var(--up); }
+.diag-titik-merah { color: var(--down); }
+.diag-gagal {
+  font-size: var(--f-l); padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--down); color: var(--down); background: var(--permukaan-2);
+}
+.diag-kartu {
+  border: 1px solid var(--garis); border-left-width: 4px;
+  border-radius: 8px; padding: 9px 11px;
+  /* Uses `--permukaan-2`; the previous `var(--kartu)` was never defined anywhere, so the WARNING card background was transparent. */
+  background: var(--permukaan-2);
+  transition: border-color var(--alih), background var(--alih);
+}
+.diag-kartu:hover { background: var(--permukaan-3); }
+.diag-sebab      { border-left-color: var(--down); }
+.diag-akibat     { border-left-color: var(--tak-diketahui); opacity: .88; }
+/* Warnings use a color distinct from red so red keeps its meaning of "act now". */
+.diag-peringatan { border-left-color: var(--peringatan, #d19a2a); opacity: .95; }
+.diag-tanda {
+  flex: none;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+  padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor;
+}
+.diag-sebab      .diag-tanda { color: var(--down); }
+.diag-akibat     .diag-tanda { color: var(--tak-diketahui); }
+.diag-peringatan .diag-tanda { color: var(--peringatan, #d19a2a); }
+.diag-nama {
+  font-size: var(--f-m); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.diag-device {
+  font-size: 10.5px; color: var(--redup);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The meaning sentence is clamped to two lines while the card is closed and shown in full when opened, which keeps the grid even. */
+.diag-arti {
+  font-size: var(--f-s); margin-top: 6px; line-height: 1.45;
+  color: var(--teks-2);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.diag-kartu.terbuka .diag-arti {
+  -webkit-line-clamp: unset; font-size: var(--f-m); color: var(--teks);
+}
+.diag-karena { font-size: var(--f-m); margin-top: 5px; }
+.diag-panah { color: var(--tak-diketahui); }
+.diag-jangan { font-size: var(--f-s); color: var(--redup); margin-top: 3px; }
+.diag-judul {
+  font-size: var(--f-s); font-weight: 700; margin-top: 9px;
+  color: var(--redup); text-transform: uppercase; letter-spacing: .04em;
+}
+.diag-langkah { margin: 4px 0 0; padding-left: 20px; font-size: var(--f-m); }
+.diag-langkah li { margin-bottom: 3px; }
+.diag-langkah code {
+  background: var(--latar); padding: 1px 5px; border-radius: 4px;
+  border: 1px solid var(--garis);
+}
+.diag-ket { color: var(--redup); }
+.diag-buntu { font-size: var(--f-s); color: var(--redup); margin-top: 7px; }
+.diag-kaki {
+  font-size: var(--f-s); color: var(--redup); margin-top: 9px;
+  padding-top: 7px; border-top: 1px dashed var(--garis);
+}
+.diag-kaki code { background: none; padding: 0; }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('NSM', 'Network Status Monitor', 'dashboard')}"></div>
+
+<!-- Diagnosis goes above the device cards: during an incident the first question is what to do, not which device is red. -->
+<div id="diagnosis"></div>
+
+<div id="ringkas-bagian">
+  <div id="ringkas-kotak" aria-live="polite"></div>
+</div>
+
+<!-- Topology map plus network rate, two columns. Live updates come over WebSocket (`js/topologi.js` -> `/ws/topologi`), with REST `/api/topologi` as fallback if the WebSocket never connects. -->
+<div class="baris-peta">
+
+  <div class="papan" id="topologi-bagian">
+    <div class="papan-kepala">
+      <h3 id="judul-topologi">Peta Topologi Jaringan</h3>
+      <span id="topologi-status" class="topologi-status">Menyambungkan&hellip;</span>
+      <div class="papan-alat">
+        <label class="saklar-kecil" title="Sembunyikan busur percakapan, sisakan kabelnya saja">
+          <input type="checkbox" id="topo-saklar-trafik" checked> percakapan
+        </label>
+        <button type="button" class="tombol-kecil" id="topo-zoom-keluar" title="Perkecil">&minus;</button>
+        <button type="button" class="tombol-kecil" id="topo-zoom-pas" title="Kembalikan ukuran dan posisi pandangan">100%</button>
+        <button type="button" class="tombol-kecil" id="topo-zoom-masuk" title="Perbesar">+</button>
+        <button type="button" class="tombol-kecil" id="topo-atur-ulang" hidden
+                title="Kembalikan semua node ke tata letak hitungan">atur ulang</button>
+      </div>
+    </div>
+    <div class="jelas-isi" data-untuk="#judul-topologi">Peta ini menggambar DUA hal yang berbeda dengan bentuk yang berbeda, dan perbedaan itu yang paling penting dibaca. Garis LURUS = jalur tetap yang tercatat di NSM (kabel sungguhan lab, diisi dari proyek GNS3) — ia menjawab "apa tersambung ke apa". Busur MELENGKUNG yang mengalir = percakapan TCP sungguhan yang terekam poller dalam 10 menit terakhir, tebalnya mengikuti jumlah data — ia menjawab "siapa sedang bicara dengan siapa", dan dua ujungnya bisa saja terpisah beberapa perangkat. Kartu bergaris putus = alamat yang bicara dengan lab tetapi tidak terdaftar di NSM; alamat itu sengaja TIDAK dibuang, sebab justru itu yang paling pantas terlihat saat ada yang mencurigakan. Node bisa ditarik untuk dirapikan dan posisinya diingat peramban; latar bisa digeser, dan Ctrl+roda memperbesar. Yang perlu diketahui batasnya: jalur tetap adalah CATATAN, bukan hasil deteksi — NSM tidak membaca LLDP/CDP, jadi kabel yang dicabut diam-diam tidak akan hilang sendiri dari peta ini.</div>
+    <div id="topologi-bingkai">
+      <svg id="topologi-svg" role="img"
+           aria-label="Peta topologi jaringan: perangkat, kabel tetap, dan percakapan yang sedang berlangsung"></svg>
+      <div id="topologi-kosong" class="topologi-kosong" hidden></div>
+
+      <!-- LEGEND, bottom-left corner inside the map frame. -->
+      <div class="topo-legenda">
+        <b>Keterangan</b>
+        <div class="lajur">
+          <div class="baris"><span class="titik t-up"></span> menjawab</div>
+          <div class="baris"><span class="titik t-down"></span> tidak menjawab</div>
+          <div class="baris"><span class="titik t-tanya"></span> belum diperiksa</div>
+        </div>
+        <div class="lajur">
+          <div class="baris"><i class="l-kabel"></i> kabel langsung</div>
+          <div class="baris"><i class="l-segmen"></i> satu segmen LAN</div>
+          <div class="baris"><i class="l-wan"></i> WAN antar-lokasi (lewat ISP)</div>
+        </div>
+        <div class="lajur">
+          <div class="baris"><i class="l-nirkabel"></i> nirkabel</div>
+          <div class="baris"><i class="l-trafik"></i> percakapan, menyusuri jalurnya</div>
+          <div class="baris" style="color:var(--teks-samar)">kartu putus = tak terdaftar</div>
+        </div>
+        <div class="kaki">Busur percakapan MELEWATI switch dan router yang harus dilalui paketnya &middot; arahkan kursor untuk melihat daftar lompatannya</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column wrapped as ONE grid cell of `.baris-peta`, which must keep exactly two direct children; extra children would land below the map in the left column. -->
+  <div class="kolom-kanan">
+
+  <div class="papan">
+    <div class="papan-kepala">
+      <h3 id="judul-laju">Laju Jaringan</h3>
+      <div class="papan-alat">
+        <span id="ringkas-jam" class="topologi-status"></span>
+      </div>
+    </div>
+    <div class="jelas-isi" data-untuk="#judul-laju">Tiap perangkat menyumbang INTERFACE TERSIBUKNYA saja, lalu angkanya dijumlahkan antar-perangkat. Menjumlahkan semua interface akan menghitung paket yang sama berkali-kali: sebuah router melihatnya masuk lewat satu interface dan keluar lewat interface lain, dan laptop di lab ini punya dua adapter VMware yang selalu nol. Yang ditampilkan karena itu bukan "total lalu lintas jaringan tanpa hitungan ganda" — paket yang menyeberang antar-lokasi tetap dilihat beberapa perangkat sekaligus — melainkan penjumlahan dari yang DILIHAT tiap perangkat. Masuk digambar ke atas, keluar ke bawah dari garis nol yang sama, supaya arah mana yang sedang besar terbaca dari bentuknya tanpa perlu membaca legenda.</div>
+    <div id="ringkas-grafik"></div>
+    <div id="ringkas-grafik-kaki"></div>
+    <div class="grafik-arah">
+      <span><i class="i-masuk"></i> masuk (ke atas)</span>
+      <span><i class="i-keluar"></i> keluar (ke bawah)</span>
+    </div>
+  </div>
+
+  <!-- Three extra charts that answer questions the cards above do not. -->
+
+  <div class="papan">
+    <div class="papan-kepala">
+      <h3 id="judul-dg-ada">Ketersediaan 24 Jam</h3>
+    </div>
+    <div class="jelas-isi" data-untuk="#judul-dg-ada">Seluruh kartu dan angka
+      di atas bercerita tentang SEKARANG. Grafik ini satu-satunya yang bisa
+      menjawab &ldquo;tadi malam bagaimana&rdquo;. Perangkat yang berkedip dua
+      puluh kali semalam lalu kebetulan hidup saat halaman dibuka terlihat sama
+      sehatnya dengan yang tidak pernah putus &mdash; kecuali di sini.
+      Sumbu tegaknya SENGAJA tidak dimulai dari nol: ketersediaan sehari-hari
+      duduk di 99&ndash;100%, dan dengan sumbu 0&ndash;100 penurunan ke 97%
+      (yang berarti ada yang benar-benar putus) tidak akan terlihat sama
+      sekali. Batas bawah yang dipakai ditulis di bawah grafik.
+      Perangkat yang dijeda tidak dihitung.</div>
+    <div id="dg-ketersediaan" class="dg-grafik" role="img"
+         aria-label="Grafik persen perangkat menjawab per jam"></div>
+    <div id="dg-ketersediaan-kaki" class="dg-kaki">Memuat&hellip;</div>
+  </div>
+
+  <div class="papan">
+    <div class="papan-kepala">
+      <h3 id="judul-dg-pesan">Pesan Perangkat 24 Jam</h3>
+    </div>
+    <div class="jelas-isi" data-untuk="#judul-dg-pesan">Ini yang perangkat
+      KIRIMKAN sendiri lewat syslog, bukan yang NSM tanyakan. Lonjakan pesan
+      sering mendahului gangguan &mdash; itu justru gunanya mendengar dan bukan
+      cuma bertanya tiap lima detik. Batang kuning adalah pesan yang tingkat
+      keparahannya di atas ambang. Angka ini memakai ambang yang SAMA dengan
+      halaman Syslog, bukan definisi sendiri.</div>
+    <div id="dg-pesan" class="dg-grafik" role="img"
+         aria-label="Grafik jumlah pesan syslog per jam"></div>
+    <div id="dg-pesan-kaki" class="dg-kaki">Memuat&hellip;</div>
+  </div>
+
+  <div class="papan">
+    <div class="papan-kepala">
+      <h3 id="judul-dg-kap">Kapasitas Penyimpanan</h3>
+    </div>
+    <div class="jelas-isi" data-untuk="#judul-dg-kap">Kartu peringatan di atas
+      halaman ini memberi tahu satu per satu bahwa disk sedang mengisi. Grafik
+      ini menjawab pertanyaan berikutnya, yang tidak dijawab kartu mana pun:
+      SIAPA yang paling dekat ke ambang dibanding yang lain &mdash; dan itulah
+      yang menentukan mana yang dikerjakan lebih dulu. Warnanya mengikuti
+      kedekatan ke ambang, bukan urutan. Angkanya pengukuran TERBARU, bukan
+      rata-rata: rata-rata seminggu justru menyembunyikan disk yang baru
+      melonjak.</div>
+    <div id="dg-kapasitas" class="dg-grafik dg-tinggi" role="img"
+         aria-label="Grafik persen disk terpakai per server"></div>
+    <div id="dg-kapasitas-kaki" class="dg-kaki">Memuat&hellip;</div>
+  </div>
+
+  </div>
+
+</div>
+
+<div id="meta" class="redup" style="font-size:var(--f-m)">Memuat&hellip;</div>
+
+<div id="kartu-kotak"></div>
+
+<div class="catatan">
+  Klik <b>ikon</b> untuk melihat IP, lokasi, platform, waktu cek terakhir, dan
+  <b>layanan mana yang hidup atau mati di device itu</b>, tanpa berpindah
+  halaman. Warna kartu device menjawab pertanyaan yang berbeda dari warna
+  layanan: ping hanya membuktikan mesinnya menyala, sedangkan layanan di
+  atasnya bisa berhenti tanpa mengubah hasil ping sama sekali, jadi kartu hijau
+  dengan satu layanan merah adalah keadaan yang wajar dan bukan kesalahan
+  pembacaan. <b>Riwayat</b> membuka catatan gangguan device beserta
+  grafiknya. <b>Data SSH</b> (atau <b>Data Lokal</b> untuk mesin ini sendiri) mengambil kondisi device saat ini secara langsung,
+  dan mati untuk device yang belum punya platform atau sedang tidak merespons.
+  Tombol jeda menghentikan pemantauan tanpa menghapus riwayat yang sudah ada.
+  Peringatan email diatur per akun di halaman <b>Notifikasi</b>.
+  Baris <b>panah</b> di kartu menunjukkan lalu lintas pada interface yang
+  sedang paling sibuk di device itu, masuk dan keluar; arahkan kursor untuk
+  melihat nilai aslinya dan dari mana angkanya dibaca. Device yang tidak punya
+  jalur baca lalu lintas tidak menampilkan baris itu sama sekali.
+</div>
+
+<script src="/ikon.js"></script>
+<script src="/js/ikon-ui.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/app.js"></script>
+<!-- Load after ikon.js (`ikonDevice`/`jenisIkon`), waktu.js (`waktuRelatif`) and halaman.js (`ambilJson`, used by the fallback path). -->
+<script src="/js/topologi.js"></script>
+<!-- After halaman.js (needs ambilJson). Compact strip plus rate chart. -->
+<script src="/js/ringkas.js"></script>
+<script src="/js/lipatan.js"></script>
+<script src="/js/diagnosis.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+<script src="/vendor/echarts.min.js"></script>
+<script src="/js/dasbor-grafik.js"></script>
+</body>
+</html>

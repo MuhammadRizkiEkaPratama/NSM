@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Kesehatan Sistem - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+/* Large verdict at the top: is NSM itself healthy? Details below. Same pattern as the Backup page. */
+#vonis { border-radius: var(--r-sedang); padding: var(--sp-4) var(--sp-5);
+         margin-bottom: var(--sp-5); border: 1px solid var(--garis);
+         background: var(--alas-tabel); }
+#vonis.sehat     { border-color: var(--up);         box-shadow: inset 3px 0 0 var(--up); }
+#vonis.perhatian { border-color: var(--hati-hati);  box-shadow: inset 3px 0 0 var(--hati-hati); }
+#vonis.bahaya    { border-color: var(--down);       box-shadow: inset 3px 0 0 var(--down); }
+#vonis.sehat h2     { color: var(--up); }
+#vonis.bahaya h2    { color: var(--down); }
+#vonis .ringkas { color: var(--teks-redup); font-size: var(--f-s); }
+#vonis ul { margin: var(--sp-3) 0 0; padding-left: 20px; }
+#vonis li { margin-bottom: 6px; line-height: 1.5; }
+
+#kisi { display: grid; gap: var(--sp-3);
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
+.periksa { border: 1px solid var(--garis); border-radius: var(--r-sedang);
+           padding: var(--sp-4); background: var(--alas-catatan); }
+/* Title and value on one line; the value must not split when the title wraps (the "Server email" card's title is too long for one line). */
+.periksa .kepala { display: flex; align-items: baseline; gap: var(--sp-2);
+                   margin-bottom: 6px; }
+.periksa .nama { font-weight: 600; font-size: var(--f-n);
+                 /* Title may wrap but must not push the value out; `min-width: 0` lets the flex item shrink below its content size. */
+                 min-width: 0; overflow-wrap: anywhere; }
+.periksa .nilai { margin-left: auto; font-variant-numeric: tabular-nums;
+                  font-size: var(--f-m); color: var(--teks-2);
+                  white-space: nowrap; flex: 0 0 auto; }
+.periksa .ket { color: var(--teks-redup); font-size: var(--f-s);
+                line-height: 1.55; }
+
+.periksa.sehat        { box-shadow: inset 3px 0 0 var(--up); }
+.periksa.perhatian    { box-shadow: inset 3px 0 0 var(--hati-hati);
+                        border-color: var(--hati-hati); }
+.periksa.bahaya       { box-shadow: inset 3px 0 0 var(--down);
+                        border-color: var(--down); }
+.periksa.mati-sengaja { box-shadow: inset 3px 0 0 var(--garis-terang); opacity: .72; }
+
+.periksa.sehat .nilai        { color: var(--up); }
+.periksa.perhatian .nilai    { color: var(--hati-hati); }
+.periksa.bahaya .nilai       { color: var(--down); }
+
+/* Detail inside the card (used by the Database section). */
+.rincian { margin-top: var(--sp-3); border-top: 1px solid var(--garis);
+           padding-top: var(--sp-2); }
+.rincian .baris { display: flex; gap: var(--sp-2); font-size: var(--f-s);
+                  padding: 3px 0; }
+.rincian .baris b { font-weight: 500; color: var(--teks-2); }
+.rincian .baris span { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.jumlah-baris { margin-top: var(--sp-2); font-size: var(--f-xs);
+                color: var(--teks-redup); line-height: 1.6; }
+
+.bagian-judul { font-size: var(--f-bagian); margin: var(--sp-6) 0 var(--sp-3); }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Kesehatan Sistem',
+     'apakah NSM sendiri masih bekerja', 'kesehatan')}"></div>
+
+<div class="isi">
+
+  <div id="alat">
+    <!-- This button is named "Periksa Ulang" to match the identical action on the Backup page and the Title Case button convention. -->
+    <button id="segarkan" type="button">Periksa Ulang</button>
+    <span id="meta"></span>
+  </div>
+
+  <div id="vonis"><h2>Memuat...</h2>
+    <div class="ringkas">Menanyakan keadaan tiap bagian.</div>
+  </div>
+
+  <div id="kisi"></div>
+
+  <p class="tautan-bawah">
+    <a th:href="@{/admin/backup}">Rincian backup</a> &middot;
+    <a th:href="@{/admin/audit}">Audit Log</a> &middot;
+    <a th:href="@{/}">Kembali ke Dashboard</a>
+  </p>
+</div>
+
+<!-- Load order: halaman.js must come before kesehatan.js because it defines ambilJson(), which checks the content type so an expired session shows a proper message instead of "Unexpected token '<'". -->
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<!-- jelas.js must come before kesehatan.js: the cards call `jelas.pasang()` when built, and otherwise fall back to printing full explanations. -->
+<script src="/js/jelas.js"></script>
+<script src="/kesehatan.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

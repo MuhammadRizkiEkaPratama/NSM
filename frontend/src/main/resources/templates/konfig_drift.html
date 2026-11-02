@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Deteksi Penyimpangan - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Deteksi Penyimpangan', 'apakah yang sekarang cocok dengan Sumber Kebenaran', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('drift')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-drift">Tahap 2 dari rencana network
+  automation tertutup. Membandingkan intent (Sumber Kebenaran) dengan potret
+  konfigurasi TERBARU yang sudah tersimpan -- baca-saja penuh, tidak ada satu
+  koneksi baru pun dibuka ke perangkat. Hanya kunci yang SUDAH dinyatakan di
+  intent yang diperiksa; kunci yang belum diisi tidak dihitung sebagai
+  penyimpangan, itu memang di luar cakupan sampai diisi.</div>
+
+<h4 id="judul-drift" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-git-compare"/></svg>
+  Perangkat yang punya intent</h4>
+
+<div class="gulir-tabel"><table id="tabel-drift" class="tabel-rincian">
+  <thead>
+    <tr>
+      <th>Perangkat</th>
+      <th>Platform</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="baris-drift">
+    <tr><td colspan="4" class="redup">Memuat&hellip;</td></tr>
+  </tbody>
+</table></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Platform yang belum didukung: potret Linux yang ada saat ini berisi POSTUR KEAMANAN (sshd_config, port dengar) -- bukan hostname/NTP/DNS yang dinyatakan katalog intent. Membandingkannya akan menghasilkan kesimpulan yang salah, bukan sekadar tidak lengkap, jadi platform itu ditandai 'tidak didukung' apa adanya.">
+    Kenapa ada perangkat yang tidak didukung?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/drift.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

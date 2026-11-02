@@ -1,0 +1,88 @@
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  svg { display: block; }
+  text { font-family: Arial, Helvetica, sans-serif; fill: #000000; }
+  .nama { font-size: 13px; font-weight: bold; }
+  .sub  { font-size: 10px; }
+  .tanda { font-size: 10px; font-style: italic; }
+  .judul { font-size: 12px; font-weight: bold; letter-spacing: 0.5px; }
+  .kotak { fill: #ffffff; stroke: #000000; stroke-width: 1.6; }
+  .kotak-inti { fill: #ffffff; stroke: #000000; stroke-width: 2.8; }
+  .panah { stroke: #000000; stroke-width: 1.6; fill: none; marker-end: url(#ujung); }
+  .batas { fill: none; stroke: #000000; stroke-width: 1; stroke-dasharray: 6 4; }
+</style>
+
+<svg width="1120" height="500" viewBox="0 0 1120 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ujung" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1120" height="500" fill="#ffffff"/>
+
+  <!-- batas tanggung jawab, digambar lebih dulu supaya berada di belakang kotak -->
+  <rect class="batas" x="590" y="46" width="270" height="352"/>
+
+  <!-- ============ BARIS ATAS: JALUR PERMINTAAN PENGGUNA ============ -->
+  <text class="judul" x="30" y="34">JALUR PERMINTAAN PENGGUNA</text>
+
+  <rect class="kotak" x="30" y="70" width="150" height="66"/>
+  <text class="nama" x="42" y="96">Peramban</text>
+  <text class="sub"  x="42" y="114">pengguna</text>
+
+  <rect class="kotak" x="290" y="70" width="230" height="66"/>
+  <text class="nama" x="302" y="96">Java Spring Boot</text>
+  <text class="sub"  x="302" y="114">porta 8080</text>
+  <text class="sub"  x="302" y="129">penampil, tanpa aturan bisnis</text>
+
+  <rect class="kotak-inti" x="610" y="70" width="230" height="66"/>
+  <text class="nama" x="622" y="96">Python FastAPI</text>
+  <text class="sub"  x="622" y="114">porta 8000</text>
+  <text class="sub"  x="622" y="129">seluruh aturan bisnis</text>
+
+  <rect class="kotak" x="930" y="70" width="160" height="66"/>
+  <text class="nama" x="942" y="96">MySQL</text>
+  <text class="sub"  x="942" y="114">192.168.56.104</text>
+
+  <path class="panah" d="M 180 103 L 290 103"/>
+  <text class="tanda" x="235" y="96" text-anchor="middle">HTTP</text>
+
+  <path class="panah" d="M 520 103 L 610 103"/>
+  <text class="tanda" x="565" y="96" text-anchor="middle">JSON</text>
+
+  <path class="panah" d="M 840 103 L 930 103"/>
+  <text class="tanda" x="885" y="96" text-anchor="middle">SQL</text>
+
+  <!-- ============ BARIS BAWAH: JALUR PENGUMPULAN DATA ============ -->
+  <text class="judul" x="30" y="270">JALUR PENGUMPULAN DATA</text>
+
+  <rect class="kotak" x="30" y="300" width="150" height="66"/>
+  <text class="nama" x="42" y="326">Perangkat</text>
+  <text class="sub"  x="42" y="344">router, switch, server</text>
+
+  <rect class="kotak" x="290" y="300" width="230" height="66"/>
+  <text class="nama" x="302" y="326">Connector</text>
+  <text class="sub"  x="302" y="344">23 modul pembaca perangkat</text>
+
+  <rect class="kotak-inti" x="610" y="300" width="230" height="66"/>
+  <text class="nama" x="622" y="326">Poller</text>
+  <text class="sub"  x="622" y="344">20 pekerjaan berkala</text>
+
+  <path class="panah" d="M 180 333 L 290 333"/>
+  <text class="tanda" x="235" y="326" text-anchor="middle">SSH, SNMP, ICMP</text>
+
+  <path class="panah" d="M 520 333 L 610 333"/>
+
+  <path class="panah" d="M 840 333 L 1010 333 L 1010 136"/>
+  <text class="tanda" x="866" y="352">menulis hasil pengamatan</text>
+
+  <!-- keterangan batas -->
+  <text class="sub" x="590" y="420">Kotak bergaris putus-putus menandai satu-satunya bagian yang menyentuh basis data,</text>
+  <text class="sub" x="590" y="435">Secure Shell, dan SNMP.</text>
+
+  <text class="sub" x="30" y="470">Aliran data bersifat satu arah. Bagian Java tidak menyentuh basis data, tidak melakukan Secure Shell, dan hanya meneruskan</text>
+  <text class="sub" x="30" y="485">data yang diterimanya dari bagian Python apa adanya.</text>
+
+</svg>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Lalu Lintas - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/ikon.css">
+<style>
+
+#alat { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+        margin-bottom: var(--sp-4); }
+#alat .pemisah { width: 1px; height: 22px; background: var(--garis); margin: 0 6px; }
+#meta { color: var(--teks-redup); font-size: var(--f-s); margin-left: auto; }
+
+table { margin-top: var(--sp-2); }
+td.angka, td.byte { font-variant-numeric: tabular-nums; text-align: right; }
+
+.judul-panel { font-size: var(--f-bagian); margin: 0 0 var(--sp-1); }
+
+/* Source line under each tab title: says where the numbers are read from and what that source cannot see. The five tabs use three sources (access log: HTTP only; SFTP log: people but only file transfers; TCP connection snapshots: all protocols but no content), and comparing numbers across tabs as if they measured the same thing is misleading. Kept short and outside the "?" help so it is actually read. */
+.sumber-tab { font-size: var(--f-xs); color: var(--teks-samar);
+              margin: 0 0 var(--sp-3); line-height: 1.5; }
+.sumber-tab b { color: var(--teks-redup); font-weight: 700; }
+
+/* --- Temuan anomali --- */
+.kartu-anomali { border: 1px solid var(--garis); border-left-width: 3px;
+                 border-radius: var(--r-sedang); background: var(--permukaan-2);
+                 padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+.kartu-anomali.tinggi { border-left-color: var(--down); }
+.kartu-anomali.sedang { border-left-color: var(--hati-hati); }
+/* "rendah" stays neutral so not every finding is colored. */
+.kartu-anomali.rendah { border-left-color: var(--garis); }
+.kepala-anomali { display: flex; align-items: baseline; gap: var(--sp-3);
+                  flex-wrap: wrap; }
+.kepala-anomali .judul { font-weight: 700; }
+.kepala-anomali .kapan { color: var(--teks-redup); font-size: var(--f-s);
+                         margin-left: auto; }
+/* Figure and its baseline sit on one line: a number without a baseline says nothing. */
+.baris-angka { margin-top: var(--sp-2); font-size: var(--f-n); }
+.baris-angka .nilai { font-weight: 700; }
+.baris-angka .banding { color: var(--teks-2); }
+.baris-angka .banding::before { content: "  vs  "; color: var(--teks-redup); }
+.alasan-anomali { margin-top: var(--sp-1); color: var(--teks-2);
+                  font-size: var(--f-s); line-height: 1.5; max-width: 78ch; }
+.bukti-anomali { margin-top: var(--sp-2); font-size: var(--f-xs);
+                 font-family: var(--huruf-mono); color: var(--teks-redup); }
+.bukti-anomali div { padding: 1px 0; word-break: break-all; }
+.dasar-belum { border: 1px dashed var(--garis); border-radius: var(--r-sedang);
+               padding: var(--sp-3) var(--sp-4); color: var(--teks-2); }
+td.path { font-family: var(--huruf-mono); font-size: var(--f-s); word-break: break-all; }
+
+/* Anomaly panel is the only section that is not a tab (see the HTML comment below). Neutral left border that JS recolors when there are findings; never green before data arrives. */
+#panel-anomali {
+  border: 1px solid var(--garis); border-left-width: 3px;
+  border-left-color: var(--garis-terang);
+  border-radius: var(--r-sedang); background: var(--permukaan-2);
+  padding: var(--sp-4); margin-top: var(--sp-4);
+}
+#panel-anomali.ada-temuan-tinggi { border-left-color: var(--down); }
+#panel-anomali.ada-temuan-sedang { border-left-color: var(--hati-hati); }
+#panel-anomali h3 { margin: 0; }
+
+.sub-judul { font-size: var(--f-s); text-transform: uppercase;
+             letter-spacing: .04em; color: var(--teks-redup);
+             margin: var(--sp-5) 0 0; font-weight: 700; }
+
+/* Transfer direction is deliberately not a status color: a downloaded file is not a bad state. */
+.arah { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+        background: var(--permukaan-3); color: var(--teks-2);
+        border: 1px solid var(--garis); white-space: nowrap; }
+
+/* Unknown people are flagged, not hidden: the transfer happened, only the actor is unknown. */
+td.tanpa-nama { color: var(--teks-redup); font-style: italic; }
+
+
+/* NSM's own requests are flagged, not hidden, so the figures stay accountable. */
+.lencana-nsm { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+               background: var(--permukaan-3); color: var(--teks-redup);
+               border: 1px solid var(--garis); margin-left: 6px; }
+td.gagal-ada { color: var(--down); }
+
+/* Address outside the lab network: flagged with a neutral marker, not a status color (status tokens in nsm.css are for device state only, and a package update from the internet is not a problem). */
+.tanda-luar { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+              background: var(--permukaan-3); color: var(--teks-redup);
+              border: 1px solid var(--garis); margin-left: 6px; white-space: nowrap; }
+.pintu-daftar { color: var(--teks-redup); font-size: var(--f-xs); margin-top: 2px;
+                line-height: 1.45; }
+
+.tanda-baru { font-size: var(--f-xs); padding: 1px 6px; border-radius: var(--r-bulat);
+              background: var(--permukaan-3); color: var(--teks-redup);
+              border: 1px solid var(--garis); margin-left: 6px; white-space: nowrap; }
+
+/* DNS name: a caption under the address, not a replacement for it. */
+.nama-dns { color: var(--teks-redup); font-size: var(--f-xs); margin-top: 2px;
+            font-family: var(--huruf-mono); word-break: break-all; }
+td.arah { font-size: var(--f-xs); color: var(--teks-redup); white-space: nowrap; }
+
+/* Explanatory paragraph: `.ket` has no rule in nsm.css, so it would fall back to the 16px browser default; fixed per page. */
+.ket { font-size: var(--f-s); color: var(--teks-2); line-height: 1.55;
+       max-width: 78ch; }
+</style>
+</head>
+<body th:attr="data-periode=${period}">
+
+<div th:replace="~{fragmen/nav :: bilah('Lalu Lintas', 'siapa mengambil apa, sebesar apa', 'traffic')}"></div>
+
+<div id="alat">
+  <span class="redup kecil">Periode</span>
+  <span class="pil" data-p="1h" role="button" tabindex="0">1 Jam</span>
+  <span class="pil" data-p="24h" role="button" tabindex="0">24 Jam</span>
+  <span class="pil" data-p="7d" role="button" tabindex="0">7 Hari</span>
+  <span class="pil" data-p="30d" role="button" tabindex="0">30 Hari</span>
+  <span class="pemisah"></span>
+  <span id="meta">Memuat&hellip;</span>
+</div>
+
+<div id="kartu" class="kisi-4"></div>
+
+<!-- Anomaly is deliberately not a tab: it is a conclusion drawn from all five data topics, and answer should not be hidden behind a tab name the reader must guess. -->
+<div id="panel-anomali">
+  <h3 id="judul-anomali" class="kepala">Yang layak ditanyakan</h3>
+  <div class="jelas-isi" data-untuk="#judul-anomali">Tiap temuan disertai angka pembandingnya — bukan "lonjakan lalu lintas" melainkan berapa banyak, dibandingkan dengan berapa yang biasa. Label tanpa angka akan diabaikan setelah dilihat dua kali. Temuan di sini dihitung Python dari sumber yang sama dengan lima tab di bawah, jadi tidak ada angka di panel ini yang tidak bisa ditelusuri ke barisnya.</div>
+  <div id="dasar-anomali" class="ket"></div>
+  <div id="anomali"></div>
+</div>
+
+<!-- Five topics, one visible at a time (tabs); see js/tab.js for why tabs rather than columns or folds. -->
+<!-- Tab names put the difference up front: ADDRESS versus PERSON. The first and third tabs answer with IP addresses and people's names respectively, from different sources; the full question is in each panel title. -->
+<div class="tab-bar" role="tablist" aria-label="Rincian lalu lintas">
+  <button class="tab" role="tab" id="tab-klien" aria-controls="panel-klien"
+          data-tab="klien" type="button">
+    Klien Teratas (HTTP) <span class="tab-cacah" data-untuk-tab="klien"></span>
+  </button>
+  <button class="tab" role="tab" id="tab-berkas" aria-controls="panel-berkas"
+          data-tab="berkas" type="button">
+    Berkas Teratas (HTTP) <span class="tab-cacah" data-untuk-tab="berkas"></span>
+  </button>
+  <button class="tab" role="tab" id="tab-sftp" aria-controls="panel-sftp"
+          data-tab="sftp" type="button">
+    Log Aktivitas <span class="tab-cacah" data-untuk-tab="sftp"></span>
+  </button>
+  <button class="tab" role="tab" id="tab-percakapan" aria-controls="panel-percakapan"
+          data-tab="percakapan" type="button">
+    Sesi Jaringan (TCP) <span class="tab-cacah" data-untuk-tab="percakapan"></span>
+  </button>
+  <button class="tab" role="tab" id="tab-pintu" aria-controls="panel-pintu"
+          data-tab="pintu" type="button">
+    Layanan yang Dipakai <span class="tab-cacah" data-untuk-tab="pintu"></span>
+  </button>
+</div>
+
+<div class="tab-panel" id="panel-klien" role="tabpanel" aria-labelledby="tab-klien"
+     data-tab-panel="klien">
+  <h4 id="judul-t-klien" class="judul-panel kepala">Klien Teratas — alamat IP mana yang paling banyak meminta data (HTTP)</h4>
+  <div class="sumber-tab">Dibaca dari <b><span data-istilah="access-log">access log</span> web server</b>.
+    Tahu nama berkasnya, tetapi hanya melihat HTTP — yang lewat HTTPS atau SSH
+    tidak muncul di sini. Yang disebut adalah ALAMAT, bukan orang.</div>
+  <div class="jelas-isi" data-untuk="#judul-t-klien">Diurutkan dari yang paling banyak menarik data. Angka ini berasal dari access log web server, bukan dari counter interface: counter tahu berapa byte lewat sebuah kartu jaringan, tetapi tidak pernah menyimpan siapa lawan bicaranya.</div>
+  <div class="gulir-tabel"><table data-hal="8">
+    <thead>
+      <tr>
+        <th>Alamat Sumber</th>
+        <th>Permintaan</th>
+        <th>Diunduh</th>
+        <th>Terakhir Terlihat</th>
+      </tr>
+    </thead>
+    <tbody id="baris-klien"></tbody>
+  </table></div>
+</div>
+
+<div class="tab-panel" id="panel-berkas" role="tabpanel" aria-labelledby="tab-berkas"
+     data-tab-panel="berkas" hidden>
+  <h4 id="judul-t-berkas" class="judul-panel kepala">Berkas Teratas — apa yang diunduh lewat web (HTTP)</h4>
+  <div class="sumber-tab">Dibaca dari <b><span data-istilah="access-log">access log</span> web server</b>,
+    sumber yang sama dengan tab sebelumnya — dikelompokkan per berkas, bukan
+    per alamat.</div>
+  <div class="jelas-isi" data-untuk="#judul-t-berkas">Diurutkan dari yang paling besar totalnya. Kolom Rata-rata memisahkan dua hal yang totalnya bisa sama persis tetapi artinya berlawanan: satu berkas besar yang ditarik sekali, dan berkas kecil yang ditarik ribuan kali. Nama berkas dibaca dari access log, bukan dari menyadap paket, jadi berkas yang diambil lewat HTTP terbaca namanya sedangkan isi koneksi SSH atau HTTPS tidak — dan memang seharusnya begitu.</div>
+  <div class="gulir-tabel"><table data-hal="8">
+    <thead>
+      <tr>
+        <th>Berkas</th>
+        <th>Jumlah</th>
+        <th>Total</th>
+        <th data-istilah="rata-rata-berkas">Rata-rata</th>
+        <th>Terakhir Terlihat</th>
+      </tr>
+    </thead>
+    <tbody id="baris-berkas"></tbody>
+  </table></div>
+</div>
+
+<!-- Only tab that names people instead of addresses: addresses change hands (DHCP, shared laptops), while names from LDAP identify the same person on every machine. -->
+<div class="tab-panel" id="panel-sftp" role="tabpanel" aria-labelledby="tab-sftp"
+     data-tab-panel="sftp" hidden>
+  <h4 id="judul-t-sftp" class="judul-panel kepala">Log Aktivitas — siapa melakukan apa, lewat SFTP, SMB, atau SSH</h4>
+  <div class="sumber-tab">Dibaca dari TIGA log berbeda, ditampilkan sebagai DUA
+    tabel terpisah di bawah (sempat digabung jadi satu, dipisah lagi 19
+    Agustus 2026 -- "berkas apa disentuh" dan "perintah apa diketik" dua
+    pertanyaan yang beda maknanya):
+    <b><span data-istilah="sftp">SFTP</span></b> (transfer lewat SSH) dan
+    <b>SMB</b> (folder gaya Windows <code>\\server\share</code>) masuk tabel
+    <b>Aktivitas Berkas</b>; <b>SSH</b> (perintah shell yang dijalankan, dari
+    <code>auditd</code>) masuk tabel <b>Riwayat Perintah</b>. Ketiganya
+    menyebut PENGGUNA (dari LDAP), bukan sekadar alamat IP — nama jauh
+    lebih berguna, karena alamat bisa berpindah tangan (DHCP) tapi nama
+    tidak.</div>
+  <div class="jelas-isi" data-untuk="#judul-t-sftp">Dua tabel, karena pertanyaannya beda: Aktivitas Berkas menjawab "siapa MENYENTUH berkas apa" -- UNDUH/AMBIL berarti berkas dibaca (dibuka, ditarik, atau disalin keluar), UNGGAH/KIRIM berarti berkas ditulisi. Riwayat Perintah menjawab "perintah apa DIKETIK" lewat SSH, dan itu mencakup banyak hal yang bukan aktivitas berkas sama sekali (`whoami`, `systemctl`, dst) -- kolom Ukuran/Host TIDAK PERNAH ada di sana karena `auditd` cuma mencatat baris perintahnya, bukan byte yang dipindah, dan SSH tidak mengumumkan nama mesin klien. HOST di Aktivitas Berkas hanya diketahui untuk SMB — nama komputer Windows (mis. "LAB-PC") tempat orang itu tersambung; SFTP tidak membocorkan itu. STATUS "Gagal" pada Aktivitas Berkas berarti percobaannya benar-benar DITOLAK sistem berkas (sandi salah, berkas tidak ada); pada Riwayat Perintah berarti command-nya sendiri gagal dijalankan (`exit code` bukan nol) — keduanya layak diperiksa lebih dulu. Sekadar membuka folder untuk melihat isinya SENGAJA tidak ditampilkan di Aktivitas Berkas — hanya perbuatan sungguhan atas berkas, supaya log ini tidak dibanjiri Explorer yang menyegarkan dirinya sendiri. Perintah yang dijalankan otomatis saat login (pesan selamat datang) juga disaring dari Riwayat Perintah, dengan cara yang sama.</div>
+  <div id="catatan-sftp" class="ket"></div>
+
+  <!-- Self-explanatory column headers; long explanations are hover text (`data-petunjuk`, drawn by js/petunjuk.js) and `.th-jelas` shows a small question mark. -->
+  <h5 class="sub-judul">Per Pengguna</h5>
+  <div class="gulir-tabel"><table data-hal="5">
+    <thead>
+      <tr>
+        <th>Pengguna</th>
+        <th class="th-jelas" data-petunjuk="Berapa KALI orang ini menyentuh berkas pada periode ini — dihitung per perbuatan (buka, unduh, unggah, hapus, ganti nama), bukan per berkas. Membuka satu berkas lima kali berarti 5 kejadian.">Kejadian</th>
+        <th class="th-jelas" data-petunjuk="Total ukuran berkas yang DIBACA orang ini (diunduh/dibuka/disalin keluar). SFTP melaporkan ukurannya; SMB tidak pernah — di baris SMB ini tertulis 'ukuran tak diketahui', bukan 0 B, karena keduanya berbeda arti.">Diunduh</th>
+        <th class="th-jelas" data-petunjuk="Total ukuran berkas yang DITULIS orang ini ke server (diunggah/disalin masuk). Sama seperti kolom Diunduh: SMB tidak melaporkan ukuran, jadi ditulis terus terang 'tak diketahui'.">Diunggah</th>
+        <th class="th-jelas" data-petunjuk="Berkas TERBESAR yang pernah ia unduh pada periode ini, beserta ukurannya. Berguna untuk memisahkan 'sering mengambil berkas kecil' dari 'sekali mengambil sesuatu yang besar'.">Berkas Terbesar Diunduh</th>
+        <th>Terakhir Terlihat</th>
+      </tr>
+    </thead>
+    <tbody id="baris-orang"></tbody>
+  </table></div>
+
+  <h5 class="sub-judul">Per Berkas</h5>
+  <div class="gulir-tabel"><table data-hal="5">
+    <thead>
+      <tr>
+        <th>Berkas</th>
+        <th class="th-jelas" data-petunjuk="Berapa KALI berkas ini disentuh pada periode ini — semua perbuatan dihitung (dibuka, diunduh, diunggah, disalin). Satu orang membukanya empat kali tetap terhitung 4.">Berapa Kali</th>
+        <th class="th-jelas" data-petunjuk="Berapa ORANG BERBEDA yang menyentuhnya. Angka ini sengaja dipisah dari kolom sebelahnya, karena artinya berlawanan: 4 kali oleh 1 orang itu kebiasaan kerja; 4 kali oleh 4 orang berarti berkas ini sedang beredar.">Oleh Berapa Orang</th>
+        <th class="th-jelas" data-petunjuk="Jumlah ukuran seluruh perpindahan berkas ini pada periode itu. Kalau tertulis 'ukuran tak diketahui (SMB)', artinya berkasnya memang berpindah — cuma protokol SMB yang tidak pernah melaporkan berapa byte-nya, jadi angkanya tidak dikarang.">Total Ukuran</th>
+        <th>Terakhir Terlihat</th>
+      </tr>
+    </thead>
+    <tbody id="baris-berkas-sftp"></tbody>
+  </table></div>
+
+  <!-- File activity: main SIEM-style event table, one raw event per row, columns ordered time, who, what, object details. Always SMB/SFTP, so size and client host columns are meaningful. SSH commands are in the separate "Riwayat Perintah" table. -->
+  <h5 class="sub-judul">Aktivitas Berkas</h5>
+  <div class="gulir-tabel"><table data-hal="8">
+    <thead>
+      <tr>
+        <th>Waktu</th>
+        <th>Pengguna</th>
+        <th class="th-jelas" data-petunjuk="Apa yang dilakukan atas berkas itu. UNDUH = berkas dibaca (dibuka/ditarik). UNGGAH = berkas ditulisi. SALIN = disalin antar folder DI DALAM server, tanpa pernah keluar ke laptop. HAPUS / GANTI NAMA / BUAT FOLDER apa adanya.">Aksi</th>
+        <th>Berkas</th>
+        <th class="th-jelas" data-petunjuk="Ditebak dari akhiran nama berkasnya saja (.pdf, .xlsx, .mp4). Murni untuk memudahkan membaca — NSM tidak membuka isi berkasnya untuk memeriksa.">Jenis</th>
+        <th class="th-jelas" data-petunjuk="Besar berkas yang berpindah. Hanya SFTP yang melaporkannya; baris SMB bertanda '-' karena protokol itu memang tidak pernah menyebut jumlah byte, bukan karena datanya hilang.">Ukuran</th>
+        <th class="th-jelas" data-petunjuk="Alamat IP komputer yang melakukannya. Alamat bisa berpindah tangan (DHCP), jadi kolom Pengguna di sebelah kiri lebih bisa dipercaya untuk menunjuk ORANG.">Alamat Sumber</th>
+        <th class="th-jelas" data-petunjuk="Nama komputernya (mis. 'lab-pc'), bukan alamatnya. Hanya diketahui untuk SMB — Windows menyebutkan namanya sendiri saat menyambung. SFTP tidak, jadi di sana tertulis '-'.">Host</th>
+        <th class="th-jelas" data-petunjuk="Lewat jalan mana berkas itu disentuh. SMB = folder sharing gaya Windows (\\server\sharing). SFTP = transfer lewat SSH, termasuk `scp`.">Protokol</th>
+        <th class="th-jelas" data-petunjuk="'Gagal' berarti percobaannya DITOLAK server — berkasnya tidak ada, atau orang itu tidak punya hak atasnya. Baris Gagal justru yang paling pantas diperiksa lebih dulu. '-' berarti tidak diketahui: log SFTP tidak merekam percobaan yang gagal.">Status</th>
+      </tr>
+    </thead>
+    <tbody id="baris-sftp-terbaru"></tbody>
+  </table></div>
+
+  <!-- Command history, separate from File activity. Fewer columns: rows are always SSH shell commands. -->
+  <h5 class="sub-judul">Riwayat Perintah</h5>
+  <div class="gulir-tabel"><table data-hal="9">
+    <thead>
+      <tr>
+        <th>Waktu</th>
+        <th>Pengguna</th>
+        <th class="th-jelas" data-petunjuk="Baris perintah yang benar-benar diketik/dijalankan lewat SSH, apa adanya beserta argumennya. Dibaca dari `auditd` — yang mencatat PERINTAHNYA, bukan berapa byte yang dipindah, jadi tabel ini memang tidak punya kolom Ukuran.">Perintah</th>
+        <th class="th-jelas" data-petunjuk="Alamat IP asal sesi SSH-nya. '-' berarti sesinya sudah berjalan sebelum NSM sempat membaca baris pembuka sesi itu, jadi alamatnya tidak pernah terlihat — bukan disembunyikan.">Alamat Sumber</th>
+        <th class="th-jelas" data-petunjuk="'Gagal' berarti perintahnya sendiri berakhir dengan galat (exit code bukan nol) — misalnya mencoba menghapus berkas yang bukan haknya. Layak diperiksa lebih dulu daripada yang berhasil.">Status</th>
+      </tr>
+    </thead>
+    <tbody id="baris-riwayat-perintah"></tbody>
+  </table></div>
+</div>
+
+<div class="tab-panel" id="panel-percakapan" role="tabpanel" aria-labelledby="tab-percakapan"
+     data-tab-panel="percakapan" hidden>
+  <h4 id="judul-t-percakapan" class="judul-panel kepala">Sesi Jaringan — koneksi TCP yang sedang berlangsung</h4>
+  <div class="sumber-tab">Dibaca dari <b><span data-istilah="flow-koneksi">koneksi TCP</span> yang sedang hidup</b>
+    di tiap perangkat. Melihat SEMUA protokol — SSH, MySQL, sambungan ke
+    internet — tetapi hanya tahu alamat dan <span data-istilah="pintu-port">pintunya</span>,
+    tidak pernah tahu berkas apa yang lewat.</div>
+  <div class="jelas-isi" data-untuk="#judul-t-percakapan">Sumber kedua, dan cakupannya berbeda dari tab "Siapa mengambil data": itu dibaca dari access log web server, jadi tahu berkas apa yang diambil tetapi buta di luar HTTP. Tab ini dibaca dari koneksi TCP yang sedang hidup di tiap perangkat, jadi melihat SSH, MySQL, port 8080, dan sambungan keluar ke internet, tetapi hanya tahu alamat dan pintunya, bukan isinya.</div>
+  <div id="ringkas-flow" class="ket"></div>
+  <div class="gulir-tabel"><table data-hal="8">
+    <thead>
+      <tr>
+        <th>Alamat</th>
+        <th data-istilah="pintu-port">Port</th>
+        <th>Koneksi</th>
+        <th data-istilah="arah-masuk-keluar">Diunduh</th>
+        <th data-istilah="arah-masuk-keluar">Diunggah</th>
+        <th>Terakhir Terlihat</th>
+      </tr>
+    </thead>
+    <tbody id="baris-percakapan"></tbody>
+  </table></div>
+</div>
+
+<div class="tab-panel" id="panel-pintu" role="tabpanel" aria-labelledby="tab-pintu"
+     data-tab-panel="pintu" hidden>
+  <h4 id="judul-t-pintu" class="judul-panel kepala">Layanan yang Dipakai — satu baris per (perangkat, layanan, arah)</h4>
+  <div class="sumber-tab">Untuk tiap PERANGKAT YANG DIPANTAU: layanan jaringan apa yang
+    terlihat aktif (dari portnya — MySQL, SSH, LDAP, dst), berapa kali, dan
+    ke arah mana. Data <span data-istilah="flow-koneksi">koneksi TCP</span>
+    hidup yang SAMA dengan tab sebelumnya, cuma dikelompokkan per LAYANAN,
+    bukan per alamat lawan.</div>
+  <div class="jelas-isi" data-untuk="#judul-t-pintu">Dengan bahasa sederhana: ambil baris mana saja, bacanya "Perangkat X memakai Layanan Y, Z kali, ke arah W." <b>Masuk</b> berarti pihak lain menyambung KE perangkat ini — ia berperan sebagai server (contoh: MySQL:3306 menerima query dari perangkat lain). <b>Keluar</b> berarti perangkat ini menyambung KELUAR ke pihak lain — ia berperan sebagai klien (contoh: memeriksa direktori LDAP untuk memverifikasi login). Satu percakapan nyata antara dua perangkat yang dipantau NSM muncul sebagai DUA baris terpisah di sini — satu dari tiap sisi — karena tiap perangkat cuma melaporkan sudut pandangnya sendiri, tidak pernah sudut pandang lawannya.</div>
+  <div class="gulir-tabel"><table data-hal="8">
+    <thead>
+      <tr>
+        <th>Perangkat</th>
+        <th data-istilah="pintu-port">Layanan / Port</th>
+        <th data-istilah="arah-masuk-keluar">Arah</th>
+        <th>Lawan</th>
+        <th data-istilah="arah-masuk-keluar">Keluar</th>
+        <th data-istilah="arah-masuk-keluar">Masuk</th>
+      </tr>
+    </thead>
+    <tbody id="baris-pintu"></tbody>
+  </table></div>
+</div>
+
+<div class="catatan">
+  Halaman ini menjawab pertanyaan yang tidak bisa dijawab angka bandwidth:
+  bukan <b>berapa</b> yang lewat, melainkan <b>siapa</b> yang mengambilnya dan
+  <b>apa</b> yang diambil.
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Dua sumber, dua batas yang berbeda. ACCESS LOG hanya dibaca dari device yang punya layanan HTTP terdaftar di NSM, dan besar unggahan tidak tercatat kecuali mod_logio dinyalakan; kolom kosong berarti tidak diketahui, bukan nol. PERCAKAPAN TCP adalah potret tiap 60 detik, jadi koneksi yang lahir dan mati di antara dua potret tidak pernah terlihat, dan angkanya batas bawah, bukan jumlah pasti. Hanya device Linux yang bisa di-SSH yang terbaca: router Cisco dan laptop belum ikut. Keduanya sama-sama tidak melihat isi paket.">
+    Dari mana angka ini, dan apa batasnya?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<!-- Must load before traffic.js, which calls `jelaskan()` (defined here) when drawing table headers. -->
+<script src="/js/istilah.js"></script>
+<script src="/js/tab.js"></script>
+<script src="/traffic.js"></script>
+<script src="/js/jelas.js"></script>
+<!-- History table pagination. Called again by each renderer after its tbody is filled; tables inside a `hidden` tab still need it attached. -->
+<script src="/js/halaman-tabel.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

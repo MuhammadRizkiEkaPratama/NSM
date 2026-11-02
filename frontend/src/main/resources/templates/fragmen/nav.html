@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Title bar and navigation shared by all NSM pages.
+  Usage: <div th:replace="~{fragmen/nav :: bilah('Page Title', 'subtitle', 'report')}"></div>
+  The third argument marks the current page in the menu. Known values: dashboard, report, insiden, services, traffic, wawasan, users, audit, backup, notifikasi, email, password. Pass '' for none.
+  `username` and `isAdmin` are supplied to every page by NavAdvice.
+-->
+<body>
+
+<div th:fragment="bilah(judul, anakJudul, halaman)">
+  <div class="pita-merek"></div>
+
+  <div class="bilah">
+    <div class="judul-kiri">
+      <h1 th:text="${judul}">NSM</h1>
+      <span class="anak-judul" th:if="${anakJudul != null and !anakJudul.isEmpty()}"
+            th:text="${anakJudul}"></span>
+    </div>
+
+    <nav class="nav" aria-label="Menu utama">
+      <a th:href="@{/}" th:classappend="${halaman == 'dashboard'} ? 'aktif'"
+         title="Kartu status semua device, diperbarui otomatis">Dashboard</a>
+
+      <a th:href="@{/report}" th:classappend="${halaman == 'report'} ? 'aktif'"
+         title="Ketersediaan, jumlah gangguan, dan unduhan laporan">Report</a>
+
+      <a th:href="@{/insiden}" th:classappend="${halaman == 'insiden'} ? 'aktif'"
+         title="Gangguan yang sudah disatukan: satu insiden dengan satu akar, bukan satu baris per gejala">Insiden</a>
+
+      <a th:href="@{/services}" th:classappend="${halaman == 'services'} ? 'aktif'"
+         title="Apakah layanan di atas device benar-benar melayani, bukan cuma mesinnya menyala">Layanan</a>
+
+      <a th:href="@{/traffic}" th:classappend="${halaman == 'traffic'} ? 'aktif'"
+         title="Siapa mengambil apa dari web server, sebesar apa">Lalu Lintas</a>
+
+      <!-- Only one Insights link is in the main menu; the SOC Agent and Tenant pages are reached through `fragmen/wawasan-jalur`, to keep the bar within 1366px. -->
+      <a th:href="@{/wawasan}" th:classappend="${halaman == 'wawasan'} ? 'aktif'"
+         title="Apa yang NSM pelajari: kebiasaan tiap perangkat, pola pesan log, dan ke mana angkanya menuju">Wawasan</a>
+
+      <a th:href="@{/syslog}" th:classappend="${halaman == 'syslog'} ? 'aktif'"
+         title="Pesan yang dikirim perangkat sendiri: interface naik turun, tetangga OSPF hilang, konfigurasi diubah dari alamat mana">Syslog</a>
+
+      <a th:if="${isAdmin}" th:href="@{/admin/backup}"
+         th:classappend="${halaman == 'backup'} ? 'aktif'"
+         title="Apakah pencadangan benar-benar berjalan, dan apa isinya">Backup</a>
+
+      <a th:if="${isAdmin}" th:href="@{/admin/kesehatan}"
+         th:classappend="${halaman == 'kesehatan'} ? 'aktif'"
+         title="Apakah NSM sendiri sehat: poller, basis data, MySQL, server email">Kesehatan</a>
+
+      <!-- Admin links are grouped because they are opened rarely and are what push the menu past 1366px. -->
+      <details class="menu-nav" th:if="${isAdmin}"
+               th:classappend="${halaman == 'users' or halaman == 'audit' or halaman == 'konfig' or halaman == 'ldap'} ? 'punya-aktif'">
+        <summary title="Kelola akun, rekam jejak, dan konfigurasi perangkat">Admin</summary>
+        <div class="isi-menu">
+          <a th:href="@{/admin/users}" th:classappend="${halaman == 'users'} ? 'aktif'"
+             title="Menyetujui akun baru dan membuka akun terkunci">Kelola User</a>
+          <a th:href="@{/admin/audit}" th:classappend="${halaman == 'audit'} ? 'aktif'"
+             title="Rekam jejak aktivitas akun dan sistem">Audit Log</a>
+          <a th:href="@{/admin/konfig}" th:classappend="${halaman == 'konfig'} ? 'aktif'"
+             title="Riwayat konfigurasi perangkat: apa yang berubah, dan kapan">Konfigurasi</a>
+          <a th:href="@{/admin/ldap}" th:classappend="${halaman == 'ldap'} ? 'aktif'"
+             title="Siapa saja di direktori LDAP, jabatan apa, dan siapa terakhir login">LDAP</a>
+        </div>
+      </details>
+
+      <details class="menu-nav menu-akun" th:if="${username != null}"
+               th:classappend="${halaman == 'notifikasi' or halaman == 'email' or halaman == 'password'} ? 'punya-aktif'">
+        <summary title="Pengaturan akun sendiri"><b th:text="${username}">user</b></summary>
+        <div class="isi-menu">
+          <a th:href="@{/account/notifikasi}" th:classappend="${halaman == 'notifikasi'} ? 'aktif'"
+             title="Memilih device mana yang peringatannya dikirim ke emailmu">Notifikasi</a>
+          <a th:href="@{/account/email}" th:classappend="${halaman == 'email'} ? 'aktif'"
+             title="Mengganti alamat email akun, dengan verifikasi">Email</a>
+          <a th:href="@{/account/password}" th:classappend="${halaman == 'password'} ? 'aktif'"
+             title="Mengganti password akun sendiri">Password</a>
+
+          <!-- Theme switch. Light versus dark depends on where the viewer sits (dark in dim rooms, light for meetings and printed reports), so the choice is left to the user. See the header of `js/tema.js`. -->
+          <div class="baris-tema">
+            <span>Tampilan</span>
+            <span class="saklar-tema" data-saklar-tema role="group" aria-label="Pilih tema"></span>
+          </div>
+        </div>
+      </details>
+
+      <!-- Logout is intentionally not inside the menu; the way out should never be hidden behind an extra click. -->
+      <form th:action="@{/logout}" method="post">
+        <button type="submit" title="Keluar dari akun ini">Logout</button>
+      </form>
+    </nav>
+  </div>
+
+  <!-- Lives in the fragment, not in each page, so its behavior applies everywhere the fragment is used. -->
+  <script src="/js/menu.js"></script>
+  
+</div>
+
+</body>
+</html>

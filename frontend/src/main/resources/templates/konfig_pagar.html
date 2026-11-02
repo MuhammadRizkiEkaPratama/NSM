@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Pagar Otomasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<link rel="stylesheet" href="/css/konfig.css">
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Pagar Otomasi', 'satu pintu wajib untuk perbaikan otomatis nanti', 'konfig')}"></div>
+<div th:replace="~{fragmen/konfig-jalur :: jalur('pagar')}"></div>
+
+<div class="jelas-isi" data-untuk="#judul-pagar">Tahap 3 dari rencana network
+  automation tertutup. Lima gerbang, SEMUA harus lolos sebelum sebuah
+  perbaikan boleh berjalan tanpa manusia: (1) risiko diklasifikasikan aman
+  otomatis (Tahap 2, tidak bisa diubah lewat setelan ini), (2) kuncinya ada
+  di daftar putih operator, (3) bukan sedang jendela beku, (4) di dalam jam
+  kerja, (5) di bawah batas laju. Belum ada satu pun pemulih otomatis
+  (Tahap 4-7) yang dibangun -- halaman ini baca-saja penuh, dan riwayatnya
+  akan kosong sampai saat itu.</div>
+
+<h4 id="judul-pagar" class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-shield-check"/></svg>
+  Setelan sekarang</h4>
+<div id="status-pagar"></div>
+
+<h4 class="kepala judul-ikon">
+  <svg class="ikon"><use href="/ikon-tabler.svg#i-list-checks"/></svg>
+  Riwayat keputusan</h4>
+<div class="gulir-tabel"><table class="tabel-rincian" id="tabel-riwayat-pagar">
+  <thead>
+    <tr><th>Waktu</th><th>Device</th><th>Kunci</th><th>Keputusan</th>
+    <th>Alasan</th><th>Verifikasi</th></tr>
+  </thead>
+  <tbody id="baris-riwayat-pagar">
+    <tr><td colspan="6" class="redup">Memuat&hellip;</td></tr>
+  </tbody>
+</table></div>
+
+<div class="catatan">
+  <span class="bantu" tabindex="0" role="button"
+        data-petunjuk="Daftar putih dinyalakan lewat PAGAR_DAFTAR_PUTIH di .env, dipisah koma -- kosong secara bawaan (kill-switch, sama seperti AUTO_BAN_AKTIF). Kunci yang berklasifikasi wajib_manusia (Tahap 2) TIDAK BISA masuk daftar putih apa pun isinya -- gerbang itu cuma bisa diubah lewat kode (sot/katalog.py), bukan setelan runtime.">
+    Bagaimana cara menyalakan sebuah kunci?
+  </span>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/waktu.js"></script>
+<script src="/js/halaman.js"></script>
+<script src="/pagar.js"></script>
+<script src="/js/jelas.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>

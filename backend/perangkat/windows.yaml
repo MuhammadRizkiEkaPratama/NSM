@@ -1,0 +1,41 @@
+nama: windows
+keterangan: Windows lewat SSH, dibaca dengan akun berhak terbatas
+teruji: lab
+sumber: >-
+  Lab NSM: laptop pengembang, dihubungi lewat OpenSSH Server sebagai akun
+  non-admin dengan kunci. Setiap perintah di berkas ini sudah berjalan di
+  lab sebelum dipindah ke sini.
+
+deteksi:
+  sysobjectid:
+    - ".1.3.6.1.4.1.311.1.1.3.1"
+
+akses:
+  netmiko_device_type: windows
+  jenis: host
+  butuh_enable: false
+
+baca:
+  # Moved from `WINDOWS_CMDS` in connectors/ssh.py. Deliberately limited: the
+  # Windows SSH device row only proves remote access works. The same machine is
+  # already collected by the `lokal` connector, and collecting twice would give two different numbers.
+  nama_host: hostname
+  identitas: ver
+  akun: whoami
+  alamat_ip: ipconfig | findstr /i "IPv4"
+  disk: dir C:\ | findstr /i "free"
+
+
+tulis:
+  didukung: false
+  jaring_pengaman:
+    jenis: tidak_ada
+
+kemampuan:
+  # Windows identity markers come from hostname + psutil, not by asking the machine
+  # for its MAC: a laptop with many adapters returned wrong answers, producing a
+  # `bertentangan` identity verdict that blocked the write path to the right device.
+  identitas: windows
+
+  # `firewall` is empty: the Windows SSH row uses a restricted account that cannot
+  # change anything. This machine's Windows Firewall is read via the `lokal` platform.

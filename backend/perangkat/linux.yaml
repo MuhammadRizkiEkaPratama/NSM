@@ -1,0 +1,58 @@
+nama: linux
+keterangan: Linux (Ubuntu/Debian dan turunannya)
+teruji: lab
+sumber: >-
+  Lab NSM: VM nsm-ubuntu (192.168.56.101), VM testUbuntu, dan VM nsm-files
+  (192.168.56.105), semuanya Ubuntu. Setiap perintah di berkas ini sudah
+  berjalan di nsm-app sebelum dipindah ke sini.
+
+deteksi:
+  # net-snmp, used by nearly all Linux distributions.
+  sysobjectid:
+    - ".1.3.6.1.4.1.8072.3.2.10"
+
+akses:
+  netmiko_device_type: linux
+  jenis: host
+  butuh_enable: false
+
+baca:
+  # Moved from `LINUX_CMDS` in connectors/ssh.py. `konfigurasi` is deliberately
+  # absent: a Linux host has no single equivalent of `show running-config`; service
+  # files are read by connectors/konfig_linux.py instead.
+  nama_host: hostname
+  identitas: grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"'
+  kernel: uname -r
+  alamat_ip: ip -br addr
+  uptime: uptime -p
+  cpu: uptime
+  memori: free -h
+  disk: df -h /
+  sesi_login: loginctl list-sessions 2>/dev/null || who
+
+  interface_rinci: cat /proc/net/dev
+
+tulis:
+  # Linux writes go through `ubah_firewall.py` (`ufw` with its own rules and guards),
+  # not a generic "send config commands" path, so this stays false.
+  didukung: false
+  jaring_pengaman:
+    # No generic config-command path for Linux, so nothing to guard. Firewall changes
+    # go through `ubah_firewall.py`, which has its own guards and rollback.
+    jenis: tidak_ada
+
+# Alternative names used in the platform column; `identitas_sumber.py` accepts
+# these too, and recording them here applies to every query.
+alias:
+  - ubuntu
+  - debian
+
+kemampuan:
+  firewall: ufw
+  identitas: linux
+
+  # All three go over SSH and today exist only for Linux. They are separate
+  # questions rather than one `punya_ssh` because a device may expose CPU without auditd.
+  baca_sumberdaya: true
+  baca_trafik: true
+  baca_konfig_layanan: true

@@ -1,0 +1,64 @@
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  svg { display: block; }
+  text { font-family: Arial, Helvetica, sans-serif; fill: #000000; }
+  .jam { font-size: 12px; font-weight: bold; }
+  .isi { font-size: 11px; }
+  .sub { font-size: 10px; font-style: italic; }
+  .judul { font-size: 12px; font-weight: bold; letter-spacing: 0.5px; }
+  .sumbu { stroke: #000000; stroke-width: 2; }
+  .tik { stroke: #000000; stroke-width: 1.4; }
+  .tegak { stroke: #000000; stroke-width: 1; stroke-dasharray: 3 3; }
+  .kurung { stroke: #000000; stroke-width: 1.4; fill: none; }
+  .titik { fill: #000000; }
+  .titik-kosong { fill: #ffffff; stroke: #000000; stroke-width: 2; }
+</style>
+
+<svg width="1000" height="380" viewBox="0 0 1000 380" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="1000" height="380" fill="#ffffff"/>
+
+  <text class="judul" x="30" y="32">PEMULIHAN OTOMATIS ROUTER LOKASI A &#8212; 23 AGUSTUS 2026</text>
+  <text class="sub" x="30" y="50">Seluruh stempel waktu diambil dari tabel device_events dan pagar_tindakan pada basis data produksi.</text>
+
+  <!-- sumbu -->
+  <line class="sumbu" x1="70" y1="250" x2="950" y2="250"/>
+  <text class="isi" x="920" y="272">waktu</text>
+
+  <!-- penanda 1: perangkat mati -->
+  <line class="tegak" x1="110" y1="126" x2="110" y2="250"/>
+  <circle class="titik" cx="110" cy="250" r="6"/>
+  <line class="tik" x1="110" y1="245" x2="110" y2="262"/>
+  <text class="jam" x="72"  y="284">00.12.34</text>
+  <text class="isi" x="72"  y="84">Empat perangkat</text>
+  <text class="isi" x="72"  y="100">tercatat DOWN</text>
+  <text class="sub" x="72"  y="118">R1, R2, SW-B, LDAP</text>
+
+  <!-- penanda 2: pagar memberi izin -->
+  <line class="tegak" x1="654" y1="150" x2="654" y2="250"/>
+  <circle class="titik" cx="654" cy="250" r="6"/>
+  <line class="tik" x1="654" y1="245" x2="654" y2="262"/>
+  <text class="jam" x="616" y="284">00.13.36</text>
+  <text class="isi" x="560" y="128">Pagar otomasi memberi IZIN</text>
+  <text class="sub" x="560" y="144">enam gerbang dilewati, satu baris audit ditulis</text>
+
+  <!-- penanda 3: R1 hidup -->
+  <line class="tegak" x1="790" y1="180" x2="790" y2="250"/>
+  <circle class="titik-kosong" cx="790" cy="250" r="6"/>
+  <line class="tik" x1="790" y1="245" x2="790" y2="262"/>
+  <text class="jam" x="752" y="284">00.13.52</text>
+  <text class="isi" x="700" y="176">R1 membalas ping</text>
+
+  <!-- penanda 4: sisanya hidup -->
+  <line class="tegak" x1="890" y1="210" x2="890" y2="250"/>
+  <circle class="titik-kosong" cx="890" cy="250" r="6"/>
+  <line class="tik" x1="890" y1="245" x2="890" y2="262"/>
+  <text class="jam" x="852" y="306">00.14.03</text>
+  <text class="isi" x="800" y="206">Tiga perangkat lain pulih</text>
+
+  <!-- kurung durasi -->
+  <path class="kurung" d="M 110 322 L 110 332 L 790 332 L 790 322"/>
+  <text class="jam" x="392" y="352">78,86 detik</text>
+  <text class="sub" x="330" y="368">tanpa satu pun perintah diketik manusia</text>
+
+</svg>

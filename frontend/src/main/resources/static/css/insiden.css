@@ -1,0 +1,129 @@
+/*
+ * Incidents page styles (page-specific only). Colors, spacing and font sizes come from nsm.css
+ * tokens, with no raw color values. All classes are prefixed `ins-` because `.panel` in nsm.css is
+ * fixed at 380px and reusing it would shrink the content.
+ */
+
+/* Back link. Copied from `.jalur` in konfig.css instead of loading all of konfig.css for one navigation line. */
+.jalur {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--f-s); margin: var(--sp-3) 0 var(--sp-4);
+}
+.jalur a { color: var(--teks-redup); text-decoration: none; }
+.jalur a:hover { color: var(--teks); }
+.jalur .pulang { color: var(--tautan); font-weight: 600; }
+
+
+#alat {
+  display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+
+/*
+ * `width: auto`: nsm.css gives ALL `<select>` elements `width: 100%` (meant for single-column
+ * forms), which inside the flex `#alat` makes the window picker take the full page width and pushes
+ * "updated" to the next line. Same pattern as `form.saring select { width: auto; }` in admin_audit.html.
+ */
+#alat select {
+  width: auto;
+  min-width: 190px;
+  font-size: var(--f-m);
+  padding: 7px 9px;
+}
+#alat #meta { margin-left: auto; }
+
+#ringkas-insiden { margin-bottom: var(--sp-5); }
+#ringkas-insiden .angka-mini {
+  font-size: 26px; font-weight: 700; letter-spacing: -.5px;
+}
+#ringkas-insiden .angka-mini.buruk { color: var(--down); }
+#ringkas-insiden .angka-mini.aman  { color: var(--up); }
+
+/* --------------------------------------------------------------------- */
+/* Kartu insiden                                                          */
+/* --------------------------------------------------------------------- */
+
+.ins-kartu {
+  display: block; background: var(--permukaan-2);
+  border: 1px solid var(--garis);
+  border-radius: var(--r-sedang); padding: 14px 18px;
+  margin-bottom: var(--sp-3); color: inherit;
+  transition: border-color var(--alih), background var(--alih);
+}
+a.ins-kartu:hover {
+  background: var(--permukaan-3); border-color: var(--garis-terang);
+  text-decoration: none;
+}
+/* Left border color follows SEVERITY, not status, so a recovered but once-serious incident still looks different. */
+.ins-kartu.p-bahaya    { --aksen: var(--down); }
+.ins-kartu.p-perhatian { --aksen: var(--hati-hati); }
+.ins-kartu.p-info      { --aksen: var(--teks-redup); }
+
+.ins-kartu .baris-atas {
+  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+}
+.ins-kartu .akar { font-size: var(--f-l); font-weight: 700; }
+.ins-kartu .kapan { color: var(--teks-redup); font-size: var(--f-s); }
+.ins-kartu .ringkas {
+  margin-top: 6px; font-size: var(--f-m); line-height: 1.55;
+  color: var(--teks-2); max-width: 92ch;
+}
+.ins-kartu .angka-baris {
+  display: flex; gap: var(--sp-5); flex-wrap: wrap;
+  margin-top: 10px; font-size: var(--f-s); color: var(--teks-redup);
+}
+.ins-kartu .angka-baris b { color: var(--teks-2); font-weight: 600; }
+
+.ins-kosong {
+  border: 1px dashed var(--garis-terang); border-radius: var(--r-sedang);
+  padding: 18px; color: var(--teks-redup); font-size: var(--f-m);
+}
+
+/* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+
+/* The vertical line is drawn from a pseudo-element on the wrapper, not per-row left borders, which would break at every row gap. */
+.ins-garis { position: relative; padding-left: 26px; margin-top: var(--sp-3); }
+.ins-garis::before {
+  content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--garis-terang);
+}
+
+.ins-tahap { position: relative; margin-bottom: var(--sp-4); }
+.ins-tahap::before {
+  content: ""; position: absolute; left: -23px; top: 5px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--permukaan); border: 2px solid var(--garis-terang);
+}
+.ins-tahap.mulai::before  { border-color: var(--down); background: var(--down); }
+.ins-tahap.pulih::before  { border-color: var(--up);   background: var(--up); }
+.ins-tahap.gejala::before { border-color: var(--hati-hati); }
+.ins-tahap.gejala.sudah-pulih::before { border-color: var(--up); }
+
+.ins-tahap .waktu {
+  font-size: var(--f-s); color: var(--teks-redup);
+  font-variant-numeric: tabular-nums;
+}
+.ins-tahap .pokok {
+  font-size: var(--f-n); font-weight: 600; margin-top: 2px;
+}
+.ins-tahap .ket {
+  font-size: var(--f-s); color: var(--teks-2); margin-top: 3px;
+  line-height: 1.5; max-width: 92ch;
+}
+
+/* ROOT marker. Not color alone: root vs downstream must be readable at a glance and color alone is not accessible. */
+.lencana-akar {
+  font-size: var(--f-xs); padding: 1px 7px; border-radius: var(--r-bulat);
+  background: var(--down-latar); color: var(--down);
+  border: 1px solid var(--down-tepi); font-weight: 700;
+  letter-spacing: .3px; text-transform: uppercase;
+}
+.lencana-hilir {
+  font-size: var(--f-xs); padding: 1px 7px; border-radius: var(--r-bulat);
+  background: var(--permukaan-3); color: var(--teks-redup);
+  border: 1px solid var(--garis-terang);
+}
+
+#kepala-insiden .ins-kartu { cursor: default; }
+#kepala-insiden .ins-kartu:hover { background: var(--permukaan-2); }

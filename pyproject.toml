@@ -1,0 +1,126 @@
+# NSM project configuration (Python tooling).
+# Paths point at `backend/` because that is where the code lives today.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nsm"
+version = "0.1.0"
+description = "Network Status Monitor: monitoring, configuration compliance, and guarded automation for small networks (lab project)"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Muhammad Rizki Eka Pratama" }]
+
+license = "MIT"
+keywords = ["network-monitoring", "network-automation", "snmp", "netmiko", "compliance"]
+
+# Copied from `backend/requirements.txt` without changing any version pins, so `pip install .` works.
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "pymysql",
+    "apscheduler",
+    "icmplib",
+    "netmiko",
+    "paramiko",
+    "ldap3",
+    "pysnmp>=7.0,<8.0",
+    "psutil",
+    "cryptography",
+    "jinja2",
+    "openpyxl",
+    "python-docx",
+    "drain3",
+]
+
+[project.optional-dependencies]
+# Development tools. Kept separate on purpose: the nsm-app VM has only 3.9 GB RAM and runs the poller, uvicorn and Spring Boot together.
+dev = [
+    "pytest>=9",
+    "pytest-xdist",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/MuhammadRizkiEkaPratama/NSM"
+
+# -----------------------------------------------------------------------------
+# ruff
+# -----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["backend"]
+extend-exclude = [
+    "backend/venv",
+    "frontend/target",
+    "buku/node_modules",
+]
+
+[tool.ruff.lint]
+# Start with a short rule list: enabling every ruff rule on never-linted files would flood the output. Add rules once the current set is clean.
+select = [
+    "E4", "E7", "E9",  # syntax and semantic errors that are almost always real defects
+    "F",               # pyflakes: nama tak terpakai, impor tak terpakai, nama tak terdefinisi
+    "I",               # urutan impor
+    "B",
+    "UP",              # sintaks usang
+]
+ignore = [
+    # Docstrings contain tables, command output and addresses that legitimately exceed 88 characters. Code line length is still enforced by the formatter.
+    "E501",
+
+    # UP031 (`%`-format to f-string) is disabled on purpose. The project uses `%`-formatting consistently, and the rule alone produced most of the findings, drowning out real ones such as dead imports.
+    "UP031",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files import for side effects and patch modules before other imports (e.g. `uji_main.py` points `SessionLocal` at temporary SQLite before importing routes), so E402/I001 are relaxed: import order matters there.
+"backend/uji_*.py" = ["F401", "F811", "E402", "I001"]
+"backend/migrate_*.py" = ["E402"]
+"backend/report_service/__init__.py" = ["F401"]
+"backend/poller.py" = ["F401", "E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["nsm", "connectors", "report_service", "pemulih", "sot", "drift"]
+
+[tool.ruff.lint.flake8-bugbear]
+# B008 is disabled for FastAPI: `Depends()`, `Body()` and `Query()` are meant to be called in parameter defaults and are resolved per request.
+# keluar adalah menaburkan `# noqa` di 71 tempat.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Body", "fastapi.Query",
+                          "Depends", "Body", "Query"]
+
+# -----------------------------------------------------------------------------
+# pytest
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+# Collect only `backend/tests` and only `test_*.py`. The legacy `uji_*.py` scripts run at import time (network, database, some change real devices), so pytest must not import them during collection. They run via the subprocess wrapper in `backend/tests/test_warisan.py`; see `backend/tests/conftest.py`.
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+addopts = "-ra --strict-markers"
+
+# This marker replaces `ci_manifest.json` rather than discarding it: the manifest records which tests need the live lab and which modify real devices.
+markers = [
+    "murni: tidak butuh lab hidup",
+    "butuh_lab: butuh VM/router/LDAP hidup; dilewati kecuali --lab",
+    "mengubah_perangkat: MENULIS ke perangkat sungguhan; dilewati kecuali --ubah-perangkat",
+    "manifest_basi: ada di disk tapi tidak di ci_manifest.json — sengaja GAGAL, bukan dilewati",
+]
+
+# -----------------------------------------------------------------------------
+# mypy
+# -----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+files = ["backend/nsm"]
+# Only `backend/nsm` is type-checked: it is the clean-architecture layer and the only part that can pass without many exceptions. Coverage widens as code moves into `nsm/`.
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true

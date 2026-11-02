@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Masuk - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+.merek { text-align: center; margin-bottom: var(--sp-5); }
+.merek .nama { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
+.merek .garis { width: 42px; height: 3px; margin: var(--sp-2) auto;
+                background: linear-gradient(90deg, var(--brand), var(--brand-terang));
+                border-radius: 2px; }
+.merek .sub { color: var(--teks-redup); font-size: var(--f-m); }
+</style>
+</head>
+<body class="terpusat" data-latar="shader">
+
+<div class="pita-merek"></div>
+
+<div class="panel muncul" style="width:360px">
+  <div class="merek">
+    <div class="nama">NSM</div>
+    <div class="garis"></div>
+    <div class="sub">Network Status Monitor</div>
+  </div>
+
+  <div class="pesan-galat" th:if="${param.error}">Username atau password salah.</div>
+  <!-- Identity server down. Kept separate from "wrong username or password" because the user action differs; the message says what to do and mentions the emergency login. -->
+  <div class="pesan-galat" th:if="${param.ldapmati}">
+    <b>Sandimu kemungkinan besar tidak salah.</b>
+    Server identitas (LDAP) sedang tidak bisa dihubungi, jadi username ini
+    tidak bisa diperiksa sama sekali &mdash; akunmu hanya ada di direktori itu.
+    <br><br>
+    Nyalakan kembali server LDAP-nya, atau masuk memakai <b>akun darurat</b>
+    yang tersimpan lokal kalau kamu punya. Percobaan ini tidak dihitung
+    sebagai salah sandi dan tidak akan mengunci akunmu.
+  </div>
+  <!-- An idle login page has an expired CSRF token. Show a calm message with the next step instead of a bare 403 error page. -->
+  <div class="pesan-galat" th:if="${param.kedaluwarsa}">
+    Halaman ini terbuka terlalu lama, jadi sesinya kedaluwarsa.
+    Halamannya sudah dimuat ulang &mdash; silakan masukkan lagi username dan password.
+  </div>
+  <div class="pesan-galat" th:if="${param.locked}">
+    <span th:if="${param.hard}">Akun terkunci pada tingkat 3 karena percobaan berlebihan.
+      Buka lewat <a th:href="@{/forgot}">Lupa password</a> atau hubungi admin.</span>
+    <span th:unless="${param.hard}">
+      Akun terkunci karena 3 kali gagal masuk.
+      <span th:if="${param.secs}">Coba lagi dalam <b id="countdown">--:--</b>.</span>
+      <span th:unless="${param.secs}">Coba lagi beberapa menit lagi.</span>
+    </span>
+  </div>
+  <div class="pesan-sukses" th:if="${param.emailed}">Tautan reset password sudah dikirim ke
+    emailmu, jadi kamu bisa langsung mengatur ulang tanpa menunggu.</div>
+  <div class="pesan-galat" th:if="${param.pending}">Akun belum disetujui admin.</div>
+  <!-- Distinct from "not yet approved": a revoked account should not be told to wait for approval. -->
+  <div class="pesan-galat" th:if="${param.dicabut}">Akses akun ini sudah dicabut admin. Hubungi admin bila menurut Anda ini keliru.</div>
+  <div class="pesan-galat" th:if="${param.ipblocked}">Alamat IP kamu diblokir karena terlalu
+    banyak percobaan gagal. Hubungi admin.</div>
+  <div class="pesan-sukses" th:if="${param.logout}">Kamu sudah keluar.</div>
+  <div class="pesan-sukses" th:if="${param.reset}">Password berhasil diatur ulang.
+    Silakan masuk dengan password baru.</div>
+
+  <form th:action="@{/login}" method="post">
+    <label class="label-atas" for="u">Username</label>
+    <input type="text" name="username" id="u" autofocus required autocomplete="username">
+
+    <label class="label-atas" for="pw">Password</label>
+    <input type="password" name="password" id="pw" required autocomplete="current-password">
+
+    <label class="baris-centang"><input type="checkbox" id="showpw"> Lihat password</label>
+    <label class="baris-centang">
+      <input type="checkbox" id="rm" name="remember-me"> Ingat saya selama 1 jam
+    </label>
+
+    <button type="submit" class="tombol-utama tombol-lebar" style="margin-top:var(--sp-5)">Masuk</button>
+  </form>
+
+  <div class="tautan-bawah"><a th:href="@{/forgot}">Lupa password</a></div>
+  <div class="tautan-bawah">Belum punya akun? <a th:href="@{/signup}">Daftar</a></div>
+</div>
+
+<script src="/js/halaman.js"></script>
+<script src="/js/petunjuk.js"></script>
+<script src="/vendor/three.min.js"></script>
+<script src="/js/latar-bsp.js"></script>
+</body>
+</html>

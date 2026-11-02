@@ -1,0 +1,65 @@
+nama: fortinet
+keterangan: Fortinet FortiOS (FortiGate)
+teruji: dokumentasi
+# No Fortinet device in the lab. None of the commands in this file has been run on real FortiOS.
+
+deteksi:
+  # Fortinet's PEN in the IANA registry.
+  sysobjectid:
+    - ".1.3.6.1.4.1.12356."
+
+akses:
+  netmiko_device_type: fortinet
+  jenis: jaringan
+  butuh_enable: false
+
+  # `paging_mati` is deliberately left empty. netmiko's FortiOS driver ignores its
+  # `disable_paging` argument and instead runs `config system console` / `set output standard` / `end`.
+  # That changes a persistent device setting, and a monitoring tool must not alter
+  # what it reads. netmiko still runs it when opening a session; anyone enabling
+  # this platform must know that first.
+
+baca:
+  # `show full-configuration` is used instead of `show` so defaults are printed.
+  # Otherwise a default changing between FortiOS versions would not show up as a
+  # change in the snapshot. The cost is larger snapshots and noisier diffs.
+  konfigurasi: show full-configuration
+
+  # `konfigurasi_startup` is deliberately absent: FortiOS saves as soon as a config
+  # block is closed with `end`, so there is no unsaved state (netmiko's
+  # `save_config()` for Fortinet raises `NotImplementedError`).
+
+  nama_host: get system status
+  identitas: get system status
+  interface_ringkas: get system interface
+  interface_rinci: diagnose netlink interface list
+  tabel_rute: get router info routing-table all
+  cpu: get system performance status
+  memori: get system performance status
+
+tulis:
+  didukung: true
+
+  mode_konfig: ""
+
+  # FortiOS saves on `end` and has no equivalent of `reload in N` or `commit
+  # confirmed`; `tidak_ada` here is a statement, not a missing value.
+  jaring_pengaman:
+    jenis: tidak_ada
+
+rahasia:
+  # FortiOS config is nested and indented, so every pattern allows leading
+  # whitespace. `ENC` marks encrypted values; they are still masked because the
+  # snapshot ends up in backups.
+  - pola: '(?im)^(\s*set\s+(?:password|passwd|passphrase)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*set\s+(?:psksecret|ppk-secret|secondary-secret|secret)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*set\s+(?:private-key|certificate|ca)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+  - pola: '(?im)^(\s*set\s+(?:community|auth-pwd|priv-pwd)\s+).+$'
+    ganti: '\1<DISAMARKAN>'
+
+kemampuan: {}
+# Deliberately empty: no capability here has been tried on a real Fortinet
+# device, and `dialek_perangkat` treats unlisted capabilities as unsupported.

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Atur Notifikasi - NSM</title>
+<script src="/js/tema.js"></script>
+<link rel="stylesheet" href="/vendor/font/manrope.css">
+<link rel="stylesheet" href="/css/nsm.css">
+<style>
+.baris-device {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px; border: 1px solid var(--garis);
+  border-radius: 6px; margin-bottom: var(--sp-2); background: var(--permukaan);
+  cursor: pointer; transition: border-color var(--alih), background var(--alih);
+}
+.baris-device:hover { border-color: var(--garis-terang); background: var(--permukaan-2); }
+.baris-device input { width: 18px; height: 18px; flex: none; accent-color: #22c55e; cursor: pointer; }
+.baris-device .nama { font-size: var(--f-n); font-weight: 600; }
+.baris-device .rinci { font-size: var(--f-s); color: var(--teks-redup); margin-top: 2px; }
+.baris-device .dijeda { font-size: var(--f-xs); color: #9c6500; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div th:replace="~{fragmen/nav :: bilah('Atur Notifikasi', 'berlaku untuk akunmu saja', 'notifikasi')}"></div>
+
+<div style="display:flex; justify-content:center;">
+  <div class="panel panel-lebar">
+    <h2><span data-istilah="notifikasi-langganan">Notifikasi Saya</span></h2>
+    <div class="pengantar">
+      Centang device yang ingin kamu terima peringatannya lewat email, baik saat
+      device bermasalah maupun saat pulih. Bawaannya mati, jadi kamu hanya menerima
+      email untuk device yang dicentang di sini. Ini satu-satunya saklarnya, dan
+      pilihan tiap user berdiri sendiri.
+    </div>
+
+    <div class="pesan-sukses" th:if="${success}" th:text="${success}"></div>
+
+    <form th:action="@{/account/notifikasi}" method="post">
+      <div th:if="${#lists.isEmpty(devices)}" class="kosong">Belum ada device yang terdaftar.</div>
+
+      <label class="baris-device" th:each="d : ${devices}">
+        <input type="checkbox" name="device" th:value="${d.id}"
+               th:checked="${subscribed.contains(d.id.longValue())}">
+        <span>
+          <span class="nama" th:text="${d.name}">Device</span>
+          <span class="dijeda" th:if="${d.aktif == false}">(pemantauan dijeda)</span>
+          <span class="rinci" style="display:block">
+            <span th:text="${d.ipAddress}">ip</span>
+            <span th:if="${d.location}" th:text="' &middot; ' + ${d.location}"></span>
+          </span>
+        </span>
+      </label>
+
+      <button type="submit" class="tombol-utama" style="margin-top:var(--sp-4)">Simpan</button>
+    </form>
+
+    <div class="tautan-bawah"><a th:href="@{/}">Kembali ke dashboard</a></div>
+  </div>
+</div>
+
+<script src="/js/latar.js"></script>
+<script src="/js/istilah.js"></script>
+<script src="/js/petunjuk.js"></script>
+</body>
+</html>
