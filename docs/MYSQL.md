@@ -253,7 +253,7 @@ These are the most expensive failure type: succeeding without doing anything.
    date. Backups would have reported success every night while storing nothing
    new. It now dumps the database NSM actually uses (`nsm.sql`) and no longer
    includes `nsm.db`.
-2. **Poller freshness check said "stale" forever.** `restart_nsm.ps1` opened
+2. **Poller freshness check said "stale" forever.** `scripts/restart_nsm.ps1` opened
    `nsm.db` directly. It now calls `backend/cek_segar.py`, which follows
    wherever NSM writes, prints seconds since the last row (`-1` if none), and
    exits with status 2 when the database is unreachable, so "poller idle" and

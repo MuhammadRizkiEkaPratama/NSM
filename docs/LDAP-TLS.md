@@ -120,7 +120,7 @@ CA into the copy:
 keytool -importcert -alias bsp-lab-ca -file bsp-lab-ca.crt -keystore nsm-truststore.jks -storepass <TRUSTSTORE_PASSWORD>
 ```
 
-(`<TRUSTSTORE_PASSWORD>` is the password of the copied store.) `restart_nsm.ps1`
+(`<TRUSTSTORE_PASSWORD>` is the password of the copied store.) `scripts/restart_nsm.ps1`
 points Java at it through `JAVA_TOOL_OPTIONS`
 (`-Djavax.net.ssl.trustStore=...`) and prints a red warning if the file is
 missing. `*.jks` is git-ignored; do not commit it.

@@ -53,7 +53,7 @@ HTML and JS live inside the jar (Spring copies `src/main/resources` at build), s
 
 ### Local development mode
 
-`restart_nsm.ps1` (Windows) starts the three processes locally for development; it is **not** how the primary instance runs. `-Status` only checks, `-TanpaJava` skips Spring. It sets the truststore variable for you. Manually, from `backend/`: `python -u poller.py`, `python -m uvicorn main:app --port 8000`, then in `frontend/`: `mvnw spring-boot:run` with `JAVA_TOOL_OPTIONS` set (section 7). Use `-u` for the poller; without it stdout is buffered when detached and logs look empty while the poller works.
+`scripts/restart_nsm.ps1` (Windows) starts the three processes locally for development; it is **not** how the primary instance runs. `-Status` only checks, `-TanpaJava` skips Spring. It sets the truststore variable for you. Manually, from `backend/`: `python -u poller.py`, `python -m uvicorn main:app --port 8000`, then in `frontend/`: `mvnw spring-boot:run` with `JAVA_TOOL_OPTIONS` set (section 7). Use `-u` for the poller; without it stdout is buffered when detached and logs look empty while the poller works.
 
 ---
 
@@ -196,7 +196,7 @@ Four tasks live in the host laptop's Task Scheduler (the backup tasks are create
 | NSM Backup Incremental | 03:00 daily | Delta since the full backup (`backup_incremental.py`) |
 | NSM Verifikasi Pemulihan | Sunday 04:00 | Proves backups restore into a scratch database (`verifikasi_pulih.py`) |
 | NSM Terowongan GNS3 | every 10 min | Keeps the reverse SSH tunnel host to `nsm-app` for the GNS3 API |
-| NSM CI | 07:00 daily | Runs the "pure" tests (`pasang_ci.ps1` installs it) |
+| NSM CI | 07:00 daily | Runs the "pure" tests (`scripts/pasang_ci.ps1` installs it) |
 
 Details: [BACKUP.md](BACKUP.md).
 

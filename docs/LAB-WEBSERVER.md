@@ -287,7 +287,7 @@ Stopping Apache versus powering off the VM is the heart of the feature: the host
 still answers ping, so ping-only monitoring would report everything healthy while
 the service is down.
 
-The repo's `simulasi_serangan.py` (port probes against ports the firewall is
+The repo's `scripts/simulasi_serangan.py` (port probes against ports the firewall is
 expected to deny) targets the same lab servers; it makes plain TCP connection
 attempts to closed ports so the firewall pages have refusals to show, and
 exploits nothing.

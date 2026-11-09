@@ -151,7 +151,7 @@ python backend/jalankan_semua_uji.py          # safe tests only
 python backend/jalankan_semua_uji.py --semua  # includes device-touching tests
 ```
 
-A dry run is always available: `ubah_firewall.blokir(db, device_id, ip, 60, "test", "test", sungguhan=False)` returns the plan without connecting. `simulasi_serangan.py` generates controlled, rate-limited refused connection attempts from other lab machines (`--menit`, `--sekaligus`, `--hanya-a`, `--hanya-b`). An attacker Kali VM scanning the lab was used for the live proofs below.
+A dry run is always available: `ubah_firewall.blokir(db, device_id, ip, 60, "test", "test", sungguhan=False)` returns the plan without connecting. `scripts/simulasi_serangan.py` generates controlled, rate-limited refused connection attempts from other lab machines (`--menit`, `--sekaligus`, `--hanya-a`, `--hanya-b`). An attacker Kali VM scanning the lab was used for the live proofs below.
 
 Live proofs in the lab, each verified independently over SSH rather than trusting NSM's own record:
 
